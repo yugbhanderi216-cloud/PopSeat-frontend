@@ -1,0 +1,180 @@
+.admin-dashboard {
+  min-height: 100vh;
+  padding: 30px;
+  font-family: "Poppins", sans-serif;
+  background: #b7a998;
+}
+
+/* HEADER */
+
+.top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* LOGO ZOOM EFFECT */
+
+.brand-logo {
+  width: 70px;
+  transition: transform 0.4s ease, filter 0.4s ease;
+  cursor: pointer;
+}
+
+/* HOVER (Desktop) */
+.brand-logo:hover {
+  transform: scale(1.5);
+  filter: drop-shadow(0 0 20px #b8673d);
+}
+
+/* TOUCH (Mobile) */
+.brand-logo:active {
+  transform: scale(1.6);
+  filter: drop-shadow(0 0 25px #b8673d);
+}
+
+/* TITLE */
+
+.brand-title {
+  color: #4a3f35;
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+/* TEXT GLOW ON LOGO HOVER */
+
+.brand:hover .brand-title {
+  text-shadow: 0 0 10px rgba(184,103,61,0.7);
+}
+
+/* LOGOUT */
+
+.logout-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  background: #b8673d;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.logout-btn:hover {
+  background: #a75831;
+}
+
+/* PANEL */
+
+.control-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  background: #e9dfd2;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 30px;
+  border: 1px solid #d6c8b7;
+}
+
+.dashboard-title {
+  color: #4a3f35;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.stats-box span {
+  font-size: 13px;
+  opacity: 0.7;
+  color: #6b5f55;
+}
+
+.stats-box h2 {
+  margin: 0;
+  font-size: 26px;
+  color: #b8673d;
+}
+
+.search-box input {
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 1px solid #d6c8b7;
+  outline: none;
+  background: #f3ece3;
+  color: #4a3f35;
+}
+
+/* GRID */
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.card {
+  width: 280px;
+  background: #e9dfd2;
+  border-radius: 18px;
+  padding: 20px;
+  color: #4a3f35;
+  border: 1px solid #d6c8b7;
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+/* STATUS */
+
+.status.Pending { color: #f59e0b; }
+.status.Active { color: #22c55e; }
+.status.Disabled { color: #ef4444; }
+
+/* BUTTON */
+
+.actions button {
+  margin-top: 10px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: #b8673d;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.actions button:hover {
+  background: #a75831;
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+  .control-panel {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .card {
+    width: 100%;
+  }
+
+  .brand-title {
+    font-size: 30px;
+  }
+
+  .brand-logo {
+    width: 55px;
+  }
+}

@@ -1,0 +1,112 @@
+/* ===== PAGE BACKGROUND ===== */
+
+.payment-page {
+  min-height: 100vh;
+  background: #b8a899;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Poppins", sans-serif;
+  padding: 40px 20px;
+}
+
+/* ===== PAYMENT CARD ===== */
+
+.payment-card {
+  background: #efe6dc;
+  padding: 50px 45px;
+  border-radius: 30px;
+  width: 100%;
+  max-width: 450px;
+  text-align: center;
+
+  border: 1px solid #d6c6b8;
+
+  box-shadow: 0 30px 60px rgba(0,0,0,0.08);
+  transition: 0.3s ease;
+}
+
+.payment-card:hover {
+  transform: translateY(-6px);
+}
+
+/* ===== TITLE ===== */
+
+.payment-card h2 {
+  font-size: 18px;
+  color: #6b5c4f;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.payment-card h3 {
+  font-size: 26px;
+  margin: 12px 0;
+  color: #4a3a2f;
+  font-weight: 600;
+}
+
+/* ===== PRICE ===== */
+
+.payment-card h1 {
+  margin: 25px 0;
+  font-size: 48px;
+  color: #b5633c;
+  font-weight: 700;
+}
+
+/* ===== BUTTON ===== */
+
+.payment-card button {
+  background: linear-gradient(135deg, #b5633c, #9e4f2a);
+
+  border: none;
+  padding: 14px 30px;
+  border-radius: 12px;
+
+  color: white;
+  cursor: pointer;
+
+  font-weight: 600;
+  font-size: 16px;
+
+  width: 100%;
+  transition: 0.25s ease;
+}
+
+.payment-card button:hover {
+  background: #9e4f2a;
+  transform: translateY(-2px);
+}
+
+/* ===== OPTIONAL SUBTEXT ===== */
+
+.payment-card p {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #6b5c4f;
+}
+
+/* ===== MOBILE RESPONSIVE ===== */
+
+@media (max-width: 600px) {
+
+  .payment-card {
+    padding: 35px 25px;
+    border-radius: 22px;
+  }
+
+  .payment-card h1 {
+    font-size: 36px;
+  }
+
+  .payment-card h3 {
+    font-size: 20px;
+  }
+
+  .payment-card button {
+    font-size: 15px;
+    padding: 12px;
+  }
+
+}
