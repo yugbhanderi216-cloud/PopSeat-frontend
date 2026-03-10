@@ -1,0 +1,174 @@
+.orders-container {
+  padding: 20px;
+  background: #b8a899;
+  min-height: 100vh;
+  color: #4a3a2f;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ORDER CARD */
+
+.order-card {
+  background: #f8f3ee;
+  padding: 18px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+
+  border: 1px solid #e6ddd3;
+  transition: 0.2s ease;
+
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+.order-card:hover {
+  border-color: #b5633c;
+}
+
+/* TEXT */
+
+.order-card p {
+  margin: 4px 0;
+  color: #6b5c4f;
+}
+
+/* ITEMS */
+
+.items-list {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #7c6f64;
+  word-wrap: break-word;
+}
+
+/* DELIVERY INFO */
+
+.delivery-info {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 4px 0;
+  color: #b5633c;
+}
+
+/* BUTTON AREA */
+
+.order-buttons,
+.order-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.order-buttons button,
+.order-actions button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+
+  background: #b5633c;
+  color: white;
+
+  font-weight: 600;
+  transition: 0.2s;
+
+  white-space: nowrap;
+}
+
+.order-buttons button:hover,
+.order-actions button:hover {
+  background: #9e4f2a;
+}
+
+/* NEW ORDER FLASH */
+
+.new-order {
+  animation: flashHighlight 1s ease-in-out 3;
+  border: 2px solid #b5633c;
+}
+
+@keyframes flashHighlight {
+  0% { background-color: #efe6dc; }
+  50% { background-color: #f8f3ee; }
+  100% { background-color: #efe6dc; }
+}
+
+/* FILTER BAR */
+
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.filter-bar input,
+.filter-bar select {
+  padding: 7px 10px;
+  border: 1px solid #e6ddd3;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #4a3a2f;
+  min-width: 140px;
+}
+
+.filter-bar button {
+  padding: 7px 14px;
+  background: #b5633c;   /* same as your main buttons */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.filter-bar button:hover {
+  background: #9e4f2a;
+}
+
+/* ===============================
+MOBILE RESPONSIVE
+================================ */
+
+@media (max-width: 768px) {
+
+  .orders-container {
+    padding: 15px;
+  }
+
+  .order-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .delivery-info {
+    font-size: 18px;
+  }
+
+  .order-buttons,
+  .order-actions {
+    width: 100%;
+  }
+
+  .order-buttons button,
+  .order-actions button {
+    width: 100%;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+  }
+
+  .filter-bar input,
+  .filter-bar select,
+  .filter-bar button {
+    width: 100%;
+  }
+}

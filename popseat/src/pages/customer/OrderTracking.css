@@ -1,0 +1,128 @@
+/* ===============================
+   PAGE
+=============================== */
+
+.tracking-page{
+min-height:100vh;
+padding:40px 20px;
+font-family:"Poppins",sans-serif;
+background:#b8a899;
+color:#4a3a2f;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+gap:20px;
+}
+
+/* ===============================
+   CARD
+=============================== */
+
+.tracking-card {
+  background: #f8f3ee;
+
+  padding: 35px 30px;
+  border-radius: 22px;
+
+  width: 100%;
+  max-width: 420px;
+
+  border: 1px solid #e6ddd3;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+
+  text-align: center;
+}
+
+/* ===============================
+   TITLE
+=============================== */
+
+.tracking-card h2 {
+  margin-bottom: 10px;
+}
+
+.order-id {
+  font-size: 13px;
+  color: #6b5c4f;
+  margin-bottom: 20px;
+}
+
+/* ===============================
+   STEPS
+=============================== */
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  margin-top: 20px;
+}
+
+/* STEP */
+
+.step {
+  padding: 12px 16px;
+
+  border-radius: 12px;
+
+  background: #efe6dc;
+
+  font-size: 14px;
+  text-align: left;
+
+  border-left: 4px solid #e6ddd3;
+}
+
+/* ACTIVE STEP */
+
+.step.active {
+  background: white;
+  border-left: 4px solid #b5633c;
+  font-weight: 500;
+}
+
+/* ===============================
+   BUTTON
+=============================== */
+
+.home-btn {
+  margin-top: 25px;
+
+  padding: 12px 24px;
+
+  border: none;
+  border-radius: 14px;
+
+  background: #b5633c;
+  color: white;
+
+  cursor: pointer;
+}
+
+.home-btn:hover {
+  background: #9e4f2a;
+}
+
+/* ===============================
+   MOBILE
+=============================== */
+
+@media (max-width: 480px) {
+
+  .tracking-page {
+    padding: 30px 15px;
+  }
+
+  .tracking-card {
+    width: 92%;
+    padding: 25px 20px;
+  }
+
+  .step {
+    font-size: 13px;
+  }
+
+}

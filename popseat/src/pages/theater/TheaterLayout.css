@@ -1,0 +1,132 @@
+/* ===============================
+   GLOBAL LAYOUT
+=============================== */
+.layout {
+  position: relative;
+  min-height: calc(100vh - 64px);
+  background: #b8a899;
+  overflow-x: hidden;
+}
+
+/* ===============================
+   SIDEBAR
+=============================== */
+.sidebar {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  height: 100%;
+  width: 260px;
+
+  background: #efe6dc;
+  color: #4a3a2f;
+
+  padding: 24px 18px;
+
+  box-shadow: 6px 0 30px rgba(0,0,0,0.12);
+  transition: transform 0.3s ease;
+
+  z-index: 500;
+}
+
+/* Hidden */
+.layout.closed .sidebar {
+  transform: translateX(-100%);
+}
+
+/* Visible */
+.layout.open .sidebar {
+  transform: translateX(0);
+}
+
+/* Header */
+
+.sidebar-header h2 {
+  font-size: 20px;
+  margin-bottom: 4px;
+  color: #4a3a2f;
+}
+
+.sidebar-header span {
+  font-size: 12px;
+  color: #7c6f64;
+}
+
+/* ===============================
+   LINKS
+=============================== */
+
+.sidebar-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-links a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  text-decoration: none;
+  color: #6b5c4f;
+
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+
+  transition: 0.25s ease;
+}
+
+/* Hover */
+
+.sidebar-links a:hover {
+  background: #f8f3ee;
+  color: #4a3a2f;
+  transform: translateX(5px);
+}
+
+/* Active */
+
+.sidebar-links a.active {
+  background: #b5633c;
+  color: white;
+  box-shadow: 0 6px 18px rgba(181,99,60,0.3);
+}
+
+/* ===============================
+   MAIN CONTENT
+=============================== */
+
+.main-content {
+  padding: 28px;
+  width: 100%;
+  transition: all 0.3s ease;
+  overflow-x: hidden;
+}
+
+/* When sidebar opens */
+
+.layout.open .main-content {
+  margin-left: 260px;
+  width: calc(100% - 260px);
+}
+
+/* When sidebar closes */
+
+.layout.closed .main-content {
+  margin-left: 0;
+  width: 100%;
+}
+
+/* ===============================
+   MOBILE
+=============================== */
+
+@media (max-width: 768px) {
+
+  .layout.open .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+}

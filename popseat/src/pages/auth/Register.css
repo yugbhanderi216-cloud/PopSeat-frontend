@@ -1,0 +1,271 @@
+/* RESET */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  }
+
+/* PAGE */
+.register-page {
+display: flex;
+min-height: 100vh;
+background: #b8a899;
+font-family: "Poppins", sans-serif;
+}
+
+/* LEFT IMAGES GRID */
+
+.register-left {
+  width: 45%;
+  background: #b8a899;
+
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+
+  gap: 18px;
+  padding: 40px 25px;
+
+  align-items: center;
+}
+/* IMAGE STYLE */
+
+.register-left img {
+width: 100%;
+object-fit: cover;
+border-radius: 16px;
+
+border: 3px solid rgba(255,255,255,0.2);
+
+box-shadow:
+0 35px 70px rgba(0,0,0,0.65),
+0 18px 35px rgba(0,0,0,0.45),
+0 6px 12px rgba(0,0,0,0.25);
+
+object-position: left center;
+animation: imageSlide 12s ease-in-out infinite;
+
+transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* SQUARE IMAGES */
+
+.register-left img:nth-child(1){
+grid-column: 1;
+grid-row: 1;
+aspect-ratio: 1 / 1;
+}
+
+.register-left img:nth-child(2){/* BIGGER SQUARE IMAGES */
+
+.register-left img:nth-child(1){
+  grid-column: 1;
+  grid-row: 1;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+}
+
+.register-left img:nth-child(2){
+  grid-column: 1;
+  grid-row: 2;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+}
+grid-column: 1;
+grid-row: 2;
+aspect-ratio: 1 / 1;
+}
+
+/* TALL IMAGES */
+
+.register-left img:nth-child(3){
+grid-column: 2;
+grid-row: 1 / span 2;
+height: 100%;
+}
+
+.register-left img:nth-child(4){
+grid-column: 3;
+grid-row: 1 / span 2;
+height: 100%;
+}
+
+/* animation delays */
+
+.register-left img:nth-child(2){ animation-delay:2s; }
+.register-left img:nth-child(3){ animation-delay:4s; }
+.register-left img:nth-child(4){ animation-delay:6s; }
+
+/* sliding animation */
+
+@keyframes imageSlide {
+
+0% { object-position: left center; }
+
+50% { object-position: right center; }
+
+100% { object-position: left center; }
+
+}
+
+/* hover */
+
+.register-left img:hover {
+transform: scale(1.05);
+
+box-shadow:
+0 50px 100px rgba(0,0,0,0.8),
+0 25px 50px rgba(0,0,0,0.55),
+0 10px 20px rgba(0,0,0,0.35);
+}
+
+/* RIGHT SECTION */
+.register-right {
+width: 55%;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 40px;
+}
+
+/* CARD */
+.register-card {
+width: 100%;
+max-width: 440px;
+padding: 50px 45px;
+border-radius: 24px;
+
+background: #efe6dc;
+
+border: 1px solid #d6c6b8;
+
+box-shadow:
+0 20px 50px rgba(0,0,0,0.08),
+0 4px 12px rgba(0,0,0,0.04);
+
+display: flex;
+flex-direction: column;
+text-align: center;
+}
+
+/* BRAND */
+.brand {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 12px;
+margin-bottom: 30px;
+}
+
+.brand img {
+width: 50px;
+height: 50px;
+padding: 6px;
+border-radius: 14px;
+
+background: linear-gradient(135deg, #b5633c, #9e4f2a);
+}
+
+.brand h1 {
+font-size: 26px;
+font-weight: 700;
+color: #4a3a2f;
+}
+
+/* TITLE */
+.register-card h2 {
+margin-bottom: 25px;
+font-weight: 600;
+color: #4a3a2f;
+}
+
+/* INPUTS */
+.register-card input {
+padding: 14px;
+margin-bottom: 15px;
+border-radius: 12px;
+
+border: 1px solid #d6c6b8;
+background: #f8f3ee;
+}
+
+.register-card input:focus {
+outline: none;
+border-color: #b5633c;
+box-shadow: 0 0 0 3px rgba(181,99,60,0.15);
+}
+
+/* RULES */
+.rule {
+font-size: 13px;
+color: #c44536;
+margin-bottom: 6px;
+text-align: left;
+}
+
+.rule.valid {
+color: #2e7d32;
+}
+
+/* STRENGTH */
+.strength-bar {
+height: 6px;
+background: #e8ded3;
+border-radius: 10px;
+margin: 8px 0;
+overflow: hidden;
+}
+
+.strength {
+height: 100%;
+transition: 0.4s ease;
+}
+
+.strength-0 { width: 20%; background: #c44536; }
+.strength-1 { width: 40%; background: #d97706; }
+.strength-2 { width: 60%; background: #eab308; }
+.strength-3 { width: 80%; background: #65a30d; }
+.strength-4 { width: 100%; background: #2e7d32; }
+
+.strength-text {
+font-size: 12px;
+color: #4a3a2f;
+margin-bottom: 12px;
+text-align: left;
+}
+
+/* BUTTON */
+.register-card button {
+padding: 14px;
+border-radius: 14px;
+border: none;
+font-weight: 600;
+
+background: linear-gradient(135deg, #b5633c, #9e4f2a);
+color: white;
+
+cursor: pointer;
+margin-top: 8px;
+}
+
+.register-card button:disabled {
+background: #d6c6b8;
+cursor: not-allowed;
+}
+
+/* LINK */
+.register-card p {
+margin-top: 18px;
+font-size: 14px;
+color: #4a3a2f;
+}
+
+.register-card a {
+color: #b5633c;
+text-decoration: none;
+}
+
+.register-card a:hover {
+text-decoration: underline;
+}

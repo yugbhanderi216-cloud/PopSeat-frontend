@@ -1,0 +1,304 @@
+/* GLOBAL */
+*{
+box-sizing:border-box;
+}
+html,body{
+margin:0;
+padding:0;
+font-family:"Poppins",sans-serif;
+background:#b8a899;
+}
+
+/* MAIN WRAPPER */
+.owner-container{
+width:95%;
+max-width:1300px;
+margin:40px auto;
+background:#efe6dc;
+border-radius:30px;
+padding:30px;
+box-shadow:0 30px 60px rgba(0,0,0,0.08);
+transition:.3s;
+}
+
+/* HEADER */
+.owner-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:30px;
+background:#e8ded3;
+padding:16px 22px;
+border-radius:18px;
+flex-wrap:wrap;
+gap:10px;
+}
+
+.owner-header h1{
+margin:0;
+line-height:1;
+}
+/* BRAND */
+.brand{
+display:flex;
+align-items:center;
+gap:12px;
+margin-bottom:0;
+}
+
+.brand img{
+width:42px;
+height:42px;
+padding:6px;
+border-radius:12px;
+background:linear-gradient(135deg,#b5633c,#9e4f2a);
+}
+
+.brand h1 {
+font-size: 26px;
+font-weight: 700;
+color: #4a3a2f;
+}
+
+/* HEADER BUTTON */
+.owner-header button{
+background:#b5633c;
+color:white;
+padding:10px 22px;
+border:none;
+border-radius:10px;
+font-weight:600;
+cursor:pointer;
+transition:.25s;
+box-shadow:0 6px 15px rgba(0,0,0,0.15);
+}
+.owner-header button:hover{
+background:#9e4f2a;
+transform:translateY(-2px);
+}
+
+/* GRID */
+.theater-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+gap:24px;
+}
+
+/* CARD */
+.theater-card{
+background:#f8f3ee;
+border-radius:20px;
+padding:22px;
+box-shadow:0 15px 35px rgba(0,0,0,0.05);
+border:1px solid #d6c6b8;
+transition:.3s;
+}
+.theater-card:hover{
+transform:translateY(-5px);
+box-shadow:0 25px 50px rgba(0,0,0,0.08);
+}
+
+/* CARD TITLE */
+.theater-card h3{
+font-size:18px;
+font-weight:600;
+color:#4a3a2f;
+margin-bottom:10px;
+}
+
+/* ACTION BUTTONS */
+.theater-actions{
+display:flex;
+gap:10px;
+margin-top:15px;
+}
+.theater-actions button{
+flex:1;
+padding:9px;
+border-radius:8px;
+border:none;
+font-weight:600;
+cursor:pointer;
+transition:.2s;
+}
+.theater-actions button:first-child{
+background:#b5633c;
+color:white;
+}
+.theater-actions button:first-child:hover{
+background:#9e4f2a;
+}
+.delete-theater-btn{
+background:#b5633c;
+color:white;
+}
+.delete-theater-btn:hover{
+background:#9e4f2a;
+}
+
+/* STAFF BOX */
+.staff-manage-box{
+margin-top:18px;
+padding:15px;
+background:#efe6dc;
+border-radius:14px;
+border:1px solid #d6c6b8;
+}
+
+.staff-manage-box h4{
+font-size:14px;
+margin-bottom:8px;
+color:#4a3a2f;
+}
+
+.staff-manage-box input{
+width:100%;
+padding:9px;
+border-radius:8px;
+border:1px solid #d6c6b8;
+margin-bottom:8px;
+outline:none;
+background:#f8f3ee;
+transition:.2s;
+}
+.staff-manage-box input:focus{
+border-color:#b5633c;
+box-shadow:0 0 0 2px rgba(181,99,60,0.15);
+}
+
+/* STAFF BUTTON */
+.staff-manage-box button{
+background:#b5633c;
+color:white;
+border:none;
+padding:6px 14px;
+border-radius:6px;
+cursor:pointer;
+transition:.2s;
+}
+.staff-manage-box button:hover{
+background:#9e4f2a;
+}
+
+/* STAFF LIST */
+.staff-list-mini{
+margin-top:10px;
+background:#ffffff;
+border-radius:10px;
+border:1px solid #d6c6b8;
+max-height:140px;
+overflow-y:auto;
+padding:8px;
+}
+
+/* WORKER ROW */
+.worker-row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:6px 8px;
+margin-bottom:6px;
+background:#f4ede5;
+border-radius:8px;
+}
+.worker-row span{
+font-size:13px;
+color:#4a3a2f;
+}
+
+/* DELETE WORKER */
+.delete-worker-btn{
+background:#c44536;
+border:none;
+color:white;
+padding:4px 8px;
+font-size:11px;
+border-radius:5px;
+cursor:pointer;
+transition:.2s;
+}
+.delete-worker-btn:hover{
+opacity:.85;
+}
+
+/* RENEW BUTTON */
+.renew-btn{
+background:#b5633c;
+border:none;
+padding:6px 14px;
+border-radius:6px;
+color:white;
+cursor:pointer;
+transition:.2s;
+}
+.renew-btn:hover{
+background:#9e4f2a;
+}
+
+/* TABLET */
+@media(max-width:900px){
+
+.owner-container{
+padding:24px;
+}
+
+.theater-grid{
+grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+}
+
+}
+
+/* MOBILE */
+@media(max-width:600px){
+
+.owner-container{
+width:95%;
+padding:18px;
+border-radius:22px;
+}
+
+.owner-header{
+flex-direction:column;
+align-items:flex-start;
+gap:12px;
+}
+
+.owner-header h1{
+font-size:20px;
+}
+
+.owner-brand span{
+font-size:18px;
+}
+
+.owner-header button{
+width:100%;
+}
+
+.theater-grid{
+grid-template-columns:1fr;
+gap:18px;
+}
+
+.theater-card{
+padding:18px;
+}
+
+.theater-actions{
+flex-direction:column;
+}
+
+.theater-actions button{
+width:100%;
+}
+
+.staff-manage-box input{
+font-size:14px;
+}
+
+.worker-row{
+flex-direction:row;
+font-size:13px;
+}
+
+}
