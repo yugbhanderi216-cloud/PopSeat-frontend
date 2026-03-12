@@ -52,9 +52,31 @@
   transition: 0.2s ease;
 }
 
+/* TEXTAREA */
+
+.edit-container textarea {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 18px;
+
+  border: 1px solid #e6ddd3;
+  border-radius: 6px;
+
+  font-size: 15px;
+
+  background: #ffffff;
+  color: #4a3a2f;
+
+  resize: none;
+  height: 80px;
+
+  transition: 0.2s ease;
+}
+
 /* Focus Effect */
 
-.edit-container input:focus {
+.edit-container input:focus,
+.edit-container textarea:focus {
   outline: none;
   border-color: #b5633c;
   box-shadow: 0 0 0 2px rgba(181,99,60,0.15);
@@ -86,9 +108,7 @@
   transform: translateY(-2px);
 }
 
-/* ===============================
-   MOBILE RESPONSIVE
-=============================== */
+/* MOBILE */
 
 @media (max-width: 768px) {
 
@@ -102,7 +122,8 @@
     font-size: 20px;
   }
 
-  .edit-container input {
+  .edit-container input,
+  .edit-container textarea {
     padding: 10px;
   }
 

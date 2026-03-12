@@ -51,11 +51,11 @@ const EditTheater = () => {
     return <h2 style={{ padding: "20px" }}>No Theater Found</h2>;
   }
 
-  /* SMART HANDLE CHANGE */
+  /* HANDLE CHANGE */
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    const capitalFields = ["ownerName", "theaterName", "branch", "location"];
+    const capitalFields = ["ownerName", "theaterName", "branch", "city", "address"];
 
     let newValue = value;
 
@@ -137,10 +137,17 @@ const EditTheater = () => {
       />
 
       <input
-        name="location"
-        value={theaterData.location}
+        name="city"
+        value={theaterData.city || ""}
         onChange={handleChange}
-        placeholder="Location"
+        placeholder="City"
+      />
+
+      <textarea
+        name="address"
+        value={theaterData.address || ""}
+        onChange={handleChange}
+        placeholder="Full Address"
       />
 
       <input

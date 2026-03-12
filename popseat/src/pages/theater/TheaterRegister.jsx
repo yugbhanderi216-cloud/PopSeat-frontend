@@ -20,7 +20,8 @@ const TheaterRegister = () => {
     ownerName: "",
     theaterName: "",
     branch: "",
-    location: "",
+    city: "",
+    address: "",
     screens: "",
     contact: "",
     openingTime: "",
@@ -37,9 +38,7 @@ const TheaterRegister = () => {
     const now = new Date();
 
     ownerPlans = ownerPlans.filter(
-      (p) =>
-        p.ownerEmail === ownerEmail &&
-        new Date(p.expiresAt) > now
+      (p) => p.ownerEmail === ownerEmail && new Date(p.expiresAt) > now
     );
 
     localStorage.setItem("ownerPlans", JSON.stringify(ownerPlans));
@@ -64,7 +63,8 @@ const TheaterRegister = () => {
       "ownerName",
       "theaterName",
       "branch",
-      "location",
+      "city",
+      "address",
     ];
 
     let newValue = value;
@@ -109,12 +109,13 @@ const TheaterRegister = () => {
       ownerName,
       theaterName,
       branch,
-      location,
+      city,
+      address,
       screens,
       contact,
     } = theaterData;
 
-    if (!ownerName || !theaterName || !branch || !location) {
+    if (!ownerName || !theaterName || !branch || !city || !address) {
       alert("Please fill all required fields.");
       return;
     }
@@ -128,19 +129,14 @@ const TheaterRegister = () => {
     const now = new Date();
 
     ownerPlans = ownerPlans.filter(
-      (p) =>
-        p.ownerEmail === ownerEmail &&
-        new Date(p.expiresAt) > now
+      (p) => p.ownerEmail === ownerEmail && new Date(p.expiresAt) > now
     );
 
     ownerPlans.sort(
-      (a, b) =>
-        new Date(a.expiresAt) - new Date(b.expiresAt)
+      (a, b) => new Date(a.expiresAt) - new Date(b.expiresAt)
     );
 
-    const usablePlan = ownerPlans.find(
-      (p) => p.remainingTheaters > 0
-    );
+    const usablePlan = ownerPlans.find((p) => p.remainingTheaters > 0);
 
     if (!usablePlan) {
       alert("Your plan limit is reached.");
@@ -156,10 +152,8 @@ const TheaterRegister = () => {
     const alreadyExists = theaters.find(
       (t) =>
         t.ownerEmail === ownerEmail &&
-        t.theaterName.toLowerCase() ===
-          theaterName.toLowerCase() &&
-        t.branch.toLowerCase() ===
-          branch.toLowerCase()
+        t.theaterName.toLowerCase() === theaterName.toLowerCase() &&
+        t.branch.toLowerCase() === branch.toLowerCase()
     );
 
     if (alreadyExists) {
@@ -173,7 +167,8 @@ const TheaterRegister = () => {
       ownerName,
       theaterName,
       branch,
-      location,
+      city,
+      address,
       totalScreens: Number(screens),
       contact,
       openingTime: theaterData.openingTime,
@@ -202,9 +197,14 @@ const TheaterRegister = () => {
   return (
     <div className="theater-page">
 
-      {/* 🔙 REAL APP STYLE BACK BUTTON */}
-      <button type="button" className="back-btn" onClick={() => navigate(-1)} >
-               ← </button>
+      {/* BACK BUTTON */}
+      <button
+        type="button"
+        className="back-btn"
+        onClick={() => navigate(-1)}
+      >
+        ←
+      </button>
 
       <div className="theater-card">
         <h2>Register Theater</h2>
@@ -233,9 +233,16 @@ const TheaterRegister = () => {
         />
 
         <input
-          name="location"
-          placeholder="Location"
-          value={theaterData.location}
+          name="city"
+          placeholder="City"
+          value={theaterData.city}
+          onChange={handleChange}
+        />
+
+        <textarea
+          name="address"
+          placeholder="Full Address"
+          value={theaterData.address}
           onChange={handleChange}
         />
 
