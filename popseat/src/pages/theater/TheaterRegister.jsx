@@ -28,11 +28,17 @@ const TheaterRegister = () => {
     closingTime: "",
     logo: "",
     banner: "",
+
+    /* BANK DETAILS */
+    accountHolder: "",
+    bankName: "",
+    accountNumber: "",
+    ifsc: "",
+    upiId: "",
   });
 
-  /* ===============================
-     PLAN CHECK
-  =============================== */
+  /* ================= PLAN CHECK ================= */
+
   useEffect(() => {
     let ownerPlans = JSON.parse(localStorage.getItem("ownerPlans")) || [];
     const now = new Date();
@@ -53,9 +59,8 @@ const TheaterRegister = () => {
 
   if (loading) return null;
 
-  /* ===============================
-     INPUT CHANGE
-  =============================== */
+  /* ================= INPUT CHANGE ================= */
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -65,6 +70,8 @@ const TheaterRegister = () => {
       "branch",
       "city",
       "address",
+      "accountHolder",
+      "bankName",
     ];
 
     let newValue = value;
@@ -79,9 +86,8 @@ const TheaterRegister = () => {
     }));
   };
 
-  /* ===============================
-     IMAGE UPLOAD
-  =============================== */
+  /* ================= IMAGE UPLOAD ================= */
+
   const handleImage = (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -101,9 +107,8 @@ const TheaterRegister = () => {
     reader.readAsDataURL(file);
   };
 
-  /* ===============================
-     SUBMIT
-  =============================== */
+  /* ================= SUBMIT ================= */
+
   const handleSubmit = () => {
     const {
       ownerName,
@@ -112,7 +117,10 @@ const TheaterRegister = () => {
       city,
       address,
       screens,
-      contact,
+      accountHolder,
+      bankName,
+      accountNumber,
+      ifsc,
     } = theaterData;
 
     if (!ownerName || !theaterName || !branch || !city || !address) {
@@ -121,7 +129,12 @@ const TheaterRegister = () => {
     }
 
     if (!screens || Number(screens) < 1) {
-      alert("At least 1 screen is required.");
+      alert("At least 1 screen required.");
+      return;
+    }
+
+    if (!accountHolder || !bankName || !accountNumber || !ifsc) {
+      alert("Please fill bank details.");
       return;
     }
 
@@ -145,43 +158,18 @@ const TheaterRegister = () => {
     }
 
     let theaters = JSON.parse(localStorage.getItem("theaters")) || [];
-    if (!Array.isArray(theaters)) {
-      theaters = Object.values(theaters);
-    }
-
-    const alreadyExists = theaters.find(
-      (t) =>
-        t.ownerEmail === ownerEmail &&
-        t.theaterName.toLowerCase() === theaterName.toLowerCase() &&
-        t.branch.toLowerCase() === branch.toLowerCase()
-    );
-
-    if (alreadyExists) {
-      alert("This branch already exists.");
-      return;
-    }
 
     const newTheater = {
       id: Date.now(),
-      ownerEmail,
-      ownerName,
-      theaterName,
-      branch,
-      city,
-      address,
-      totalScreens: Number(screens),
-      contact,
-      openingTime: theaterData.openingTime,
-      closingTime: theaterData.closingTime,
-      logo: theaterData.logo,
-      banner: theaterData.banner,
+      ...theaterData,
+      totalScreens: Number(theaterData.screens),
       planId: usablePlan.id,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
       status: "Active",
     };
 
     theaters.push(newTheater);
+
     localStorage.setItem("theaters", JSON.stringify(theaters));
 
     usablePlan.remainingTheaters -= 1;
@@ -197,7 +185,6 @@ const TheaterRegister = () => {
   return (
     <div className="theater-page">
 
-      {/* BACK BUTTON */}
       <button
         type="button"
         className="back-btn"
@@ -207,6 +194,7 @@ const TheaterRegister = () => {
       </button>
 
       <div className="theater-card">
+
         <h2>Register Theater</h2>
 
         <input value={theaterData.ownerEmail} readOnly />
@@ -250,7 +238,6 @@ const TheaterRegister = () => {
           name="screens"
           type="number"
           placeholder="Total Screens"
-          min="1"
           value={theaterData.screens}
           onChange={handleChange}
         />
@@ -292,9 +279,49 @@ const TheaterRegister = () => {
           onChange={(e) => handleImage(e, "banner")}
         />
 
+        {/* ================= BANK DETAILS ================= */}
+
+        <h3>Bank Details</h3>
+
+        <input
+          name="accountHolder"
+          placeholder="Account Holder Name"
+          value={theaterData.accountHolder}
+          onChange={handleChange}
+        />
+
+        <input
+          name="bankName"
+          placeholder="Bank Name"
+          value={theaterData.bankName}
+          onChange={handleChange}
+        />
+
+        <input
+          name="accountNumber"
+          placeholder="Account Number"
+          value={theaterData.accountNumber}
+          onChange={handleChange}
+        />
+
+        <input
+          name="ifsc"
+          placeholder="IFSC Code"
+          value={theaterData.ifsc}
+          onChange={handleChange}
+        />
+
+        <input
+          name="upiId"
+          placeholder="UPI ID (Optional)"
+          value={theaterData.upiId}
+          onChange={handleChange}
+        />
+
         <button onClick={handleSubmit}>
           Register Theater
         </button>
+
       </div>
     </div>
   );

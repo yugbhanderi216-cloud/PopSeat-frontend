@@ -52,10 +52,19 @@ const EditTheater = () => {
   }
 
   /* HANDLE CHANGE */
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    const capitalFields = ["ownerName", "theaterName", "branch", "city", "address"];
+    const capitalFields = [
+      "ownerName",
+      "theaterName",
+      "branch",
+      "city",
+      "address",
+      "accountHolder",
+      "bankName"
+    ];
 
     let newValue = value;
 
@@ -70,6 +79,7 @@ const EditTheater = () => {
   };
 
   /* IMAGE UPLOAD */
+
   const handleImage = (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -83,6 +93,8 @@ const EditTheater = () => {
     };
     reader.readAsDataURL(file);
   };
+
+  /* SAVE */
 
   const handleSave = () => {
 
@@ -168,7 +180,7 @@ const EditTheater = () => {
       <input
         type="time"
         name="openingTime"
-        value={theaterData.openingTime}
+        value={theaterData.openingTime || ""}
         onChange={handleChange}
       />
 
@@ -176,7 +188,7 @@ const EditTheater = () => {
       <input
         type="time"
         name="closingTime"
-        value={theaterData.closingTime}
+        value={theaterData.closingTime || ""}
         onChange={handleChange}
       />
 
@@ -192,6 +204,45 @@ const EditTheater = () => {
         type="file"
         accept="image/*"
         onChange={(e) => handleImage(e, "banner")}
+      />
+
+      {/* ================= BANK DETAILS ================= */}
+
+      <h3>Bank Details</h3>
+
+      <input
+        name="accountHolder"
+        value={theaterData.accountHolder || ""}
+        onChange={handleChange}
+        placeholder="Account Holder Name"
+      />
+
+      <input
+        name="bankName"
+        value={theaterData.bankName || ""}
+        onChange={handleChange}
+        placeholder="Bank Name"
+      />
+
+      <input
+        name="accountNumber"
+        value={theaterData.accountNumber || ""}
+        onChange={handleChange}
+        placeholder="Account Number"
+      />
+
+      <input
+        name="ifsc"
+        value={theaterData.ifsc || ""}
+        onChange={handleChange}
+        placeholder="IFSC Code"
+      />
+
+      <input
+        name="upiId"
+        value={theaterData.upiId || ""}
+        onChange={handleChange}
+        placeholder="UPI ID"
       />
 
       <button onClick={handleSave}>

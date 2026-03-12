@@ -344,3 +344,37 @@ box-shadow:0 0 0 3px rgba(181,99,60,0.15);
   }
 
 }
+/* ================= BANK DETAILS SECTION ================= */
+
+.theater-card h3{
+margin-top:20px;
+margin-bottom:10px;
+
+font-size:16px;
+font-weight:600;
+
+color:#4a3a2f;
+
+border-bottom:1px solid #d6c6b8;
+padding-bottom:6px;
+}
+
+/* Bank inputs spacing */
+
+.theater-card input[name="accountHolder"],
+.theater-card input[name="bankName"],
+.theater-card input[name="accountNumber"],
+.theater-card input[name="ifsc"],
+.theater-card input[name="upiId"]{
+margin-bottom:12px;
+}
+
+/* Optional: highlight bank section */
+
+.bank-section{
+background:#f4ede5;
+padding:12px;
+border-radius:10px;
+border:1px solid #d6c6b8;
+margin-top:15px;
+}

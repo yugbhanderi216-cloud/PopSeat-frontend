@@ -25,6 +25,21 @@
   color: #b5633c;
 }
 
+/* ===== BANK SECTION ===== */
+
+.edit-container h3 {
+  margin-top: 25px;
+  margin-bottom: 15px;
+
+  font-size: 18px;
+  font-weight: 600;
+
+  color: #4a3a2f;
+
+  border-bottom: 1px solid #e6ddd3;
+  padding-bottom: 6px;
+}
+
 /* Labels */
 
 .edit-container label {
@@ -99,6 +114,8 @@
 
   cursor: pointer;
   transition: 0.2s;
+
+  margin-top: 10px;
 }
 
 /* Hover Effect */
@@ -108,7 +125,7 @@
   transform: translateY(-2px);
 }
 
-/* MOBILE */
+/* ===== MOBILE ===== */
 
 @media (max-width: 768px) {
 
@@ -120,6 +137,10 @@
 
   .edit-container h2 {
     font-size: 20px;
+  }
+
+  .edit-container h3 {
+    font-size: 16px;
   }
 
   .edit-container input,
