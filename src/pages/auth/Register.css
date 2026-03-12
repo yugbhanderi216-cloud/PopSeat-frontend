@@ -43,12 +43,18 @@ height:90vh;
 object-fit:cover;
 border-radius:18px;
 
+/* border */
+
 border:3px solid rgba(255,255,255,0.2);
+
+/* shadow */
 
 box-shadow:
 0 35px 70px rgba(0,0,0,0.65),
 0 18px 35px rgba(0,0,0,0.45),
 0 6px 12px rgba(0,0,0,0.25);
+
+/* animation */
 
 object-position:left center;
 animation:imageSlide 12s ease-in-out infinite;
@@ -122,14 +128,6 @@ inset 0 1px 0 rgba(255,255,255,0.6);
 display:flex;
 flex-direction:column;
 text-align:center;
-}
-
-/* form width fix */
-
-.register-card form{
-width:100%;
-display:flex;
-flex-direction:column;
 }
 
 /* ================= BRAND ================= */
@@ -215,7 +213,7 @@ overflow:hidden;
 
 .strength{
 height:100%;
-transition:width 0.4s ease;
+transition:0.4s ease;
 }
 
 .strength-0{width:20%;background:#c44536;}
@@ -263,7 +261,6 @@ box-shadow:
 .register-card button:disabled{
 background:#d6c6b8;
 cursor:not-allowed;
-box-shadow:none;
 }
 
 /* ================= LINK ================= */
@@ -294,7 +291,6 @@ display:none;
 
 .register-right{
 width:100%;
-padding:30px;
 }
 
 }

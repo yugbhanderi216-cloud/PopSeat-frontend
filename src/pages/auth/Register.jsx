@@ -3,21 +3,13 @@ import { useNavigate, Link } from "react-router-dom";
 import zxcvbn from "zxcvbn";
 import logo from "../PopSeat_Logo.png";
 
-/* Images */
+/* Your 4 images */
 import img1 from "../image.png";
 import img2 from "../image_3.png";
 import img3 from "../image_2.png";
 import img4 from "../image_1.png";
 
 import "./Register.css";
-
-const strengthText = [
-  "Very Weak",
-  "Weak",
-  "Fair",
-  "Strong",
-  "Very Strong",
-];
 
 function Register() {
   const navigate = useNavigate();
@@ -52,7 +44,6 @@ function Register() {
     }
   }, []);
 
-  /* Handle Input Change */
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -68,21 +59,10 @@ function Register() {
     }
   };
 
-  /* Handle Register */
   const handleRegister = () => {
     if (!(isEightChar && strength === 4)) return;
 
     let users = JSON.parse(localStorage.getItem("users")) || [];
-
-    /* Email Duplicate Check */
-    const existingUser = users.find(
-      (u) => u.email === formData.email
-    );
-
-    if (existingUser) {
-      alert("Email already registered!");
-      return;
-    }
 
     users.push({
       id: Date.now(),
@@ -91,15 +71,21 @@ function Register() {
     });
 
     localStorage.setItem("users", JSON.stringify(users));
-
-    alert("Registration successful!");
     navigate("/login");
   };
+
+  const strengthText = [
+    "Very Weak",
+    "Weak",
+    "Fair",
+    "Strong",
+    "Very Strong",
+  ];
 
   return (
     <div className="register-page">
 
-      {/* LEFT SIDE - REGISTER FORM */}
+      {/* LEFT SIDE - REGISTER CARD */}
       <div className="register-right">
         <div className="register-card">
 
@@ -111,63 +97,48 @@ function Register() {
 
           <h2>Create Owner Account</h2>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleRegister();
-            }}
+          <input
+            name="name"
+            placeholder="Full Name"
+            onChange={handleChange}
+          />
+
+          <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            onChange={handleChange}
+          />
+
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            onChange={handleChange}
+          />
+
+          <div className={`rule ${isEightChar ? "valid" : ""}`}>
+            {isEightChar ? "✔" : "✖"} Minimum 8 Characters
+          </div>
+
+          <div className={`rule ${strength === 4 ? "valid" : ""}`}>
+            {strength === 4 ? "✔" : "✖"} Password Must Be Very Strong
+          </div>
+
+          <div className="strength-bar">
+            <div className={`strength strength-${strength}`}></div>
+          </div>
+
+          <small className="strength-text">
+            Strength: {strengthText[strength]}
+          </small>
+
+          <button
+            onClick={handleRegister}
+            disabled={!(isEightChar && strength === 4)}
           >
-
-            <input
-              name="name"
-              value={formData.name}
-              placeholder="Full Name"
-              onChange={handleChange}
-              required
-            />
-
-            <input
-              name="email"
-              type="email"
-              value={formData.email}
-              placeholder="Email"
-              onChange={handleChange}
-              required
-            />
-
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              placeholder="Password"
-              onChange={handleChange}
-              required
-            />
-
-            <div className={`rule ${isEightChar ? "valid" : ""}`}>
-              {isEightChar ? "✔" : "✖"} Minimum 8 Characters
-            </div>
-
-            <div className={`rule ${strength === 4 ? "valid" : ""}`}>
-              {strength === 4 ? "✔" : "✖"} Password Must Be Very Strong
-            </div>
-
-            <div className="strength-bar">
-              <div className={`strength strength-${strength}`}></div>
-            </div>
-
-            <small className="strength-text">
-              Strength: {strengthText[strength]}
-            </small>
-
-            <button
-              type="submit"
-              disabled={!(isEightChar && strength === 4)}
-            >
-              Register
-            </button>
-
-          </form>
+            Register
+          </button>
 
           <p>
             Already have an account? <Link to="/login">Login</Link>
