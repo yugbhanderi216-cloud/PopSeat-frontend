@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import zxcvbn from "zxcvbn";
 import logo from "../PopSeat_Logo.png";
@@ -20,172 +20,213 @@ const strengthText = [
 ];
 
 function Register() {
-  const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
+const navigate = useNavigate();
 
-  const [strength, setStrength] = useState(0);
-  const [isEightChar, setIsEightChar] = useState(false);
+const [formData,setFormData] = useState({
+name:"",
+email:"",
+password:""
+});
 
-  /* Create SUPER_ADMIN if not exists */
-  useEffect(() => {
-    let users = JSON.parse(localStorage.getItem("users")) || [];
+const [strength,setStrength] = useState(0);
+const [isEightChar,setIsEightChar] = useState(false);
+const [loading,setLoading] = useState(false);
 
-    const superAdminExists = users.some(
-      (u) => u.role === "SUPER_ADMIN"
-    );
 
-    if (!superAdminExists) {
-      users.push({
-        id: 1,
-        name: "System Super Admin",
-        email: "admin@system.com",
-        password: "Super@123",
-        role: "SUPER_ADMIN",
-      });
+/* ================= INPUT CHANGE ================= */
 
-      localStorage.setItem("users", JSON.stringify(users));
-    }
-  }, []);
+const handleChange = (e)=>{
 
-  /* Handle Input Change */
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+const {name,value} = e.target;
 
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+setFormData({
+...formData,
+[name]:value
+});
 
-    if (name === "password") {
-      setIsEightChar(value.length >= 8);
-      const result = zxcvbn(value);
-      setStrength(result.score);
-    }
-  };
+if(name === "password"){
 
-  /* Handle Register */
-  const handleRegister = () => {
-    if (!(isEightChar && strength === 4)) return;
+setIsEightChar(value.length >= 8);
 
-    let users = JSON.parse(localStorage.getItem("users")) || [];
+const result = zxcvbn(value);
 
-    /* Email Duplicate Check */
-    const existingUser = users.find(
-      (u) => u.email === formData.email
-    );
+setStrength(result.score);
 
-    if (existingUser) {
-      alert("Email already registered!");
-      return;
-    }
+}
 
-    users.push({
-      id: Date.now(),
-      ...formData,
-      role: "OWNER",
-    });
+};
 
-    localStorage.setItem("users", JSON.stringify(users));
 
-    alert("Registration successful!");
-    navigate("/login");
-  };
+/* ================= REGISTER ================= */
 
-  return (
-    <div className="register-page">
+const handleRegister = async ()=>{
 
-      {/* LEFT SIDE - REGISTER FORM */}
-      <div className="register-right">
-        <div className="register-card">
+if(!(isEightChar && strength === 4)) return;
 
-          {/* BRAND */}
-          <div className="brand">
-            <img src={logo} alt="PopSeat Logo" />
-            <h1>PopSeat</h1>
-          </div>
+try{
 
-          <h2>Create Owner Account</h2>
+setLoading(true);
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleRegister();
-            }}
-          >
+const response = await fetch("http://localhost:5000/api/auth/register",{
 
-            <input
-              name="name"
-              value={formData.name}
-              placeholder="Full Name"
-              onChange={handleChange}
-              required
-            />
+method:"POST",
 
-            <input
-              name="email"
-              type="email"
-              value={formData.email}
-              placeholder="Email"
-              onChange={handleChange}
-              required
-            />
+headers:{
+"Content-Type":"application/json"
+},
 
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              placeholder="Password"
-              onChange={handleChange}
-              required
-            />
+body:JSON.stringify({
 
-            <div className={`rule ${isEightChar ? "valid" : ""}`}>
-              {isEightChar ? "✔" : "✖"} Minimum 8 Characters
-            </div>
+name:formData.name,
+email:formData.email,
+password:formData.password,
+role:"owner"
 
-            <div className={`rule ${strength === 4 ? "valid" : ""}`}>
-              {strength === 4 ? "✔" : "✖"} Password Must Be Very Strong
-            </div>
+})
 
-            <div className="strength-bar">
-              <div className={`strength strength-${strength}`}></div>
-            </div>
+});
 
-            <small className="strength-text">
-              Strength: {strengthText[strength]}
-            </small>
+const data = await response.json();
 
-            <button
-              type="submit"
-              disabled={!(isEightChar && strength === 4)}
-            >
-              Register
-            </button>
 
-          </form>
+if(data.success){
 
-          <p>
-            Already have an account? <Link to="/login">Login</Link>
-          </p>
+alert("Registration successful");
 
-        </div>
-      </div>
+navigate("/login");
 
-      {/* RIGHT SIDE - IMAGES */}
-      <div className="register-left">
-        <img src={img1} alt="" />
-        <img src={img2} alt="" />
-        <img src={img3} alt="" />
-        <img src={img4} alt="" />
-      </div>
+}else{
 
-    </div>
-  );
+alert(data.message || "Registration failed");
+
+}
+
+}catch(error){
+
+console.log(error);
+alert("Server error");
+
+}finally{
+
+setLoading(false);
+
+}
+
+};
+
+
+return (
+
+<div className="register-page">
+
+{/* LEFT SIDE - FORM */}
+
+<div className="register-right">
+
+<div className="register-card">
+
+<div className="brand">
+
+<img src={logo} alt="PopSeat Logo" />
+<h1>PopSeat</h1>
+
+</div>
+
+<h2>Create Owner Account</h2>
+
+<form
+onSubmit={(e)=>{
+e.preventDefault();
+handleRegister();
+}}
+>
+
+<input
+name="name"
+value={formData.name}
+placeholder="Full Name"
+onChange={handleChange}
+required
+/>
+
+<input
+name="email"
+type="email"
+value={formData.email}
+placeholder="Email"
+onChange={handleChange}
+required
+/>
+
+<input
+type="password"
+name="password"
+value={formData.password}
+placeholder="Password"
+onChange={handleChange}
+required
+/>
+
+
+{/* PASSWORD RULES */}
+
+<div className={`rule ${isEightChar ? "valid" : ""}`}>
+{isEightChar ? "✔" : "✖"} Minimum 8 Characters
+</div>
+
+<div className={`rule ${strength === 4 ? "valid" : ""}`}>
+{strength === 4 ? "✔" : "✖"} Password Must Be Very Strong
+</div>
+
+
+{/* PASSWORD STRENGTH */}
+
+<div className="strength-bar">
+<div className={`strength strength-${strength}`}></div>
+</div>
+
+<small className="strength-text">
+Strength: {strengthText[strength]}
+</small>
+
+
+<button
+type="submit"
+disabled={!(isEightChar && strength === 4) || loading}
+>
+
+{loading ? "Registering..." : "Register"}
+
+</button>
+
+</form>
+
+
+<p>
+Already have an account? <Link to="/login">Login</Link>
+</p>
+
+</div>
+
+</div>
+
+
+{/* RIGHT SIDE IMAGES */}
+
+<div className="register-left">
+
+<img src={img1} alt="" />
+<img src={img2} alt="" />
+<img src={img3} alt="" />
+<img src={img4} alt="" />
+
+</div>
+
+</div>
+
+);
+
 }
 
 export default Register;

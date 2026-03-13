@@ -5,278 +5,284 @@ import "./ForgotPassword.css";
 
 const ForgotPassword = () => {
 
-  const navigate = useNavigate();
+const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState(["", "", "", ""]);
-  const [generatedOtp, setGeneratedOtp] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
+const [email,setEmail] = useState("");
+const [otp,setOtp] = useState(["","","",""]);
+const [newPassword,setNewPassword] = useState("");
 
-  const [strength, setStrength] = useState(0);
-  const [isEightChar, setIsEightChar] = useState(false);
-  const [isOtpValid, setIsOtpValid] = useState(false);
+const [otpSent,setOtpSent] = useState(false);
+const [isOtpValid,setIsOtpValid] = useState(false);
 
-  const inputs = useRef([]);
+const [strength,setStrength] = useState(0);
+const [isEightChar,setIsEightChar] = useState(false);
 
-  // ===== SEND OTP =====
+const inputs = useRef([]);
 
-  const sendOtp = () => {
 
-    if (!email) {
-      alert("Please enter email");
-      return;
-    }
+/* ================= SEND OTP ================= */
 
-    const users = JSON.parse(localStorage.getItem("users")) || [];
-    const found = users.find((u) => u.email === email);
+const sendOtp = async ()=>{
 
-    if (!found) {
-      alert("Email not registered");
-      return;
-    }
+if(!email){
+alert("Please enter email");
+return;
+}
 
-    const fakeOtp = Math.floor(1000 + Math.random() * 9000).toString();
+try{
 
-    setGeneratedOtp(fakeOtp);
-    setOtpSent(true);
+const res = await fetch("http://localhost:5000/api/auth/send-email-otp",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({ email })
+});
 
-    // AUTO FILL OTP (Demo)
-    setOtp(fakeOtp.split(""));
-    setIsOtpValid(true);
+const data = await res.json();
 
-    alert("OTP sent (demo): " + fakeOtp);
-  };
+if(data.success){
 
-  // ===== OTP CHANGE =====
+setOtpSent(true);
+alert("OTP sent to email");
 
-  const handleOtpChange = (value, index) => {
+}else{
 
-    if (!/^\d?$/.test(value)) return;
+alert(data.message || "Failed to send OTP");
 
-    const newOtp = [...otp];
-    newOtp[index] = value;
+}
 
-    setOtp(newOtp);
+}catch(err){
 
-    const joinedOtp = newOtp.join("");
+console.log(err);
+alert("Server not connected yet");
 
-    setIsOtpValid(joinedOtp.length === 4 && joinedOtp === generatedOtp);
+}
 
-    if (value && index < 3) {
-      inputs.current[index + 1].focus();
-    }
+};
 
-  };
 
-  // ===== BACKSPACE =====
+/* ================= OTP CHANGE ================= */
 
-  const handleKeyDown = (e, index) => {
+const handleOtpChange = (value,index)=>{
 
-    if (e.key === "Backspace" && otp[index] === "" && index > 0) {
-      inputs.current[index - 1].focus();
-    }
+if(!/^\d?$/.test(value)) return;
 
-  };
+const newOtp = [...otp];
+newOtp[index] = value;
 
-  // ===== OTP PASTE =====
+setOtp(newOtp);
 
-  const handleOtpPaste = (e) => {
+if(value && index < 3){
+inputs.current[index+1].focus();
+}
 
-    const pasted = e.clipboardData.getData("text").slice(0, 4);
+};
 
-    if (!/^\d{4}$/.test(pasted)) return;
 
-    const newOtp = pasted.split("");
+/* ================= VERIFY OTP ================= */
 
-    setOtp(newOtp);
+const verifyOtp = async ()=>{
 
-    setIsOtpValid(pasted === generatedOtp);
+const enteredOtp = otp.join("");
 
-  };
+if(enteredOtp.length !== 4){
+alert("Enter valid OTP");
+return;
+}
 
-  // ===== PASSWORD CHANGE =====
+try{
 
-  const handlePasswordChange = (value) => {
+const res = await fetch("http://localhost:5000/api/auth/verify-email-otp",{
 
-    setNewPassword(value);
+method:"POST",
 
-    setIsEightChar(value.length >= 8);
+headers:{
+"Content-Type":"application/json"
+},
 
-    const result = zxcvbn(value);
+body:JSON.stringify({
+email,
+otp:enteredOtp
+})
 
-    setStrength(result.score);
+});
 
-  };
+const data = await res.json();
 
-  // ===== RESET PASSWORD =====
+if(data.success){
 
-  const handleReset = () => {
+setIsOtpValid(true);
+alert("OTP verified");
 
-    const users = JSON.parse(localStorage.getItem("users")) || [];
+}else{
 
-    const userIndex = users.findIndex((u) => u.email === email);
+alert("Invalid OTP");
 
-    if (userIndex === -1) {
-      alert("User not found");
-      return;
-    }
+}
 
-    users[userIndex].password = newPassword;
+}catch(err){
 
-    localStorage.setItem("users", JSON.stringify(users));
+console.log(err);
 
-    alert("Password updated successfully");
+}
 
-    // Reset fields
+};
 
-    setEmail("");
-    setOtp(["", "", "", ""]);
-    setGeneratedOtp("");
-    setNewPassword("");
-    setOtpSent(false);
-    setStrength(0);
-    setIsEightChar(false);
-    setIsOtpValid(false);
 
-    navigate("/login");
+/* ================= PASSWORD CHANGE ================= */
 
-  };
+const handlePasswordChange = (value)=>{
 
-  const strengthText = [
-    "Very Weak",
-    "Weak",
-    "Fair",
-    "Strong",
-    "Very Strong",
-  ];
+setNewPassword(value);
 
-  return (
+setIsEightChar(value.length >= 8);
 
-    <div className="forgot-page">
+const result = zxcvbn(value);
 
-      <div className="forgot-card">
+setStrength(result.score);
 
-        <h2 className="forgot-title">Reset Password</h2>
+};
 
-        <input
-          type="email"
-          className="forgot-input"
-          placeholder="Enter Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
 
-        <button
-          className="forgot-button"
-          onClick={sendOtp}
-        >
-          Send OTP
-        </button>
+/* ================= RESET PASSWORD ================= */
 
-        {otpSent && (
+const handleReset = ()=>{
 
-          <>
+alert("Password reset request sent to server");
 
-            {/* OTP BOX */}
+navigate("/login");
 
-            <div
-              className="otp-box"
-              onPaste={handleOtpPaste}
-            >
+};
 
-              {otp.map((digit, index) => (
 
-                <input
-                  key={index}
-                  ref={(el) => (inputs.current[index] = el)}
-                  type="text"
-                  maxLength="1"
-                  value={digit}
+const strengthText = [
+"Very Weak",
+"Weak",
+"Fair",
+"Strong",
+"Very Strong"
+];
 
-                  onChange={(e) =>
-                    handleOtpChange(e.target.value, index)
-                  }
 
-                  onKeyDown={(e) =>
-                    handleKeyDown(e, index)
-                  }
+return(
 
-                  className="otp-input"
-                />
+<div className="forgot-page">
 
-              ))}
+<div className="forgot-card">
 
-            </div>
+<h2 className="forgot-title">Reset Password</h2>
 
-            {/* OTP ERROR */}
+<input
+type="email"
+className="forgot-input"
+placeholder="Enter Email"
+value={email}
+onChange={(e)=>setEmail(e.target.value)}
+/>
 
-            {otp.join("").length === 4 && !isOtpValid && (
+<button
+className="forgot-button"
+onClick={sendOtp}
+>
+Send OTP
+</button>
 
-              <p style={{ color: "red", fontSize: "13px" }}>
-                Invalid OTP
-              </p>
 
-            )}
+{otpSent && (
 
-            {/* PASSWORD INPUT */}
+<>
 
-            <input
-              type="password"
-              className="forgot-input"
-              placeholder="New Password"
-              value={newPassword}
+{/* OTP INPUT */}
 
-              onChange={(e) =>
-                handlePasswordChange(e.target.value)
-              }
-            />
+<div className="otp-box">
 
-            {/* RULES */}
+{otp.map((digit,index)=>(
+<input
+key={index}
+ref={(el)=>inputs.current[index] = el}
+type="text"
+maxLength="1"
+value={digit}
 
-            <div className={`rule ${isEightChar ? "valid" : ""}`}>
-              {isEightChar ? "✔" : "✖"} Minimum 8 Characters
-            </div>
+onChange={(e)=>handleOtpChange(e.target.value,index)}
 
-            <div className={`rule ${strength === 4 ? "valid" : ""}`}>
-              {strength === 4 ? "✔" : "✖"} Password Must Be Very Strong
-            </div>
+className="otp-input"
+/>
+))}
 
-            {/* STRENGTH BAR */}
+</div>
 
-            <div className="strength-bar">
 
-              <div className={`strength strength-${strength}`}></div>
+<button
+className="forgot-button"
+onClick={verifyOtp}
+>
+Verify OTP
+</button>
 
-            </div>
 
-            <small className="strength-text">
-              Strength: {strengthText[strength]}
-            </small>
+{/* NEW PASSWORD */}
 
-            {/* RESET BUTTON */}
+{isOtpValid && (
 
-            <button
-              className="forgot-button"
-              onClick={handleReset}
-              disabled={!(isEightChar && strength === 4 && isOtpValid)}
-            >
-              Reset Password
-            </button>
+<>
 
-          </>
+<input
+type="password"
+className="forgot-input"
+placeholder="New Password"
+value={newPassword}
 
-        )}
+onChange={(e)=>handlePasswordChange(e.target.value)}
+/>
 
-        <p className="forgot-text">
-          <Link to="/login">Back to Login</Link>
-        </p>
 
-      </div>
+<div className={`rule ${isEightChar ? "valid" : ""}`}>
+{isEightChar ? "✔" : "✖"} Minimum 8 Characters
+</div>
 
-    </div>
 
-  );
+<div className={`rule ${strength === 4 ? "valid" : ""}`}>
+{strength === 4 ? "✔" : "✖"} Password Must Be Very Strong
+</div>
+
+
+<div className="strength-bar">
+<div className={`strength strength-${strength}`}></div>
+</div>
+
+
+<small className="strength-text">
+Strength: {strengthText[strength]}
+</small>
+
+
+<button
+className="forgot-button"
+onClick={handleReset}
+disabled={!(isEightChar && strength === 4)}
+>
+Reset Password
+</button>
+
+</>
+
+)}
+
+</>
+
+)}
+
+<p className="forgot-text">
+<Link to="/login">Back to Login</Link>
+</p>
+
+</div>
+
+</div>
+
+);
 
 };
 

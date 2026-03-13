@@ -9,7 +9,7 @@ const CustomerLogin = () => {
   const params = new URLSearchParams(location.search);
   const theaterId = params.get("theaterId");
 
-  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [generatedOtp, setGeneratedOtp] = useState("");
   const [timer, setTimer] = useState(0);
@@ -43,12 +43,18 @@ const CustomerLogin = () => {
 
   }, [timer, locked]);
 
+  /* EMAIL VALIDATION */
+
+  const validateEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
   /* SEND OTP */
 
   const handleSendOtp = () => {
 
-    if (mobile.length !== 10) {
-      alert("Enter valid 10 digit mobile number");
+    if (!validateEmail(email)) {
+      alert("Enter valid email address");
       return;
     }
 
@@ -64,7 +70,7 @@ const CustomerLogin = () => {
 
     alert("Demo OTP: " + randomOtp);
 
-    // auto verify after slight delay
+    // auto verify demo
     setTimeout(() => {
       verifyOtp(randomOtp, randomOtp);
     }, 500);
@@ -129,7 +135,7 @@ const CustomerLogin = () => {
 
       if (enteredOtp === realOtp) {
 
-        localStorage.setItem("customerMobile", mobile);
+        localStorage.setItem("customerEmail", email);
 
         navigate(`/payment?theaterId=${theaterId}`);
 
@@ -178,10 +184,10 @@ const CustomerLogin = () => {
           <h2>Customer Login</h2>
 
           <input
-            type="text"
-            placeholder="Enter Mobile Number"
-            value={mobile}
-            onChange={(e) => setMobile(e.target.value)}
+            type="email"
+            placeholder="Enter Email Address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             disabled={otpSent}
             className="mobile-input"
           />
