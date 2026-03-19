@@ -1,222 +1,69 @@
-/* ===============================
-   PAGE BACKGROUND
-=============================== */
-
-.login-page {
-  min-height: 100vh;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  background: #b8a899;
-
-  font-family: "Poppins", sans-serif;
-
-  position: relative;
+/* PAGE BACKGROUND */
+.login-page { min-height: 100vh; display: flex; justify-content: center; align-items: center; position: relative;
+  background-image: radial-gradient(circle at 10% 20%, var(--violet-soft), transparent 30%), radial-gradient(circle at 90% 80%, rgba(108, 99, 255, 0.05), transparent 40%);
 }
 
-/* ===============================
-   BACK BUTTON
-=============================== */
-
-.login-header {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-}
-
+/* BACK BUTTON */
+.login-header { position: absolute; top: 24px; left: 28px; }
 .back-btn {
-  border: none;
-  padding: 8px 16px;
-  border-radius: 12px;
-  cursor: pointer;
-
-  background: #b5633c;
-  color: white;
+  border: 1.5px solid var(--border-soft); padding: 8px 14px; border-radius: 8px; cursor: pointer;
+  background: var(--surface2); color: var(--text-muted); font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11.5px; font-weight: 700; transition: all 0.18s ease;
 }
+.back-btn:hover { background: var(--violet-soft); border-color: var(--violet); color: var(--violet); }
 
-.back-btn:hover {
-  background: #9e4f2a;
-}
+/* CENTER CONTAINER */
+.login-container { min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; width: 100%; }
 
-/* ===============================
-   CENTER CONTAINER
-=============================== */
-
-.login-container {
-  min-height: 100vh;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  padding: 20px;
-}
-
-/* ===============================
-   LOGIN CARD
-=============================== */
-
+/* LOGIN CARD */
 .login-card {
-  background: #f8f3ee;
-  border: 1px solid #e6ddd3;
-
-  padding: 45px 40px;
-  border-radius: 24px;
-
-  width: 100%;
-  max-width: 450px;
-
-  text-align: center;
-
-  box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+  background: var(--surface); border: 1.5px solid var(--border-soft); padding: 45px 40px; border-radius: 16px;
+  width: 100%; max-width: 420px; text-align: center; box-shadow: var(--shadow); transition: all 0.2s ease;
 }
+.login-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.login-card h2 { font-family: Outfit, sans-serif; font-size: 24px; font-weight: 800; margin-bottom: 24px; color: var(--text); }
 
-h2{
-  margin-bottom: 20px;
-}
-
-/* ===============================
-   INPUT
-=============================== */
-
+/* INPUT */
 .mobile-input {
-  width: 100%;
-  padding: 14px;
-
-  border-radius: 12px;
-  border: 1px solid #e6ddd3;
-
-  margin-bottom: 20px;
-
-  background: white;
-  color: #4a3a2f;
+  width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--border-soft);
+  margin-bottom: 20px; background: var(--surface2); color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 500; transition: all 0.2s ease; outline: none;
 }
+.mobile-input:focus { border-color: var(--violet); background: var(--surface); box-shadow: 0 0 0 3px var(--violet-glow); }
 
-.mobile-input:focus {
-  outline: none;
-  border-color: #b5633c;
-}
-
-/* ===============================
-   MAIN BUTTON
-=============================== */
-
+/* MAIN BUTTON */
 .primary-btn {
-  width: 100%;
-  padding: 14px;
-
-  border-radius: 14px;
-  border: none;
-
-  background: #b5633c;
-  color: white;
-
-  font-weight: 600;
-  cursor: pointer;
+  width: 100%; padding: 12px; border-radius: 8px; border: none; background: var(--violet); color: white;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13.5px; font-weight: 700; cursor: pointer;
+  transition: all 0.18s ease; box-shadow: 0 3px 10px rgba(108, 99, 255, 0.3);
 }
+.primary-btn:hover { background: var(--violet-deep); transform: translateY(-2px); box-shadow: 0 4px 14px rgba(108, 99, 255, 0.4); }
 
-.primary-btn:hover {
-  background: #9e4f2a;
-}
-
-/* ===============================
-   OTP BOX
-=============================== */
-
-.otp-box {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 20px 0;
-}
-
+/* OTP BOX */
+.otp-box { display: flex; justify-content: space-between; gap: 10px; margin: 24px 0; }
 .otp-box input {
-  width: 60px;
-  height: 60px;
-
-  text-align: center;
-  font-size: 18px;
-
-  border-radius: 12px;
-  border: 1px solid #e6ddd3;
-
-  background: white;
-  color: #4a3a2f;
+  width: 60px; height: 60px; text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px;
+  font-weight: 700; border-radius: 10px; border: 1.5px solid var(--border-soft); background: var(--surface2);
+  color: var(--text); outline: none; transition: all 0.2s ease;
 }
+.otp-box input:focus { transform: scale(1.05); border-color: var(--violet); background: var(--surface); box-shadow: 0 0 0 3px var(--violet-glow); }
 
-.otp-box input:focus {
-  outline: none;
-  border-color: #b5633c;
-}
+/* TIMER TEXT */
+.timer-text { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; color: var(--amber); font-weight: 600; background: var(--amber-bg); padding: 6px 12px; border-radius: 8px; display: inline-block; font-weight: 700; margin-bottom: 16px; }
 
-/* ===============================
-   TIMER TEXT
-=============================== */
-
-.timer-text {
-  color: #6b5c4f;
-  font-size: 14px;
-}
-
-/* ===============================
-   RESEND BUTTON
-=============================== */
-
+/* RESEND BUTTON */
 .resend-btn {
-  margin-top: 15px;
-
-  border: none;
-  padding: 12px;
-
-  width: 100%;
-  border-radius: 14px;
-
-  background: #dc2626;
-  color: white;
-
-  cursor: pointer;
+  margin-top: 15px; border: 1.5px solid var(--border-soft); padding: 10px; width: 100%; border-radius: 8px;
+  background: var(--surface2); color: var(--text-muted); cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 700; transition: all 0.18s ease;
 }
+.resend-btn:hover { background: var(--violet-soft); border-color: var(--violet); color: var(--violet); }
 
-.resend-btn:hover {
-  background: #b91c1c;
-}
-
-/* ===============================
-   SPINNER
-=============================== */
-
+/* SPINNER */
 .spinner {
-  margin: 20px auto;
-  width: 35px;
-  height: 35px;
-
-  border: 4px solid #e6ddd3;
-  border-top: 4px solid #b5633c;
-
-  border-radius: 50%;
-
-  animation: spin 1s linear infinite;
+  margin: 20px auto; width: 35px; height: 35px; border: 4px solid var(--surface2); border-top: 4px solid var(--violet);
+  border-radius: 50%; animation: spin 1s linear infinite;
 }
+@keyframes spin { 100% { transform: rotate(360deg); } }
 
-@keyframes spin {
-  100% { transform: rotate(360deg); }
-}
-
-/* ===============================
-   MOBILE
-=============================== */
-
-@media (max-width: 480px) {
-
-  .login-card {
-    padding: 28px 22px;
-  }
-
-  .otp-box input {
-    width: 50px;
-    height: 50px;
-  }
-
-}
+@media (max-width: 480px) { .login-card { padding: 30px 24px; } .otp-box input { width: 50px; height: 50px; } }

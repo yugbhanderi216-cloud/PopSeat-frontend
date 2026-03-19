@@ -1,155 +1,118 @@
 /* Page Container */
-
 .edit-container {
   max-width: 700px;
   width: 100%;
   margin: 40px auto;
-  padding: 30px;
-
-  background: #f8f3ee;
-
-  border-radius: 12px;
-  border: 1px solid #e6ddd3;
-
-  font-family: "Poppins", sans-serif;
-  color: #4a3a2f;
-
-  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+  padding: 40px;
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1.5px solid var(--border-soft);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--text);
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
 }
 
 /* Heading */
-
 .edit-container h2 {
   text-align: center;
-  margin-bottom: 25px;
-  color: #b5633c;
+  margin-bottom: 30px;
+  color: var(--violet);
+  font-family: Outfit, sans-serif;
+  font-size: 26px;
+  font-weight: 800;
 }
 
 /* ===== BANK SECTION ===== */
-
 .edit-container h3 {
-  margin-top: 25px;
-  margin-bottom: 15px;
-
+  margin-top: 30px;
+  margin-bottom: 20px;
   font-size: 18px;
-  font-weight: 600;
-
-  color: #4a3a2f;
-
-  border-bottom: 1px solid #e6ddd3;
-  padding-bottom: 6px;
+  font-weight: 700;
+  color: var(--text);
+  border-bottom: 1.5px solid var(--border-soft);
+  padding-bottom: 10px;
+  font-family: Outfit, sans-serif;
 }
 
 /* Labels */
-
 .edit-container label {
   font-weight: 600;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
   display: block;
-  color: #6b5c4f;
+  color: var(--text-muted);
+  font-size: 13.5px;
 }
 
 /* Inputs */
-
 .edit-container input {
   width: 100%;
-  padding: 12px;
-  margin-bottom: 18px;
-
-  border: 1px solid #e6ddd3;
-  border-radius: 6px;
-
-  font-size: 15px;
-
-  background: #ffffff;
-  color: #4a3a2f;
-
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  border: 1.5px solid var(--border-soft);
+  border-radius: 10px;
+  font-size: 14px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', sans-serif;
   transition: 0.2s ease;
 }
 
 /* TEXTAREA */
-
 .edit-container textarea {
   width: 100%;
-  padding: 12px;
-  margin-bottom: 18px;
-
-  border: 1px solid #e6ddd3;
-  border-radius: 6px;
-
-  font-size: 15px;
-
-  background: #ffffff;
-  color: #4a3a2f;
-
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  border: 1.5px solid var(--border-soft);
+  border-radius: 10px;
+  font-size: 14px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', sans-serif;
   resize: none;
-  height: 80px;
-
+  height: 90px;
   transition: 0.2s ease;
 }
 
 /* Focus Effect */
-
 .edit-container input:focus,
 .edit-container textarea:focus {
   outline: none;
-  border-color: #b5633c;
-  box-shadow: 0 0 0 2px rgba(181,99,60,0.15);
+  border-color: var(--violet);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--violet-glow);
 }
 
 /* Save Button */
-
 .edit-container button {
   width: 100%;
   padding: 14px;
-
-  background: #b5633c;
+  background: var(--violet);
   color: white;
-
   border: none;
   border-radius: 8px;
-
-  font-size: 16px;
-  font-weight: 600;
-
+  font-size: 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
   cursor: pointer;
-  transition: 0.2s;
-
-  margin-top: 10px;
+  transition: 0.18s ease;
+  margin-top: 16px;
+  box-shadow: 0 3px 10px rgba(108, 99, 255, 0.3);
 }
 
 /* Hover Effect */
-
 .edit-container button:hover {
-  background: #9e4f2a;
+  background: var(--violet-deep);
   transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(108, 99, 255, 0.4);
+}
+.edit-container button:active {
+  transform: scale(0.98);
 }
 
 /* ===== MOBILE ===== */
-
 @media (max-width: 768px) {
-
-  .edit-container {
-    margin: 20px 12px;
-    padding: 18px;
-    max-width: 100%;
-  }
-
-  .edit-container h2 {
-    font-size: 20px;
-  }
-
-  .edit-container h3 {
-    font-size: 16px;
-  }
-
-  .edit-container input,
-  .edit-container textarea {
-    padding: 10px;
-  }
-
-  .edit-container button {
-    padding: 12px;
-  }
-
+  .edit-container { margin: 24px 16px; padding: 24px; max-width: 100%; }
+  .edit-container h2 { font-size: 22px; }
+  .edit-container h3 { font-size: 18px; }
 }

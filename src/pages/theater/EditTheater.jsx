@@ -15,55 +15,62 @@ const EditTheater = () => {
   const navigate = useNavigate();
   const [theaterData, setTheaterData] = useState(null);
 
+  const theaterId = localStorage.getItem("activeOwnerTheaterId");
+
+  /* FETCH THEATER FROM API */
+
   useEffect(() => {
 
-    const role = localStorage.getItem("role");
+    const fetchTheater = async () => {
 
-    if (role === "BRANCH") {
-      navigate("/theater/overview");
-      return;
-    }
+      try {
 
-    let theaters = JSON.parse(localStorage.getItem("theaters")) || [];
+        const res = await fetch(
+          "http://localhost:5000/api/cinema"
+        );
 
-    if (!Array.isArray(theaters)) {
-      theaters = Object.values(theaters);
-      localStorage.setItem("theaters", JSON.stringify(theaters));
-    }
+        const data = await res.json();
 
-    const activeOwnerId = Number(localStorage.getItem("activeOwnerTheaterId"));
+        if (data.success) {
 
-    const selectedTheater = theaters.find(
-      (t) => t.id === activeOwnerId
-    );
+          const selected = data.cinemas.find(
+            (c) => c._id === theaterId
+          );
 
-    if (selectedTheater) {
-      setTheaterData(selectedTheater);
-    }
+          if (selected) {
+            setTheaterData(selected);
+          }
 
-  }, []);
+        }
 
-  const role = localStorage.getItem("role");
+      } catch (error) {
 
-  if (role === "BRANCH") return null;
+        console.error("Error loading theater:", error);
+
+      }
+
+    };
+
+    fetchTheater();
+
+  }, [theaterId]);
 
   if (!theaterData) {
-    return <h2 style={{ padding: "20px" }}>No Theater Found</h2>;
+    return <h2 style={{ padding: "20px" }}>Loading Theater...</h2>;
   }
 
   /* HANDLE CHANGE */
 
   const handleChange = (e) => {
+
     const { name, value } = e.target;
 
     const capitalFields = [
       "ownerName",
-      "theaterName",
-      "branch",
+      "name",
+      "branchName",
       "city",
-      "address",
-      "accountHolder",
-      "bankName"
+      "address"
     ];
 
     let newValue = value;
@@ -74,76 +81,72 @@ const EditTheater = () => {
 
     setTheaterData((prev) => ({
       ...prev,
-      [name]: newValue,
+      [name]: newValue
     }));
+
   };
 
-  /* IMAGE UPLOAD */
+  /* SAVE CHANGES */
 
-  const handleImage = (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleSave = async () => {
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setTheaterData((prev) => ({
-        ...prev,
-        [type]: reader.result,
-      }));
-    };
-    reader.readAsDataURL(file);
-  };
+    try {
 
-  /* SAVE */
+      const res = await fetch(
+        `http://localhost:5000/api/cinema/${theaterData._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(theaterData)
+        }
+      );
 
-  const handleSave = () => {
+      const data = await res.json();
 
-    let theaters = JSON.parse(localStorage.getItem("theaters")) || [];
+      if (data.success) {
 
-    if (!Array.isArray(theaters)) {
-      theaters = Object.values(theaters);
+        alert("Theater Updated Successfully ✅");
+        navigate(-1);
+
+      } else {
+
+        alert("Update failed");
+
+      }
+
+    } catch (error) {
+
+      console.error("Update error:", error);
+
     }
 
-    const updatedTheaters = theaters.map((t) =>
-      t.id === theaterData.id
-        ? {
-            ...theaterData,
-            updatedAt: new Date().toLocaleString(),
-          }
-        : t
-    );
-
-    localStorage.setItem("theaters", JSON.stringify(updatedTheaters));
-
-    window.dispatchEvent(new Event("storage"));
-
-    alert("Theater Updated Successfully ✅");
-
-    navigate(-1);
   };
 
   return (
+
     <div className="edit-container">
 
       <h2>Edit Theater</h2>
 
       <input
         name="ownerName"
-        value={theaterData.ownerName}
+        value={theaterData.ownerName || ""}
         onChange={handleChange}
         placeholder="Owner Name"
       />
 
       <input
-        name="theaterName"
-        value={theaterData.theaterName}
+        name="name"
+        value={theaterData.name || ""}
         onChange={handleChange}
         placeholder="Theater Name"
       />
 
       <input
-        name="branch"
-        value={theaterData.branch}
+        name="branchName"
+        value={theaterData.branchName || ""}
         onChange={handleChange}
         placeholder="Branch"
       />
@@ -163,15 +166,15 @@ const EditTheater = () => {
       />
 
       <input
-        name="contact"
-        value={theaterData.contact}
+        name="contactNumber"
+        value={theaterData.contactNumber || ""}
         onChange={handleChange}
-        placeholder="Contact"
+        placeholder="Contact Number"
       />
 
       <input
-        name="screens"
-        value={theaterData.screens}
+        name="totalScreens"
+        value={theaterData.totalScreens || ""}
         onChange={handleChange}
         placeholder="Screens"
       />
@@ -192,65 +195,14 @@ const EditTheater = () => {
         onChange={handleChange}
       />
 
-      <label>Logo</label>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => handleImage(e, "logo")}
-      />
-
-      <label>Banner</label>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => handleImage(e, "banner")}
-      />
-
-      {/* ================= BANK DETAILS ================= */}
-
-      <h3>Bank Details</h3>
-
-      <input
-        name="accountHolder"
-        value={theaterData.accountHolder || ""}
-        onChange={handleChange}
-        placeholder="Account Holder Name"
-      />
-
-      <input
-        name="bankName"
-        value={theaterData.bankName || ""}
-        onChange={handleChange}
-        placeholder="Bank Name"
-      />
-
-      <input
-        name="accountNumber"
-        value={theaterData.accountNumber || ""}
-        onChange={handleChange}
-        placeholder="Account Number"
-      />
-
-      <input
-        name="ifsc"
-        value={theaterData.ifsc || ""}
-        onChange={handleChange}
-        placeholder="IFSC Code"
-      />
-
-      <input
-        name="upiId"
-        value={theaterData.upiId || ""}
-        onChange={handleChange}
-        placeholder="UPI ID"
-      />
-
       <button onClick={handleSave}>
         Save Changes
       </button>
 
     </div>
+
   );
+
 };
 
 export default EditTheater;

@@ -1,3 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@700;800&display=swap');
+
+:root {
+  /* Brand */
+  --violet:       #6C63FF;
+  --violet-deep:  #4F46E5;
+  --violet-light: #8B84FF;
+  --violet-glow:  rgba(108, 99, 255, 0.14);
+  --violet-soft:  rgba(108, 99, 255, 0.08);
+
+  /* Backgrounds */
+  --bg:           #F2F0FF;
+  --bg2:          #EAE8FF;
+  --surface:      #FFFFFF;
+  --surface2:     #F7F6FF;
+  --surface3:     #EFEDFF;
+
+  /* Borders & Shadows */
+  --border:       rgba(108, 99, 255, 0.18);
+  --border-soft:  rgba(108, 99, 255, 0.09);
+  --shadow:       0 2px 16px rgba(108, 99, 255, 0.10);
+  --shadow-md:    0 6px 32px rgba(108, 99, 255, 0.15);
+
+  /* Text */
+  --text:         #1A1740;
+  --text-muted:   #6B6891;
+  --text-dim:     #ABA8CC;
+
+  /* Semantic */
+  --green:        #22C55E;
+  --green-bg:     rgba(34, 197, 94, 0.10);
+  --red:          #EF4444;
+  --red-bg:       rgba(239, 68, 68, 0.09);
+  --amber:        #F59E0B;
+  --amber-bg:     rgba(245, 158, 11, 0.10);
+  --blue:         #3B82F6;
+  --blue-bg:      rgba(59, 130, 246, 0.10);
+}
+
+
 /* ========================= RESET ========================= */
 
 * {
@@ -11,13 +51,16 @@
 .login-page {
     display: flex;
     min-height: 100vh;
-    background: #b8a899;
-    font-family: "Poppins", sans-serif;
+    background: var(--bg);
+    font-family: "Plus Jakarta Sans", sans-serif;
+    color: var(--text);
     animation: fadePage 0.8s ease;
     position: relative;
+    
+    /* Subtle radial gradient to match the new violet theme */
     background-image:
-        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.15), transparent 40%),
-        radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 0.08), transparent 40%);
+        radial-gradient(circle at 20% 20%, var(--violet-soft), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(108, 99, 255, 0.05), transparent 40%);
 }
 
 @keyframes fadePage {
@@ -25,7 +68,6 @@
         opacity: 0;
         transform: translateY(15px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -34,9 +76,9 @@
 
 /* ========================= LEFT IMAGE SECTION ========================= */
 
+/* Note: Removed the hardcoded background here to allow the main --bg to flow seamlessly */
 .login-left {
     width: 45%;
-    background: #b8a899;
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -46,87 +88,53 @@
 }
 
 /* IMAGE BOX STYLE */
-
 .login-left img {
     width: 22%;
     height: 90vh;
     object-fit: cover;
     border-radius: 18px;
-
-    /* subtle border */
-
-    border: 3px solid rgba(255, 255, 255, 0.2);
-
-    /* STRONG BLACK SHADOW */
-
+    
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    
+    /* Violet tinted shadows instead of strong black */
     box-shadow:
-        0 35px 70px rgba(0, 0, 0, 0.65),
-        0 18px 35px rgba(0, 0, 0, 0.45),
-        0 6px 12px rgba(0, 0, 0, 0.25);
-
-    /* sliding animation */
-
+        0 20px 40px rgba(108, 99, 255, 0.15),
+        0 8px 16px rgba(108, 99, 255, 0.1);
+        
     object-position: left center;
     animation: imageSlide 12s ease-in-out infinite;
 
     transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 
-/* stagger layout */
-
 .login-left img:nth-child(2),
 .login-left img:nth-child(4) {
     margin-top: 70px;
 }
 
-/* animation delays */
-
-.login-left img:nth-child(2) {
-    animation-delay: 2s;
-}
-
-.login-left img:nth-child(3) {
-    animation-delay: 4s;
-}
-
-.login-left img:nth-child(4) {
-    animation-delay: 6s;
-}
-
-/* IMAGE SHIFT ANIMATION */
+.login-left img:nth-child(2) { animation-delay: 2s; }
+.login-left img:nth-child(3) { animation-delay: 4s; }
+.login-left img:nth-child(4) { animation-delay: 6s; }
 
 @keyframes imageSlide {
-
-    0% {
-        object-position: left center;
-    }
-
-    50% {
-        object-position: right center;
-    }
-
-    100% {
-        object-position: left center;
-    }
-
+    0% { object-position: left center; }
+    50% { object-position: right center; }
+    100% { object-position: left center; }
 }
-
-/* HOVER EFFECT */
 
 .login-left img:hover {
     transform: scale(1.05);
 
     box-shadow:
-        0 50px 100px rgba(0, 0, 0, 0.8),
-        0 25px 50px rgba(0, 0, 0, 0.55),
-        0 10px 20px rgba(0, 0, 0, 0.35);
+        0 30px 60px rgba(108, 99, 255, 0.25),
+        0 12px 24px rgba(108, 99, 255, 0.15);
 }
 
 /* ========================= RIGHT SECTION ========================= */
 
+/* Note: Removed the hardcoded background here to allow the main --bg to flow seamlessly */
 .login-right {
     width: 55%;
-    background: #b8a899;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -138,52 +146,22 @@
 .login-card {
     width: 100%;
     max-width: 420px;
-    padding: 50px 45px;
-    border-radius: 24px;
-    background: #efe6dc;
-    border: 1px solid #d6c6b8;
-    box-shadow:
-        0 35px 70px rgba(0, 0, 0, 0.18),
-        0 12px 30px rgba(0, 0, 0, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    padding: 40px 45px;
+    background: var(--surface);
+    border: 1.5px solid var(--border-soft);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
     display: flex;
     flex-direction: column;
     text-align: center;
-    transition: 0.35s ease;
+    transition: 0.2s ease;
     backdrop-filter: blur(8px);
     position: relative;
-    animation: cardFloat 4s ease-in-out infinite;
-}
-
-@keyframes cardFloat {
-    0% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-6px);
-    }
-
-    100% {
-        transform: translateY(0);
-    }
 }
 
 .login-card:hover {
-    transform: translateY(-10px);
-    box-shadow:
-        0 45px 90px rgba(0, 0, 0, 0.25),
-        0 20px 40px rgba(0, 0, 0, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.7);
-}
-
-.login-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 24px;
-    pointer-events: none;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
 }
 
 /* ========================= BRAND ========================= */
@@ -193,33 +171,33 @@
     align-items: center;
     justify-content: center;
     gap: 12px;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
 }
 
 .brand img {
     width: 50px;
     height: 50px;
     padding: 6px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #b5633c, #9e4f2a);
-    box-shadow:
-        0 8px 16px rgba(0, 0, 0, 0.18),
-        0 3px 8px rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    background: var(--violet-soft);
+    box-shadow: 0 4px 12px var(--violet-glow);
 }
 
 .brand h1 {
-    font-size: 26px;
-    font-weight: 700;
-    color: #4a3a2f;
+    font-family: "Outfit", sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text);
 }
 
 /* ========================= TITLE ========================= */
 
 .login-title {
-    font-size: 22px;
-    font-weight: 600;
+    font-family: "Outfit", sans-serif;
+    font-size: 19px;
+    font-weight: 800;
     margin-bottom: 25px;
-    color: #4a3a2f;
+    color: var(--text);
 }
 
 /* ========================= ROLE SELECTOR ========================= */
@@ -233,104 +211,93 @@
 .role-card {
     flex: 1;
     padding: 12px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border-soft);
     border-radius: 12px;
-    background: #f4ede5;
     cursor: pointer;
-    font-size: 14px;
-    transition: 0.25s ease;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: 0.18s ease;
     position: relative;
     overflow: hidden;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .role-card:hover {
-    background: #e8ded3;
-    transform: translateY(-2px);
+    border-color: var(--violet);
+    background: var(--violet-soft);
+    color: var(--violet);
 }
 
 .role-card:active {
-    transform: scale(0.95);
+    transform: scale(0.97);
 }
 
 .role-card.active {
-    background: #b5633c;
+    background: var(--violet);
+    border-color: var(--violet);
     color: white;
-    font-weight: 500;
-    transform: scale(1.05);
-    box-shadow: 0 10px 22px rgba(181, 99, 60, 0.45);
+    box-shadow: 0 3px 10px rgba(108,99,255,0.3);
 }
 
 /* ========================= INPUTS ========================= */
 
 .login-input {
     width: 100%;
-    padding: 14px;
-    margin-bottom: 18px;
-    border-radius: 12px;
-    border: 1px solid #d6c6b8;
-    font-size: 14px;
-    transition: 0.25s;
-    background: #f8f3ee;
-    box-shadow:
-        inset 0 3px 6px rgba(0, 0, 0, 0.05),
-        0 3px 8px rgba(0, 0, 0, 0.06);
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-soft);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    transition: 0.2s;
+    background: var(--surface2);
+}
+
+.login-input::placeholder {
+    color: var(--text-dim);
 }
 
 .login-input:focus {
     outline: none;
-    border-color: #b5633c;
-    transform: scale(1.02);
-    box-shadow:
-        0 0 0 4px rgba(181, 99, 60, 0.18),
-        0 8px 16px rgba(0, 0, 0, 0.12);
+    border-color: var(--violet);
+    box-shadow: 0 0 0 3px var(--violet-glow);
+    background: var(--surface);
 }
 
 /* ========================= BUTTON ========================= */
 
 .login-button {
     width: 100%;
-    padding: 14px;
-    border-radius: 14px;
+    padding: 12px;
+    border-radius: 8px;
     border: none;
-    background: linear-gradient(135deg, #b5633c, #9e4f2a);
+    background: var(--violet);
     color: white;
-    font-weight: 600;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 13.5px;
     cursor: pointer;
-    transition: 0.3s ease;
+    transition: 0.18s ease;
     margin-top: 8px;
     position: relative;
     overflow: hidden;
-    box-shadow:
-        0 10px 24px rgba(181, 99, 60, 0.45),
-        0 4px 10px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 3px 10px rgba(108,99,255,0.3);
 }
 
 .login-button:hover {
-    transform: translateY(-3px);
-    box-shadow:
-        0 16px 34px rgba(181, 99, 60, 0.55),
-        0 6px 16px rgba(0, 0, 0, 0.2);
+    background: var(--violet-deep);
+    box-shadow: 0 4px 14px rgba(108,99,255,0.4);
 }
 
 .login-button:active {
-    transform: scale(0.96);
-}
-
-.login-button::after {
-    content: "";
-    position: absolute;
-    top: -50%;
-    left: -60%;
-    width: 40%;
-    height: 200%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: rotate(25deg);
-    transition: 0.6s;
-}
-
-.login-button:hover::after {
-    left: 120%;
+    transform: scale(0.98);
 }
 
 /* ========================= LINKS ========================= */
@@ -338,33 +305,22 @@
 .login-link,
 .login-text {
     margin-top: 15px;
-    font-size: 14px;
-    color: #4a3a2f;
+    font-size: 13px;
+    color: var(--text-muted);
 }
 
 .login-link a,
 .login-text a {
-    color: #b5633c;
+    color: var(--violet);
     text-decoration: none;
-    font-weight: 500;
-    position: relative;
+    font-weight: 600;
+    transition: 0.18s ease;
 }
 
-.login-link a::after,
-.login-text a::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -2px;
-    width: 0%;
-    height: 2px;
-    background: #b5633c;
-    transition: 0.3s;
-}
-
-.login-link a:hover::after,
-.login-text a:hover::after {
-    width: 100%;
+.login-link a:hover,
+.login-text a:hover {
+    color: var(--violet-deep);
+    text-decoration: underline;
 }
 
 /* ========================= RESPONSIVE ========================= */
@@ -381,20 +337,7 @@
 
 @media (max-width:600px) {
     .login-card {
-        padding: 40px 28px;
-        border-radius: 20px;
-    }
-
-    .login-title {
-        font-size: 20px;
-    }
-
-    .login-input {
-        padding: 12px;
-    }
-
-    .login-button {
-        padding: 12px;
+        padding: 30px 24px;
     }
 }
 
@@ -402,21 +345,16 @@
 
 .lock-timer {
     margin-top: 10px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #9e2a2a;
-    background: #f8dede;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--amber);
+    background: var(--amber-bg);
     padding: 8px;
     border-radius: 8px;
     animation: pulseTimer 1s infinite alternate;
 }
 
 @keyframes pulseTimer {
-    from {
-        opacity: 0.7;
-    }
-
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0.7; }
+    to { opacity: 1; }
 }

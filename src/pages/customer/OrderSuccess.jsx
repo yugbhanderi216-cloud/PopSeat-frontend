@@ -2,26 +2,63 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./OrderTracking.css";
 
+const API_BASE = "https://popseat.onrender.com/api";
+
 const Tracking = () => {
+
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
 
-  useEffect(() => {
-    const id = localStorage.getItem("orderId");
+  const orderId = localStorage.getItem("orderId");
 
-    const orders = JSON.parse(localStorage.getItem("orders")) || [];
+  /* ===============================
+     FETCH ORDER FROM API
+  =============================== */
 
-    const found = orders.find((o) => String(o.id) === String(id));
+  const fetchOrder = async () => {
 
-    if (found) {
-      setOrder(found);
+    try {
+
+      const res = await fetch(
+        `${API_BASE}/worker/orders?status=pending`
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+
+        const found = data.orders.find(
+          (o) => String(o._id) === String(orderId)
+        );
+
+        if (found) {
+          setOrder(found);
+        }
+
+      }
+
+    } catch (error) {
+      console.error("Order fetch error:", error);
     }
+
+  };
+
+  useEffect(() => {
+
+    fetchOrder();
+
+    /* refresh every 5 seconds */
+    const interval = setInterval(fetchOrder, 5000);
+
+    return () => clearInterval(interval);
+
   }, []);
 
   if (!order) {
     return (
       <div className="tracking-page">
         <div className="tracking-card">
+
           <h2>🎬 Order Tracking</h2>
 
           <p>No Order Found</p>
@@ -32,30 +69,34 @@ const Tracking = () => {
           >
             Back to Menu
           </button>
+
         </div>
       </div>
     );
   }
 
+  const status = order.orderStatus || "placed";
+
   return (
     <div className="tracking-page">
+
       <div className="tracking-card">
 
         <h2>🎬 Order Tracking</h2>
 
         <p>
-          <strong>Order ID:</strong> {order.id}
+          <strong>Order ID:</strong> {order._id}
         </p>
 
         <p>
-          <strong>Status:</strong> {order.status}
+          <strong>Status:</strong> {status}
         </p>
 
         <div className="steps">
 
           <div
             className={`step ${
-              ["Preparing", "Ready", "Delivered"].includes(order.status)
+              ["placed","preparing","ready","delivered"].includes(status)
                 ? "active"
                 : ""
             }`}
@@ -65,7 +106,7 @@ const Tracking = () => {
 
           <div
             className={`step ${
-              ["Ready", "Delivered"].includes(order.status)
+              ["ready","delivered"].includes(status)
                 ? "active"
                 : ""
             }`}
@@ -75,7 +116,7 @@ const Tracking = () => {
 
           <div
             className={`step ${
-              order.status === "Delivered" ? "active" : ""
+              status === "delivered" ? "active" : ""
             }`}
           >
             Delivered
@@ -83,7 +124,7 @@ const Tracking = () => {
 
         </div>
 
-        {order.status === "Delivered" && (
+        {status === "delivered" && (
           <p style={{ marginTop: "15px" }}>
             Enjoy your food 🍿
           </p>
@@ -97,6 +138,7 @@ const Tracking = () => {
         </button>
 
       </div>
+
     </div>
   );
 };

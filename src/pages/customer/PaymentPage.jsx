@@ -2,7 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./PaymentPage.css";
 
+const API_BASE = "https://popseat.onrender.com/api";
+
 const PaymentPage = () => {
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -10,107 +13,131 @@ const PaymentPage = () => {
   const [method, setMethod] = useState("razorpay");
 
   const params = new URLSearchParams(location.search);
-  const theaterIdFromQR = params.get("theaterId");
+
+  const seatId = params.get("seatId") || localStorage.getItem("seatId");
 
   useEffect(() => {
+
     const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
     setCart(savedCart);
 
-    if (theaterIdFromQR) {
-      localStorage.setItem("customerTheaterId", theaterIdFromQR);
-    }
-  }, [theaterIdFromQR]);
+  }, []);
 
   /* ===============================
      TOTAL
   =============================== */
+
   const total = cart.reduce(
-    (sum, item) => sum + Number(item.finalPrice) * item.quantity,
+    (sum, item) => sum + Number(item.price) * item.quantity,
     0
   );
 
   /* ===============================
-     SAVE ORDER
+     CREATE ORDER API
   =============================== */
-  const saveOrder = (paymentId) => {
-    const orderId = "ORD" + Math.floor(Math.random() * 1000000);
 
-    const screenNo = localStorage.getItem("screenNo");
-    const seatNo = localStorage.getItem("seatNo");
-    const theaterId = Number(localStorage.getItem("customerTheaterId"));
+  const createOrder = async (paymentId) => {
 
-    const newOrder = {
-      id: orderId,
-      theaterId,
-      items: cart,
-      total,
-      paymentId,
-      paymentMethod: method,
-      status: "Preparing",
-      screenNo,
-      seatNo,
-      createdAt: new Date().toLocaleString(),
-    };
+    try {
 
-    const existingOrders =
-      JSON.parse(localStorage.getItem("orders")) || [];
+      const items = cart.map((item) => ({
+        menuId: item._id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price
+      }));
 
-    localStorage.setItem(
-      "orders",
-      JSON.stringify([...existingOrders, newOrder])
-    );
+      const res = await fetch(`${API_BASE}/order/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          seatId,
+          totalAmount: total,
+          razorpayOrderId: paymentId,
+          items
+        })
+      });
 
-    localStorage.setItem("orderId", orderId);
-    localStorage.removeItem("cart");
+      const data = await res.json();
 
-    navigate("/tracking");
+      if (data.success) {
+
+        localStorage.setItem("orderId", data.order?._id || "");
+        localStorage.removeItem("cart");
+
+        navigate("/tracking");
+
+      }
+
+    } catch (err) {
+
+      console.error("Order create error:", err);
+
+    }
+
   };
 
   /* ===============================
      RAZORPAY
   =============================== */
+
   const startRazorpay = () => {
+
     const options = {
+
       key: "YOUR_RAZORPAY_KEY_ID",
+
       amount: total * 100,
       currency: "INR",
-      name: "Cinema Snacks",
+      name: "PopSeat Cinema",
       description: "Food Order Payment",
 
       handler: function (response) {
-        saveOrder(response.razorpay_payment_id);
+
+        createOrder(response.razorpay_order_id);
+
       },
 
       theme: {
-        color: "#b5633c",
-      },
+        color: "#b5633c"
+      }
+
     };
 
     const rzp = new window.Razorpay(options);
+
     rzp.open();
+
   };
 
   /* ===============================
      DIRECT UPI
   =============================== */
+
   const startUPIIntent = () => {
+
     const upiId = "yourupi@okhdfcbank";
-    const name = "Cinema Snacks";
 
     const link =
-      `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${total}&cu=INR`;
+      `upi://pay?pa=${upiId}&pn=PopSeat&am=${total}&cu=INR`;
 
     window.location.href = link;
 
-    setTimeout(() => saveOrder("UPI_MANUAL"), 4000);
+    setTimeout(() => createOrder("UPI_MANUAL"), 4000);
+
   };
 
   const handlePayment = () => {
+
     if (method === "razorpay") startRazorpay();
     else startUPIIntent();
+
   };
 
   return (
+
     <div className="payment-page">
 
       <h2 className="payment-title">Complete Payment</h2>
@@ -118,56 +145,81 @@ const PaymentPage = () => {
       <div className="payment-layout">
 
         {/* ORDER SUMMARY */}
+
         <div className="summary-box">
+
           <h3>Order Summary</h3>
 
           {cart.map((item) => (
-            <div key={item.id} className="summary-item">
+
+            <div key={item._id} className="summary-item">
+
               <span>{item.name} × {item.quantity}</span>
-              <span>₹ {item.finalPrice * item.quantity}</span>
+
+              <span>₹ {item.price * item.quantity}</span>
+
             </div>
+
           ))}
 
           <div className="summary-total">
+
             Total: ₹ {total}
+
           </div>
+
         </div>
 
         {/* PAYMENT METHOD */}
+
         <div className="method-box">
+
           <h3>Select Payment Method</h3>
 
           <label>
+
             <input
               type="radio"
               value="razorpay"
               checked={method === "razorpay"}
               onChange={() => setMethod("razorpay")}
             />
+
             Pay via UPI / Paytm / PhonePe / Cards
+
           </label>
 
           <label>
+
             <input
               type="radio"
               value="upi"
               checked={method === "upi"}
               onChange={() => setMethod("upi")}
             />
+
             Direct UPI App
+
           </label>
+
         </div>
 
       </div>
 
       <div className="pay-container">
+
         <button className="pay-btn" onClick={handlePayment}>
+
           Pay ₹ {total}
+
         </button>
+
       </div>
 
     </div>
+
   );
+
 };
 
 export default PaymentPage;

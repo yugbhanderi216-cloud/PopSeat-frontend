@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./SuperAdminLogin.css";
+import "./AdminLogin.css";
 import logo from "../PopSeat_Logo.png";
 
-const SuperAdminLogin = () => {
+const AdminLogin = () => {
 
   const navigate = useNavigate();
 
@@ -14,42 +14,68 @@ const SuperAdminLogin = () => {
 
   const [error, setError] = useState("");
 
-  const SUPER_ADMIN = {
-    email: "yugbhanderi216@gmail.com",
-    password: "777777777"
-  };
+  const API_BASE = "https://popseat.onrender.com";
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (
-      form.email === SUPER_ADMIN.email &&
-      form.password === SUPER_ADMIN.password
-    ) {
-      localStorage.setItem("role", "superadmin");
-      localStorage.setItem("loggedInUser", form.email);
-      navigate("/superadmin-dashboard");
-    } else {
-      setError("Access Denied — Invalid Credentials");
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Server not responding");
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+
+        // ✅ Store token
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", "admin");
+        localStorage.setItem("isAuth", "true");
+        localStorage.setItem("email", form.email);
+
+        // ✅ Redirect
+        navigate("/admin-dashboard");
+
+      } else {
+        setError(data.message || "Invalid credentials");
+      }
+
+    } catch (err) {
+      console.error(err);
+      setError("Server error. Try again.");
     }
   };
 
   return (
-    <div className="superadmin-wrapper">
+    <div className="admin-wrapper">
 
       {/* Background Orbs */}
       <div className="orb orb1"></div>
       <div className="orb orb2"></div>
 
-      <div className="superadmin-card">
+      <div className="admin-card">
 
-        {/* CLEAN BRAND */}
+        {/* BRAND */}
         <div className="login-brand">
           <img src={logo} alt="PopSeat Logo" />
           <span>PopSeat</span>
         </div>
 
-        <h2>Super Admin Portal</h2>
+        <h2>Admin Portal</h2>
         <p className="tag">Authorized Secure Access</p>
 
         {error && <p className="error">{error}</p>}
@@ -60,7 +86,7 @@ const SuperAdminLogin = () => {
             <span className="icon">📧</span>
             <input
               type="email"
-              placeholder="Enter Super Admin Email"
+              placeholder="Enter Admin Email"
               value={form.email}
               onChange={(e) =>
                 setForm({ ...form, email: e.target.value })
@@ -94,4 +120,4 @@ const SuperAdminLogin = () => {
   );
 };
 
-export default SuperAdminLogin;
+export default AdminLogin;

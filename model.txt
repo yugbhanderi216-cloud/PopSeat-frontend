@@ -1,0 +1,240 @@
+PopSeat SaaS - Database Models (Mongoose/MongoDB Schema Blueprint)
+===================================================================
+
+Based on the RESTful APIs defined in `api.txt`, the following data models are required to handle the multi-tenant SaaS architecture (Owner -> Theater -> Screen -> Seat -> Worker).
+
+---------------------------------------------------------
+1. USER MODEL (Handles Admin, Owner, Worker, Customer)
+---------------------------------------------------------
+Collection: users
+{
+  "_id": ObjectId,
+  "name": String (Required),
+  "email": String (Unique, Required),
+  "password": String (Hashed, Optional for OTP Customers),
+  
+  // Role Definition
+  "role": Enum ["Admin", "Owner", "Worker", "Customer"], // Default: Customer
+  
+  // Sub-Tenant Assignments (Populated based on role)
+  // - If Worker: Assigned to specific theater
+  "assignedTheaterId": ObjectId (Ref: theaters) (Optional),
+  
+  "createdAt": Timestamp,
+  "updatedAt": Timestamp
+}
+
+---------------------------------------------------------
+2. OWNER PLAN / SUBSCRIPTION MODEL
+---------------------------------------------------------
+Collection: plans
+{
+  "_id": ObjectId,
+  "ownerId": ObjectId (Ref: users) (Required),
+  
+  "planTier": Enum ["Basic", "Standard", "Pro", "Enterprise"],
+  "totalTheatersAllowed": Number,
+  "remainingTheaters": Number,
+  
+  "amountPaid": Number,
+  "paymentId": String, // (e.g., Razorpay/Stripe ID)
+  
+  "activatedAt": Date,
+  "expiresAt": Date, // Date of expiry (Renewals extend this)
+  "status": Enum ["Active", "Expired"]
+}
+
+---------------------------------------------------------
+3. THEATER MODEL (The Tenant Venue)
+---------------------------------------------------------
+Collection: theaters
+{
+  "_id": ObjectId,
+  "ownerId": ObjectId (Ref: users) (Required), // The SaaS Owner
+  
+  "name": String (Required), // e.g., "Grand Cinema"
+  "branchName": String,      // e.g., "Downtown"
+  "city": String,
+  "address": String,
+  "contactNumber": String,
+  
+  "totalScreens": Number,
+  "openingTime": String, // Format: "HH:mm"
+  "closingTime": String, // Format: "HH:mm"
+  
+  "logo": String, // URL/Base64
+  "banner": String, // URL/Base64
+  
+  // Bank Details for Owner payouts
+  "bankDetails": {
+    "accountHolder": String,
+    "bankName": String,
+    "accountNumber": String,
+    "ifsc": String,
+    "upiId": String (Optional)
+  },
+  
+  // Approvability by SuperAdmin
+  "adminStatus": Enum ["Pending", "Active", "Disabled"] (Default: Pending),
+  
+  "createdAt": Timestamp
+}
+
+---------------------------------------------------------
+4. SCREEN MODEL
+---------------------------------------------------------
+Collection: screens
+{
+  "_id": ObjectId,
+  "theaterId": ObjectId (Ref: theaters) (Required),
+  
+  "screenNumber": Number (Required), // e.g., 1, 2, 3
+  "screenName": String, // e.g., "IMAX 1", "Gold Class"
+  
+  "totalCapacity": Number
+}
+
+---------------------------------------------------------
+5. SEAT MODEL (For QR Code Resolution & Ordering)
+---------------------------------------------------------
+Collection: seats
+{
+  "_id": ObjectId,
+  "theaterId": ObjectId (Ref: theaters) (Required),
+  "screenId": ObjectId (Ref: screens) (Required),
+  
+  "row": String, // e.g., "A", "B", "C"
+  "seatNumber": String, // e.g., "A12", "B5"
+  "seatType": String // e.g., "Regular", "Recliner" (Optional)
+}
+
+---------------------------------------------------------
+6. MENU ITEM MODEL
+---------------------------------------------------------
+Collection: menuItems
+{
+  "_id": ObjectId,
+  "theaterId": ObjectId (Ref: theaters) (Required), // Menu scopes to a theater
+  
+  "name": String (Required),
+  "description": String,
+  "category": String, // e.g., "Snacks", "Beverages"
+  "image": String, // URL/Base64
+  
+  // Base Price
+  "price": Number (Required), 
+  "available": Boolean (Default: true),
+  
+  "sizes": [
+    {
+      "name": String, // e.g., "Small", "Regular", "Large"
+      "price": Number
+    }
+  ],
+  
+  // Customizations
+  "toppings": [
+    {
+      "name": String,
+      "price": Number
+    }
+  ],
+  "dips": [
+    {
+      "name": String,
+      "price": Number
+    }
+  ]
+}
+
+---------------------------------------------------------
+7. ORDER MODEL
+---------------------------------------------------------
+Collection: orders
+{
+  "_id": ObjectId,
+  "theaterId": ObjectId (Ref: theaters) (Required), // Important for Worker filtering
+  "seatId": ObjectId (Ref: seats) (Required),
+  "customerId": ObjectId (Ref: users), // Optional if guest
+  
+  // Worker Executing Output
+  "orderStatus": Enum ["Placed", "Preparing", "Ready", "Delivered"] (Default: Placed),
+  
+  "items": [
+    {
+      "menuId": ObjectId (Ref: menuItems),
+      "name": String,
+      "size": String,
+      "toppings": [String],
+      "dips": [String],
+      "quantity": Number,
+      "price": Number, // Final resolved price of this item selection
+    }
+  ],
+  
+  "totalAmount": Number (Required),
+  "paymentId": String, // Stripe/Razorpay/UPI trace
+  "paymentStatus": Enum ["Pending", "Success", "Failed"] (Default: Pending),
+  
+  "createdAt": Timestamp,
+  "updatedAt": Timestamp
+}
+
+---------------------------------------------------------
+8. OTP VERIFICATION MODEL (Temporary table)
+---------------------------------------------------------
+Collection: verifications
+{
+  "_id": ObjectId,
+  "email": String,
+  "otp": String,
+  "expiresAt": Date // TTL index to auto-delete after 5-10 minutes
+}
+
+---------------------------------------------------------
+9. CART / SESSION MODEL (Customer ongoing orders)
+---------------------------------------------------------
+Collection: carts
+{
+  "_id": ObjectId,
+  "customerId": ObjectId (Ref: users) (Optional),
+  "sessionToken": String (Required for Guests),
+  "theaterId": ObjectId (Ref: theaters) (Required),
+  
+  "items": [
+    {
+      "menuId": ObjectId (Ref: menuItems),
+      "name": String,
+      "size": String,
+      "toppings": [String],
+      "dips": [String],
+      "quantity": Number,
+      "finalPrice": Number 
+    }
+  ],
+  
+  "lastUpdated": Date  // TTL Index useful to clear abandoned carts (e.g., after 2 hours)
+}
+
+---------------------------------------------------------
+10. PAYMENT TRANSACTION LOG
+---------------------------------------------------------
+Collection: transactions
+{
+  "_id": ObjectId,
+  
+  "type": Enum ["Plan_Subscription", "Food_Order"],
+  "amount": Number,
+  "currency": String (Default: "INR"),
+  
+  "referenceId": ObjectId, // Ref: orders or plans
+  "initiatedBy": ObjectId (Ref: users),
+  
+  "provider": Enum ["Razorpay", "Stripe", "UPI", "Cash"],
+  "providerTransactionId": String,
+  
+  "status": Enum ["Initiated", "Success", "Failed", "Refunded"],
+  "errorReason": String (Optional),
+  
+  "createdAt": Timestamp
+}

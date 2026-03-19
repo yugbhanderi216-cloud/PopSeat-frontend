@@ -1,11 +1,52 @@
+:root {
+  /* Brand */
+  --violet:       #6C63FF;
+  --violet-deep:  #4F46E5;
+  --violet-light: #8B84FF;
+  --violet-glow:  rgba(108, 99, 255, 0.14);
+  --violet-soft:  rgba(108, 99, 255, 0.08);
+
+  /* Backgrounds */
+  --bg:           #F2F0FF;
+  --bg2:          #EAE8FF;
+  --surface:      #FFFFFF;
+  --surface2:     #F7F6FF;
+  --surface3:     #EFEDFF;
+
+  /* Borders & Shadows */
+  --border:       rgba(108, 99, 255, 0.18);
+  --border-soft:  rgba(108, 99, 255, 0.09);
+  --shadow:       0 2px 16px rgba(108, 99, 255, 0.10);
+  --shadow-md:    0 6px 32px rgba(108, 99, 255, 0.15);
+
+  /* Text */
+  --text:         #1A1740;
+  --text-muted:   #6B6891;
+  --text-dim:     #ABA8CC;
+
+  /* Semantic */
+  --green:        #22C55E;
+  --green-bg:     rgba(34, 197, 94, 0.10);
+  --red:          #EF4444;
+  --red-bg:       rgba(239, 68, 68, 0.09);
+  --amber:        #F59E0B;
+  --amber-bg:     rgba(245, 158, 11, 0.10);
+  --blue:         #3B82F6;
+  --blue-bg:      rgba(59, 130, 246, 0.10);
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@700;800&display=swap');
+
 /* ===============================
    GLOBAL LAYOUT
 =============================== */
 .layout {
   position: relative;
   min-height: calc(100vh - 64px);
-  background: #b8a899;
+  background: var(--bg);
   overflow-x: hidden;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--text);
 }
 
 /* ===============================
@@ -16,15 +57,19 @@
   top: 64px;
   left: 0;
   height: 100%;
-  width: 260px;
+  width: 230px;
 
-  background: #efe6dc;
-  color: #4a3a2f;
+  background: var(--surface);
+  color: var(--text);
 
   padding: 24px 18px;
 
-  box-shadow: 6px 0 30px rgba(0,0,0,0.12);
-  transition: transform 0.3s ease;
+  box-shadow: 4px 0 24px rgba(108,99,255,0.06);
+  border-right: 1px solid var(--border-soft);
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  display: flex;
+  flex-direction: column;
 
   z-index: 500;
 }
@@ -41,15 +86,31 @@
 
 /* Header */
 
-.sidebar-header h2 {
-  font-size: 20px;
-  margin-bottom: 4px;
-  color: #4a3a2f;
+.sidebar-header {
+  margin-bottom: 20px;
 }
 
-.sidebar-header span {
-  font-size: 12px;
-  color: #7c6f64;
+.sidebar-header h2 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 19px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.sidebar-header h2 span {
+  color: var(--violet);
+}
+
+.sidebar-header > span {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  letter-spacing: 0.13em;
+  margin-top: 16px;
+  display: block;
 }
 
 /* ===============================
@@ -60,37 +121,116 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex: 1;
 }
 
 .sidebar-links a {
   display: flex;
   align-items: center;
   gap: 12px;
+  position: relative;
 
   text-decoration: none;
-  color: #6b5c4f;
+  color: var(--text-muted);
 
   padding: 12px 14px;
   border-radius: 10px;
-  font-size: 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
 
-  transition: 0.25s ease;
+  transition: all 0.18s ease;
 }
 
 /* Hover */
 
 .sidebar-links a:hover {
-  background: #f8f3ee;
-  color: #4a3a2f;
+  background: var(--surface3);
+  color: var(--text);
   transform: translateX(5px);
 }
 
 /* Active */
 
 .sidebar-links a.active {
-  background: #b5633c;
+  background: var(--violet-soft);
+  color: var(--violet);
+  font-weight: 700;
+  transform: none; /* overriding hover translate on active */
+}
+
+.sidebar-links a.active:hover {
+  transform: none; /* keep stable when active */
+}
+
+.sidebar-links a.active::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 60%;
+  width: 3px;
+  background: linear-gradient(180deg, var(--violet-light), var(--violet-deep));
+  border-radius: 0 4px 4px 0;
+}
+
+/* Badge inside Nav Item (if any) */
+.sidebar-links .nav-badge {
+  background: var(--violet);
   color: white;
-  box-shadow: 0 6px 18px rgba(181,99,60,0.3);
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 2px 8px;
+  margin-left: auto;
+}
+
+.sidebar-links .nav-badge.amber {
+  background: var(--amber);
+}
+
+/* User Card (bottom) */
+.sidebar-user-card {
+  margin-top: auto;
+  background: var(--violet-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-user-card .avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--violet), var(--violet-deep));
+  box-shadow: 0 3px 10px rgba(108,99,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-family: 'Outfit', sans-serif;
+}
+
+.sidebar-user-card .info {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-user-card .info .name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.sidebar-user-card .info .role {
+  font-size: 11px;
+  color: var(--violet);
+  font-weight: 600;
 }
 
 /* ===============================
@@ -98,7 +238,7 @@
 =============================== */
 
 .main-content {
-  padding: 28px;
+  padding: 24px 28px;
   width: 100%;
   transition: all 0.3s ease;
   overflow-x: hidden;
@@ -107,8 +247,8 @@
 /* When sidebar opens */
 
 .layout.open .main-content {
-  margin-left: 260px;
-  width: calc(100% - 260px);
+  margin-left: 230px;
+  width: calc(100% - 230px);
 }
 
 /* When sidebar closes */

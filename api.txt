@@ -1,0 +1,221 @@
+API Documentation (SaaS Architecture)
+=====================================
+This document outlines the RESTful API architecture for PopSeat, designed as a Multi-Tenant SaaS platform. 
+
+Hierarchy:
+Admin (SuperUser) -> Views all Owners, Theaters, and Data
+Owner (Tenant) -> Manages Multiple Theaters
+Theater -> Manages Multiple Screens, Seats, Menu Items, and Workers
+Worker -> Operates within a singular assigned Theater
+Customer -> Orders food for a specific Theater -> Screen -> Seat
+
+---------------------------------------------------------
+1. AUTHENTICATION & IDENTITY
+---------------------------------------------------------
+Endpoint: /api/auth/login
+Method: POST
+Description: Universal login for Admin, Owner, and Worker. Returns role and tokens.
+Request Body:
+{ "email": "user@example.com", "password": "password123", "role": "owner" } // role is optional but helpful
+Response:
+{ "success": true, "token": "jwt...", "role": "owner", "userId": "u123", "assignedTheaterId": null }
+
+Endpoint: /api/auth/customer/send-otp
+Method: POST
+Description: Passwordless login via OTP for customers placing orders.
+Request Body: { "email": "customer@example.com" }
+
+Endpoint: /api/auth/customer/verify-otp
+Method: POST
+Request Body: { "email": "customer@example.com", "otp": "1234" }
+Response: { "success": true, "token": "jwt..." }
+
+Endpoint: /api/auth/owner/register
+Method: POST
+Description: Sign up for a new owner (tenant) account.
+Request Body: { "name": "Jane", "email": "jane@example.com", "password": "pwd" }
+
+
+---------------------------------------------------------
+2. ADMIN SAAS MANAGEMENT (SuperAdmin)
+---------------------------------------------------------
+Authentication Required: Bearer Token (Role: Admin)
+
+Endpoint: /api/admin/profile
+Method: GET
+Description: Get admin profile details.
+
+Endpoint: /api/admin/owners
+Method: GET
+Description: View all registered SaaS owners on the platform.
+
+Endpoint: /api/admin/theaters
+Method: GET
+Description: View all theaters across all owners on the platform.
+
+Endpoint: /api/admin/theaters/:theaterId/status
+Method: PUT
+Description: Approve, disable, or suspend a specific theater.
+Request Body: { "status": "Active" }
+
+
+---------------------------------------------------------
+3. OWNER SUBSCRIPTION & BILLING
+---------------------------------------------------------
+Authentication Required: Bearer Token (Role: Owner)
+
+Endpoint: /api/owner/plans
+Method: GET
+Description: View the owner's current active plans and remaining theater slots.
+
+Endpoint: /api/owner/plans/purchase
+Method: POST
+Description: Purchase a new SaaS tier plan.
+Request Body: { "planTier": "Pro", "paymentId": "pay_txt" }
+
+Endpoint: /api/owner/plans/:planId/renew
+Method: PUT
+Description: Renew an existing plan.
+Request Body: { "months": 6, "paymentId": "pay_abc" }
+
+
+---------------------------------------------------------
+4. THEATER MANAGEMENT (By Owner)
+---------------------------------------------------------
+Authentication Required: Bearer Token (Role: Owner)
+
+Endpoint: /api/owner/theaters
+Method: GET
+Description: List all theaters belonging to the authenticated owner.
+
+Endpoint: /api/owner/theaters
+Method: POST
+Description: Register a new theater under the owner's account (deducts from plan).
+Request Body: {
+  "name": "Grand Cinema",
+  "branchName": "Downtown",
+  "city": "Mumbai",
+  "bankDetails": { "accountNumber": "123", "ifsc": "HDFC0..." }
+}
+
+Endpoint: /api/owner/theaters/:theaterId
+Method: GET | PUT | DELETE
+Description: Retrieve, Update, or Delete a specific theater owned by this owner.
+
+
+---------------------------------------------------------
+5. SCREEN & SEAT MANAGEMENT
+---------------------------------------------------------
+Authentication Required: Bearer Token (Role: Owner)
+
+Endpoint: /api/owner/theaters/:theaterId/screens
+Method: GET
+Description: List all screens in a specific theater.
+
+Endpoint: /api/owner/theaters/:theaterId/screens
+Method: POST
+Description: Add a new screen to the theater.
+Request Body: { "screenNumber": 1, "screenName": "IMAX 1" }
+
+Endpoint: /api/owner/theaters/:theaterId/screens/:screenId/layout
+Method: POST
+Description: Generate/Configure rows and seats for a specific screen.
+Request Body: {
+  "layout": [
+    { "row": "A", "count": 20 },
+    { "row": "B", "count": 20 }
+  ]
+}
+
+Endpoint: /api/owner/theaters/:theaterId/screens/:screenId/seats
+Method: GET
+Description: Retrieve the generated seat layout for mapping/QR Generation.
+
+
+---------------------------------------------------------
+6. WORKER MANAGEMENT 
+---------------------------------------------------------
+Authentication Required: Bearer Token (Role: Owner)
+
+Endpoint: /api/owner/theaters/:theaterId/workers
+Method: GET
+Description: List all workers assigned to a *specific* theater.
+
+Endpoint: /api/owner/theaters/:theaterId/workers
+Method: POST
+Description: Create credentials for a new worker and assign them to this theater.
+Request Body: { "name": "John Doe", "email": "john.grandcinema@worker.com", "password": "temp" }
+
+Endpoint: /api/owner/theaters/:theaterId/workers/:workerId
+Method: DELETE
+Description: Remove a worker from a specific theater.
+
+
+---------------------------------------------------------
+7. MENU & FOOD MANAGEMENT
+---------------------------------------------------------
+Authentication Required: Bearer Token (Role: Owner)
+
+Endpoint: /api/owner/theaters/:theaterId/menu
+Method: GET
+Description: Get the food menu for a specific theater.
+
+Endpoint: /api/owner/theaters/:theaterId/menu
+Method: POST
+Description: Add a new generic food item to the theater's menu.
+Request Body: { "name": "Popcorn", "category": "Snacks", "price": 150 }
+
+Endpoint: /api/owner/theaters/:theaterId/menu/:itemId
+Method: PUT | DELETE
+Description: Edit or delete a menu item.
+
+
+---------------------------------------------------------
+8. CUSTOMER ORDERING 
+---------------------------------------------------------
+Authentication Required: Mostly None / Customer Token
+
+Endpoint: /api/customer/theaters/:theaterId/menu
+Method: GET
+Description: Fetch the available menu for the customer's specific theater.
+
+Endpoint: /api/customer/theaters/:theaterId/seats/:seatId
+Method: GET
+Description: Fetch details about the scanned seat (Validates screen, row, seat).
+
+Endpoint: /api/customer/orders
+Method: POST
+Description: Customer places a food order.
+Authentication: Bearer Token (Customer)
+Request Body: {
+  "theaterId": "t123",
+  "screenNo": 1,
+  "seatNo": "A12",
+  "items": [ { "menuId": "m1", "quantity": 2 } ],
+  "paymentId": "pay_razor123",
+  "totalAmount": 300
+}
+
+
+---------------------------------------------------------
+9. WORKER OPERATIONS
+---------------------------------------------------------
+Authentication Required: Bearer Token (Role: Worker)
+
+Endpoint: /api/worker/orders
+Method: GET
+Description: Fetch all live/pending orders. 
+*Note: Backend implicitly filters by the Worker's `assignedTheaterId` via their JWT token.*
+
+Endpoint: /api/worker/orders/:orderId/status
+Method: PUT
+Description: Mark an order as Preparing, Ready, or Delivered.
+Request Body: { "status": "Delivered" }
+
+---------------------------------------------------------
+10. ANALYTICS
+---------------------------------------------------------
+Endpoint: /api/owner/theaters/:theaterId/analytics
+Method: GET
+Authentication: Bearer Token (Role: Owner)
+Description: Fetch revenue, top items, and order volume for a specific theater.

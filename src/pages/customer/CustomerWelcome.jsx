@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./CustomerWelcome.css";
 
+const API_BASE = "https://popseat.onrender.com/api";
+
 const CustomerWelcome = () => {
 
   const navigate = useNavigate();
@@ -9,7 +11,7 @@ const CustomerWelcome = () => {
 
   const params = new URLSearchParams(location.search);
 
-  const theaterId = params.get("theaterId");
+  const seatId = params.get("seatId");
   const screen = params.get("screen");
   const seat = params.get("seat");
   const type = params.get("type");
@@ -24,30 +26,47 @@ const CustomerWelcome = () => {
 
     if (screen) localStorage.setItem("screenNo", screen);
     if (seat) localStorage.setItem("seatNo", seat);
-    if (theaterId) localStorage.setItem("customerTheaterId", theaterId);
+    if (seatId) localStorage.setItem("seatId", seatId);
     if (type) localStorage.setItem("seatType", type);
 
-  }, [screen, seat, theaterId, type]);
+  }, [screen, seat, seatId, type]);
 
   /* ===============================
-     LOAD THEATER DATA
+     LOAD THEATER FROM API
   =============================== */
 
   useEffect(() => {
 
-    let theaters = JSON.parse(localStorage.getItem("theaters")) || [];
+    const fetchSeatData = async () => {
 
-    if (!Array.isArray(theaters)) {
-      theaters = Object.values(theaters);
-    }
+      try {
 
-    const found = theaters.find(
-      (t) => String(t.id) === String(theaterId)
-    );
+        const res = await fetch(`${API_BASE}/seat/${seatId}`);
+        const data = await res.json();
 
-    setTheater(found);
+        if (data.success && data.seat?.hallId?.cinemaId) {
 
-  }, [theaterId]);
+          const cinema = data.seat.hallId.cinemaId;
+
+          setTheater({
+            theaterName: cinema.name,
+            banner: cinema.banner,
+            logo: cinema.theaterLogo,
+            branch: cinema.branchName,
+            city: cinema.city
+          });
+
+        }
+
+      } catch (error) {
+        console.error("Error loading theater:", error);
+      }
+
+    };
+
+    if (seatId) fetchSeatData();
+
+  }, [seatId]);
 
   /* ===============================
      ORDER BUTTON
@@ -56,7 +75,7 @@ const CustomerWelcome = () => {
   const handleOrderNow = () => {
 
     navigate(
-      `/customer/menu?theaterId=${theaterId}&screen=${screen}&seat=${seat}&type=${type}`
+      `/customer/menu?seatId=${seatId}&screen=${screen}&seat=${seat}&type=${type}`
     );
 
   };
@@ -96,7 +115,7 @@ const CustomerWelcome = () => {
         )}
 
         <h1 className="welcome-title">
-          Welcome to {theater?.theaterName}
+          Welcome to {theater?.theaterName || "Cinema"}
         </h1>
 
         <div className="welcome-info-box">

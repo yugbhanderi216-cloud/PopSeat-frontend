@@ -1,44 +1,67 @@
 import React, { useEffect, useState } from "react";
 import "./WorkerDashboard.css";
 
+const API_BASE = "https://popseat.onrender.com/api";
+
 const WorkerDashboard = () => {
   const [orders, setOrders] = useState([]);
 
-  const email = localStorage.getItem("loggedInUser");
+  // 🔐 Get token from localStorage (after login)
+  const token = localStorage.getItem("token");
 
-  const users = JSON.parse(localStorage.getItem("users")) || [];
-  const currentUser = users.find((u) => u.email === email);
-
-  const assignedTheater = currentUser?.assignedTheater;
-
-  useEffect(() => {
-    const loadOrders = () => {
-      const storedOrders =
-        JSON.parse(localStorage.getItem("orders")) || [];
-
-      // ⭐ Only show this theater's orders
-      const filtered = storedOrders.filter(
-        (o) => o.theaterEmail === assignedTheater
+  // 🔄 Fetch orders from API
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch(
+        `${API_BASE}/worker/orders?status=pending`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
-      setOrders(filtered);
-    };
+      const data = await res.json();
 
-    loadOrders();
-    const interval = setInterval(loadOrders, 3000);
+      if (data.success) {
+        setOrders(data.orders);
+      }
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+
+    // auto refresh every 3 sec
+    const interval = setInterval(fetchOrders, 3000);
     return () => clearInterval(interval);
-  }, [assignedTheater]);
+  }, []);
 
-  const updateStatus = (id, status) => {
-    const stored =
-      JSON.parse(localStorage.getItem("orders")) || [];
+  // 🔁 Update order status
+  const updateStatus = async (id, status) => {
+    try {
+      const res = await fetch(
+        `${API_BASE}/worker/order-status/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status }),
+        }
+      );
 
-    const updated = stored.map((o) =>
-      o.id === id ? { ...o, status } : o
-    );
+      const data = await res.json();
 
-    localStorage.setItem("orders", JSON.stringify(updated));
-    setOrders(updated.filter((o) => o.theaterEmail === assignedTheater));
+      if (data.success) {
+        fetchOrders(); // refresh list
+      }
+    } catch (err) {
+      console.error("Error updating status:", err);
+    }
   };
 
   return (
@@ -49,20 +72,37 @@ const WorkerDashboard = () => {
         <p>No Orders</p>
       ) : (
         orders.map((order) => (
-          <div key={order.id} className="worker-card">
-            <h3>Order #{order.id}</h3>
-            <p>Screen: {order.screenNo}</p>
-            <p>Seat: {order.seatNo}</p>
-            <p>Status: {order.status}</p>
+          <div key={order._id} className="worker-card">
+            <h3>Order #{order._id}</h3>
+            <p>Seat: {order.seatId}</p>
+            <p>Status: {order.orderStatus}</p>
 
-            {order.status === "Preparing" && (
-              <button onClick={() => updateStatus(order.id, "Ready")}>
+            {order.orderStatus === "placed" && (
+              <button
+                onClick={() =>
+                  updateStatus(order._id, "preparing")
+                }
+              >
+                Start Preparing
+              </button>
+            )}
+
+            {order.orderStatus === "preparing" && (
+              <button
+                onClick={() =>
+                  updateStatus(order._id, "ready")
+                }
+              >
                 Mark Ready
               </button>
             )}
 
-            {order.status === "Ready" && (
-              <button onClick={() => updateStatus(order.id, "Delivered")}>
+            {order.orderStatus === "ready" && (
+              <button
+                onClick={() =>
+                  updateStatus(order._id, "delivered")
+                }
+              >
                 Mark Delivered
               </button>
             )}

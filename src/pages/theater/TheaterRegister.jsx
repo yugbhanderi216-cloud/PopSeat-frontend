@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./TheaterRegister.css";
+
+const API_BASE = "https://popseat.onrender.com";
 
 const capitalizeSmart = (text) => {
   if (!text) return "";
@@ -9,27 +11,31 @@ const capitalizeSmart = (text) => {
     .replace(/(^|\s)\w/g, (letter) => letter.toUpperCase());
 };
 
+const authHeaders = () => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+});
+
 const TheaterRegister = () => {
   const navigate = useNavigate();
-  const ownerEmail = localStorage.getItem("loggedInUser");
+  const ownerEmail = localStorage.getItem("email");
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const [theaterData, setTheaterData] = useState({
-    ownerEmail,
     ownerName: "",
-    theaterName: "",
-    branch: "",
+    theaterName: "",   // → sent as "name" to API
+    branch: "",        // → sent as "branchName" to API
     city: "",
     address: "",
-    screens: "",
-    contact: "",
+    screens: "",       // → sent as "totalScreens" (Number) to API
+    contact: "",       // → sent as "contactNumber" to API
     openingTime: "",
     closingTime: "",
-    logo: "",
-    banner: "",
+    theaterLogo: "",   // URL string — no upload API available
+    banner: "",        // URL string — no upload API available
 
-    /* BANK DETAILS */
+    /* BANK DETAILS — no API endpoint yet, stored locally */
     accountHolder: "",
     bankName: "",
     accountNumber: "",
@@ -37,151 +43,96 @@ const TheaterRegister = () => {
     upiId: "",
   });
 
-  /* ================= PLAN CHECK ================= */
-
-  useEffect(() => {
-    let ownerPlans = JSON.parse(localStorage.getItem("ownerPlans")) || [];
-    const now = new Date();
-
-    ownerPlans = ownerPlans.filter(
-      (p) => p.ownerEmail === ownerEmail && new Date(p.expiresAt) > now
-    );
-
-    localStorage.setItem("ownerPlans", JSON.stringify(ownerPlans));
-
-    if (!ownerPlans.length) {
-      alert("Please purchase a plan first.");
-      navigate("/owner/plan");
-    } else {
-      setLoading(false);
-    }
-  }, [navigate, ownerEmail]);
-
-  if (loading) return null;
-
-  /* ================= INPUT CHANGE ================= */
-
+  /* ── input change ── */
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     const capitalFields = [
-      "ownerName",
-      "theaterName",
-      "branch",
-      "city",
-      "address",
-      "accountHolder",
-      "bankName",
+      "ownerName", "theaterName", "branch",
+      "city", "address", "accountHolder", "bankName",
     ];
-
-    let newValue = value;
-
-    if (capitalFields.includes(name)) {
-      newValue = capitalizeSmart(value);
-    }
-
     setTheaterData((prev) => ({
       ...prev,
-      [name]: newValue,
+      [name]: capitalFields.includes(name) ? capitalizeSmart(value) : value,
     }));
   };
 
-  /* ================= IMAGE UPLOAD ================= */
-
-  const handleImage = (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      alert("Only image files allowed");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setTheaterData((prev) => ({
-        ...prev,
-        [type]: reader.result,
-      }));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  /* ================= SUBMIT ================= */
-
-  const handleSubmit = () => {
+  /* ── submit → POST /api/cinema ── */
+  const handleSubmit = async () => {
     const {
-      ownerName,
-      theaterName,
-      branch,
-      city,
-      address,
-      screens,
-      accountHolder,
-      bankName,
-      accountNumber,
-      ifsc,
+      ownerName, theaterName, branch, city, address,
+      screens, contact, openingTime, closingTime,
+      theaterLogo, banner,
+      accountHolder, bankName, accountNumber, ifsc,
     } = theaterData;
 
+    // ── validation ──
     if (!ownerName || !theaterName || !branch || !city || !address) {
       alert("Please fill all required fields.");
       return;
     }
-
     if (!screens || Number(screens) < 1) {
       alert("At least 1 screen required.");
       return;
     }
-
     if (!accountHolder || !bankName || !accountNumber || !ifsc) {
       alert("Please fill bank details.");
       return;
     }
 
-    let ownerPlans = JSON.parse(localStorage.getItem("ownerPlans")) || [];
-    const now = new Date();
-
-    ownerPlans = ownerPlans.filter(
-      (p) => p.ownerEmail === ownerEmail && new Date(p.expiresAt) > now
-    );
-
-    ownerPlans.sort(
-      (a, b) => new Date(a.expiresAt) - new Date(b.expiresAt)
-    );
-
-    const usablePlan = ownerPlans.find((p) => p.remainingTheaters > 0);
-
-    if (!usablePlan) {
-      alert("Your plan limit is reached.");
-      navigate("/owner/plan");
-      return;
-    }
-
-    let theaters = JSON.parse(localStorage.getItem("theaters")) || [];
-
-    const newTheater = {
-      id: Date.now(),
-      ...theaterData,
-      totalScreens: Number(theaterData.screens),
-      planId: usablePlan.id,
-      createdAt: new Date().toISOString(),
-      status: "Active",
+    // ── map fields to API schema ──
+    const payload = {
+      name: theaterName,           // API expects "name"
+      branchName: branch,          // API expects "branchName"
+      ownerName,
+      email: ownerEmail,           // API expects "email"
+      contactNumber: contact,      // API expects "contactNumber"
+      city,
+      address,
+      openingTime,
+      closingTime,
+      totalScreens: Number(screens), // API expects "totalScreens" as number
+      theaterLogo: theaterLogo || "https://popseat.onrender.com/default-logo.png",
+      banner: banner || "https://popseat.onrender.com/default-banner.jpg",
     };
 
-    theaters.push(newTheater);
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/cinema`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      });
 
-    localStorage.setItem("theaters", JSON.stringify(theaters));
+      const data = await res.json();
 
-    usablePlan.remainingTheaters -= 1;
-    localStorage.setItem("ownerPlans", JSON.stringify(ownerPlans));
+      if (!res.ok || !data.success) {
+        alert(data.message || "Failed to register theater. Please try again.");
+        return;
+      }
 
-    window.dispatchEvent(new Event("storage"));
+      // ── save bank details locally (no API for this yet) ──
+      const bankDetails = JSON.parse(localStorage.getItem("bankDetails") || "{}");
+      bankDetails[data.cinema._id] = {
+        accountHolder,
+        bankName,
+        accountNumber,
+        ifsc,
+        upiId: theaterData.upiId,
+      };
+      localStorage.setItem("bankDetails", JSON.stringify(bankDetails));
 
-    alert("Theater Registered Successfully 🎬");
+      alert("Theater Registered Successfully 🎬");
+      navigate("/owner/home");
 
-    navigate("/owner/home");
+    } catch (err) {
+      console.error("Register error:", err);
+      alert("Network error. Please check your connection.");
+    } finally {
+      setLoading(false);
+    }
   };
 
+  /* ── UI ── */
   return (
     <div className="theater-page">
 
@@ -197,39 +148,40 @@ const TheaterRegister = () => {
 
         <h2>Register Theater</h2>
 
-        <input value={theaterData.ownerEmail} readOnly />
+        {/* Owner email — read only */}
+        <input value={ownerEmail || ""} readOnly />
 
         <input
           name="ownerName"
-          placeholder="Owner Name"
+          placeholder="Owner Name *"
           value={theaterData.ownerName}
           onChange={handleChange}
         />
 
         <input
           name="theaterName"
-          placeholder="Theater Name"
+          placeholder="Theater Name *"
           value={theaterData.theaterName}
           onChange={handleChange}
         />
 
         <input
           name="branch"
-          placeholder="Branch Name"
+          placeholder="Branch Name *"
           value={theaterData.branch}
           onChange={handleChange}
         />
 
         <input
           name="city"
-          placeholder="City"
+          placeholder="City *"
           value={theaterData.city}
           onChange={handleChange}
         />
 
         <textarea
           name="address"
-          placeholder="Full Address"
+          placeholder="Full Address *"
           value={theaterData.address}
           onChange={handleChange}
         />
@@ -237,14 +189,15 @@ const TheaterRegister = () => {
         <input
           name="screens"
           type="number"
-          placeholder="Total Screens"
+          min="1"
+          placeholder="Total Screens *"
           value={theaterData.screens}
           onChange={handleChange}
         />
 
         <input
           name="contact"
-          placeholder="Contact"
+          placeholder="Contact Number"
           value={theaterData.contact}
           onChange={handleChange}
         />
@@ -265,48 +218,59 @@ const TheaterRegister = () => {
           onChange={handleChange}
         />
 
-        <label>Logo</label>
+        {/*
+          ⚠️ NO IMAGE UPLOAD API IN BACKEND DOCS.
+          Using URL inputs instead of file upload.
+          Ask backend dev to add: POST /api/upload → returns image URL
+        */}
+        <label>Theater Logo URL</label>
         <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => handleImage(e, "logo")}
+          name="theaterLogo"
+          placeholder="https://... (logo image URL)"
+          value={theaterData.theaterLogo}
+          onChange={handleChange}
         />
 
-        <label>Banner</label>
+        <label>Banner URL</label>
         <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => handleImage(e, "banner")}
+          name="banner"
+          placeholder="https://... (banner image URL)"
+          value={theaterData.banner}
+          onChange={handleChange}
         />
 
-        {/* ================= BANK DETAILS ================= */}
-
+        {/* ── BANK DETAILS ── */}
+        {/*
+          ⚠️ NO BANK DETAILS API IN BACKEND DOCS.
+          Saved locally until backend adds: POST /api/cinema/:id/bank-details
+        */}
         <h3>Bank Details</h3>
+        <p className="api-note">⚠️ Bank details saved locally — backend API pending</p>
 
         <input
           name="accountHolder"
-          placeholder="Account Holder Name"
+          placeholder="Account Holder Name *"
           value={theaterData.accountHolder}
           onChange={handleChange}
         />
 
         <input
           name="bankName"
-          placeholder="Bank Name"
+          placeholder="Bank Name *"
           value={theaterData.bankName}
           onChange={handleChange}
         />
 
         <input
           name="accountNumber"
-          placeholder="Account Number"
+          placeholder="Account Number *"
           value={theaterData.accountNumber}
           onChange={handleChange}
         />
 
         <input
           name="ifsc"
-          placeholder="IFSC Code"
+          placeholder="IFSC Code *"
           value={theaterData.ifsc}
           onChange={handleChange}
         />
@@ -318,8 +282,8 @@ const TheaterRegister = () => {
           onChange={handleChange}
         />
 
-        <button onClick={handleSubmit}>
-          Register Theater
+        <button onClick={handleSubmit} disabled={loading}>
+          {loading ? "Registering..." : "Register Theater"}
         </button>
 
       </div>
