@@ -1,6 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./TheaterRegister.css";
+
+// ─────────────────────────────────────────────────────────────
+// APIs USED:
+//   POST /api/cinema               ✅ — register theater
+//   GET  /api/subscription/my      ✅ — gate registration by plan
+//
+// MISSING APIs (for backend team):
+//   POST /api/upload               ❌ — image upload → URL
+//   POST /api/cinema/:id/bank-details ❌ — save bank details server-side
+// ─────────────────────────────────────────────────────────────
 
 const API_BASE = "https://popseat.onrender.com";
 
@@ -11,129 +21,274 @@ const capitalizeSmart = (text) => {
     .replace(/(^|\s)\w/g, (letter) => letter.toUpperCase());
 };
 
+// FIX: triple-key fallback — matches OwnerHome / TheaterDashboard
 const authHeaders = () => ({
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+  "Content-Type" : "application/json",
+  Authorization  : `Bearer ${
+    localStorage.getItem("ownerToken") ||
+    localStorage.getItem("token")      || ""
+  }`,
 });
 
-const TheaterRegister = () => {
-  const navigate = useNavigate();
-  const ownerEmail = localStorage.getItem("email");
+const CAPITALIZE_FIELDS = [
+  "ownerName", "theaterName", "branch",
+  "city", "address", "accountHolder", "bankName",
+];
 
-  const [loading, setLoading] = useState(false);
+const TheaterRegister = () => {
+
+  const navigate = useNavigate();
+
+  // FIX: dual-key read for ownerEmail
+  const ownerEmail =
+    localStorage.getItem("ownerEmail") ||
+    localStorage.getItem("email")      || "";
+
+  const [loading,    setLoading]    = useState(false);
+  const [subLoading, setSubLoading] = useState(true);
+  const [error,      setError]      = useState("");
+  const [fieldError, setFieldError] = useState(""); // inline field validation
+  const [subscription, setSubscription] = useState(null);
 
   const [theaterData, setTheaterData] = useState({
-    ownerName: "",
-    theaterName: "",   // → sent as "name" to API
-    branch: "",        // → sent as "branchName" to API
-    city: "",
-    address: "",
-    screens: "",       // → sent as "totalScreens" (Number) to API
-    contact: "",       // → sent as "contactNumber" to API
-    openingTime: "",
-    closingTime: "",
-    theaterLogo: "",   // URL string — no upload API available
-    banner: "",        // URL string — no upload API available
-
-    /* BANK DETAILS — no API endpoint yet, stored locally */
-    accountHolder: "",
-    bankName: "",
-    accountNumber: "",
-    ifsc: "",
-    upiId: "",
+    ownerName   : "",
+    theaterName : "",  // → "name" in API
+    branch      : "",  // → "branchName" in API
+    city        : "",
+    address     : "",
+    screens     : "",  // → "totalScreens" (Number)
+    contact     : "",  // → "contactNumber"
+    openingTime : "",
+    closingTime : "",
+    theaterLogo : "",  // URL — no upload API yet
+    banner      : "",  // URL — no upload API yet
+    // Bank details — local only until backend adds endpoint
+    accountHolder : "",
+    bankName      : "",
+    accountNumber : "",
+    ifsc          : "",
+    upiId         : "",
   });
 
-  /* ── input change ── */
+  /* ── Auth guard ── */
+
+  useEffect(() => {
+    if (!ownerEmail) navigate("/login", { replace: true });
+  }, [ownerEmail, navigate]);
+
+  /* ===============================
+     CHECK SUBSCRIPTION — GET /api/subscription/my ✅
+     FIX: user could bypass OwnerHome plan gate by
+          navigating directly to /theater-register
+  =============================== */
+
+  useEffect(() => {
+
+    const checkSub = async () => {
+
+      setSubLoading(true);
+
+      try {
+
+        const res  = await fetch(`${API_BASE}/api/subscription/my`, {
+          headers: authHeaders(),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          const sub = data.subscription || data.plan || data.data || null;
+          setSubscription(sub);
+        }
+
+      } catch (err) {
+        console.warn("Subscription check error:", err);
+        // Allow registration attempt even if check fails —
+        // server will reject if no active plan
+      } finally {
+        setSubLoading(false);
+      }
+
+    };
+
+    checkSub();
+
+  }, []);
+
+  /* ── Subscription gate ── */
+
+  const isSubActive =
+    subscription?.status === "active" &&
+    new Date(subscription?.expiresAt) > new Date();
+
+  /* ── Input change ── */
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const capitalFields = [
-      "ownerName", "theaterName", "branch",
-      "city", "address", "accountHolder", "bankName",
-    ];
+    setFieldError("");
+    setError("");
     setTheaterData((prev) => ({
       ...prev,
-      [name]: capitalFields.includes(name) ? capitalizeSmart(value) : value,
+      [name]: CAPITALIZE_FIELDS.includes(name)
+        ? capitalizeSmart(value)
+        : value,
     }));
   };
 
-  /* ── submit → POST /api/cinema ── */
+  /* ── Validation ── */
+
+  const validate = () => {
+
+    const {
+      ownerName, theaterName, branch, city,
+      address, screens, contact,
+    } = theaterData;
+
+    if (!ownerName?.trim())    return "Owner name is required.";
+    if (!theaterName?.trim())  return "Theater name is required.";
+    if (!branch?.trim())       return "Branch name is required.";
+    if (!city?.trim())         return "City is required.";
+    if (!address?.trim())      return "Address is required.";
+
+    if (!screens || Number(screens) < 1) {
+      return "At least 1 screen is required.";
+    }
+
+    // FIX: contact validation (same as EditTheater)
+    if (contact && !/^\d{10}$/.test(contact.trim())) {
+      return "Contact number must be exactly 10 digits.";
+    }
+
+    // FIX: bank details now optional — removed hard validation block
+    // Owner can fill these later; no backend endpoint exists yet anyway
+
+    return null;
+
+  };
+
+  /* ===============================
+     SUBMIT — POST /api/cinema ✅
+  =============================== */
+
   const handleSubmit = async () => {
+
+    setError("");
+    setFieldError("");
+
+    // FIX: guard against missing owner email before sending
+    if (!ownerEmail) {
+      setError("You must be logged in to register a theater.");
+      return;
+    }
+
+    const validationError = validate();
+    if (validationError) {
+      setFieldError(validationError);
+      return;
+    }
+
     const {
       ownerName, theaterName, branch, city, address,
       screens, contact, openingTime, closingTime,
       theaterLogo, banner,
-      accountHolder, bankName, accountNumber, ifsc,
+      accountHolder, bankName, accountNumber, ifsc, upiId,
     } = theaterData;
 
-    // ── validation ──
-    if (!ownerName || !theaterName || !branch || !city || !address) {
-      alert("Please fill all required fields.");
-      return;
-    }
-    if (!screens || Number(screens) < 1) {
-      alert("At least 1 screen required.");
-      return;
-    }
-    if (!accountHolder || !bankName || !accountNumber || !ifsc) {
-      alert("Please fill bank details.");
-      return;
-    }
-
-    // ── map fields to API schema ──
+    // Map local field names → API field names (documented in state init)
     const payload = {
-      name: theaterName,           // API expects "name"
-      branchName: branch,          // API expects "branchName"
+      name          : theaterName,
+      branchName    : branch,
       ownerName,
-      email: ownerEmail,           // API expects "email"
-      contactNumber: contact,      // API expects "contactNumber"
+      email         : ownerEmail,
+      contactNumber : contact || "",
       city,
       address,
-      openingTime,
-      closingTime,
-      totalScreens: Number(screens), // API expects "totalScreens" as number
-      theaterLogo: theaterLogo || "https://popseat.onrender.com/default-logo.png",
-      banner: banner || "https://popseat.onrender.com/default-banner.jpg",
+      openingTime   : openingTime || "09:00",
+      closingTime   : closingTime || "23:00",
+      totalScreens  : Number(screens),
+      theaterLogo   : theaterLogo || "https://popseat.onrender.com/default-logo.png",
+      banner        : banner      || "https://popseat.onrender.com/default-banner.jpg",
     };
 
     setLoading(true);
+
     try {
-      const res = await fetch(`${API_BASE}/api/cinema`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify(payload),
+
+      const res  = await fetch(`${API_BASE}/api/cinema`, {
+        method  : "POST",
+        headers : authHeaders(),
+        body    : JSON.stringify(payload),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        alert(data.message || "Failed to register theater. Please try again.");
+        setError(data.message || "Failed to register theater. Please try again.");
         return;
       }
 
-      // ── save bank details locally (no API for this yet) ──
-      const bankDetails = JSON.parse(localStorage.getItem("bankDetails") || "{}");
-      bankDetails[data.cinema._id] = {
-        accountHolder,
-        bankName,
-        accountNumber,
-        ifsc,
-        upiId: theaterData.upiId,
-      };
-      localStorage.setItem("bankDetails", JSON.stringify(bankDetails));
+      // Save bank details locally against cinema _id
+      // ⚠️  No backend endpoint yet — local only
+      if (accountHolder || bankName || accountNumber || ifsc) {
+        try {
+          const bankDetails = JSON.parse(
+            localStorage.getItem("bankDetails") || "{}"
+          );
+          bankDetails[data.cinema._id] = {
+            accountHolder, bankName, accountNumber, ifsc, upiId,
+          };
+          localStorage.setItem("bankDetails", JSON.stringify(bankDetails));
+        } catch {
+          // Non-critical — don't block success flow
+        }
+      }
 
-      alert("Theater Registered Successfully 🎬");
       navigate("/owner/home");
 
     } catch (err) {
       console.error("Register error:", err);
-      alert("Network error. Please check your connection.");
+      setError("Network error. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
+
   };
 
-  /* ── UI ── */
+  /* ── Subscription loading ── */
+
+  if (subLoading) {
+    return (
+      <div className="theater-page">
+        <div className="theater-card" style={{ textAlign: "center", padding: 40 }}>
+          <p style={{ color: "#888" }}>Checking subscription...</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── No active plan — block registration ── */
+
+  if (!isSubActive) {
+    return (
+      <div className="theater-page">
+        <button type="button" className="back-btn" onClick={() => navigate(-1)}>←</button>
+        <div className="theater-card" style={{ textAlign: "center", padding: 40 }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
+          <h3>Active Plan Required</h3>
+          <p style={{ color: "#888", margin: "12px 0 20px" }}>
+            You need an active subscription plan to register a theater.
+          </p>
+          <button onClick={() => navigate("/owner/plan")}>
+            View Plans
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Render ── */
+
   return (
+
     <div className="theater-page">
 
       <button
@@ -149,7 +304,27 @@ const TheaterRegister = () => {
         <h2>Register Theater</h2>
 
         {/* Owner email — read only */}
-        <input value={ownerEmail || ""} readOnly />
+        <input value={ownerEmail} readOnly style={{ color: "#888", background: "#f5f5f5" }} />
+
+        {/* FIELD ERROR */}
+        {fieldError && (
+          <p style={{
+            color: "#e55", background: "#fff3f3", border: "1px solid #fbb",
+            borderRadius: 8, padding: "8px 12px", fontSize: 13, margin: "4px 0",
+          }}>
+            {fieldError}
+          </p>
+        )}
+
+        {/* API ERROR */}
+        {error && (
+          <p style={{
+            color: "#c00", background: "#fff3f3", border: "1px solid #fbb",
+            borderRadius: 8, padding: "8px 12px", fontSize: 13, margin: "4px 0",
+          }}>
+            {error}
+          </p>
+        )}
 
         <input
           name="ownerName"
@@ -197,9 +372,11 @@ const TheaterRegister = () => {
 
         <input
           name="contact"
-          placeholder="Contact Number"
+          placeholder="Contact Number (10 digits)"
           value={theaterData.contact}
           onChange={handleChange}
+          maxLength={10}
+          inputMode="numeric"
         />
 
         <label>Opening Time</label>
@@ -218,12 +395,13 @@ const TheaterRegister = () => {
           onChange={handleChange}
         />
 
-        {/*
-          ⚠️ NO IMAGE UPLOAD API IN BACKEND DOCS.
-          Using URL inputs instead of file upload.
-          Ask backend dev to add: POST /api/upload → returns image URL
-        */}
-        <label>Theater Logo URL</label>
+        {/* ⚠️ NO IMAGE UPLOAD API — URL inputs only */}
+        <label>
+          Theater Logo URL
+          <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}>
+            (optional)
+          </span>
+        </label>
         <input
           name="theaterLogo"
           placeholder="https://... (logo image URL)"
@@ -231,7 +409,12 @@ const TheaterRegister = () => {
           onChange={handleChange}
         />
 
-        <label>Banner URL</label>
+        <label>
+          Banner URL
+          <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}>
+            (optional)
+          </span>
+        </label>
         <input
           name="banner"
           placeholder="https://... (banner image URL)"
@@ -239,56 +422,82 @@ const TheaterRegister = () => {
           onChange={handleChange}
         />
 
-        {/* ── BANK DETAILS ── */}
-        {/*
-          ⚠️ NO BANK DETAILS API IN BACKEND DOCS.
-          Saved locally until backend adds: POST /api/cinema/:id/bank-details
-        */}
-        <h3>Bank Details</h3>
-        <p className="api-note">⚠️ Bank details saved locally — backend API pending</p>
+        {/* ── BANK DETAILS ──
+            FIX: made optional — no backend API exists yet
+                 owner not blocked from registering theater
+                 without bank details
+        ── */}
+        <h3 style={{ marginTop: 20 }}>
+          Bank Details
+          <span style={{ fontSize: 12, color: "#aaa", fontWeight: 400, marginLeft: 8 }}>
+            (optional — saved locally until backend adds this API)
+          </span>
+        </h3>
+
+        <p style={{
+          fontSize: 12, color: "#f57f17", background: "#fff8e1",
+          border: "1px solid #ffe082", borderRadius: 6,
+          padding: "6px 10px", margin: "0 0 10px",
+        }}>
+          ⚠️ Bank details are saved locally only.
+          Backend needs: <code>POST /api/cinema/:id/bank-details</code>
+        </p>
 
         <input
           name="accountHolder"
-          placeholder="Account Holder Name *"
+          placeholder="Account Holder Name"
           value={theaterData.accountHolder}
           onChange={handleChange}
         />
 
         <input
           name="bankName"
-          placeholder="Bank Name *"
+          placeholder="Bank Name"
           value={theaterData.bankName}
           onChange={handleChange}
         />
 
         <input
           name="accountNumber"
-          placeholder="Account Number *"
+          placeholder="Account Number"
           value={theaterData.accountNumber}
           onChange={handleChange}
+          inputMode="numeric"
         />
 
         <input
           name="ifsc"
-          placeholder="IFSC Code *"
+          placeholder="IFSC Code"
           value={theaterData.ifsc}
-          onChange={handleChange}
+          onChange={(e) =>
+            setTheaterData((prev) => ({
+              ...prev,
+              ifsc: e.target.value.toUpperCase(),
+            }))
+          }
         />
 
         <input
           name="upiId"
-          placeholder="UPI ID (Optional)"
+          placeholder="UPI ID (optional)"
           value={theaterData.upiId}
           onChange={handleChange}
         />
 
-        <button onClick={handleSubmit} disabled={loading}>
-          {loading ? "Registering..." : "Register Theater"}
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          style={{ opacity: loading ? 0.6 : 1, marginTop: 16 }}
+        >
+          {loading ? "Registering..." : "Register Theater 🎬"}
         </button>
 
       </div>
+
     </div>
+
   );
+
 };
 
 export default TheaterRegister;

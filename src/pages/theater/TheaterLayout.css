@@ -270,3 +270,45 @@
   }
 
 }
+/* Add these rules to your existing TheaterLayout.css */
+
+/* SIDEBAR FOOTER */
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid var(--border-soft, rgba(108,99,255,0.09));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.role-badge {
+  text-align: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--violet, #6C63FF);
+  background: var(--violet-soft, rgba(108,99,255,0.08));
+  border: 1px solid var(--border-soft, rgba(108,99,255,0.09));
+  border-radius: 20px;
+  padding: 5px 12px;
+}
+
+.sidebar-logout {
+  width: 100%;
+  padding: 9px;
+  background: transparent;
+  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
+  border-radius: 8px;
+  color: var(--text-muted, #6B6891);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.sidebar-logout:hover {
+  border-color: var(--red, #EF4444);
+  color: var(--red, #EF4444);
+  background: rgba(239,68,68,0.06);
+}

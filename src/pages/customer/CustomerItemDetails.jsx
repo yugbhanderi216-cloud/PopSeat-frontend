@@ -6,278 +6,298 @@ const API_BASE = "https://popseat.onrender.com";
 
 const CustomerItemDetails = () => {
 
-const { state } = useLocation();
-const navigate = useNavigate();
-const item = state?.item;
+  const { state } = useLocation();
+  const navigate = useNavigate();
+  const item = state?.item;
 
-if (!item) return <h2 style={{ padding: 20 }}>Item Not Found</h2>;
+  if (!item) return <h2 style={{ padding: 20 }}>Item Not Found</h2>;
 
-const sizeOptions =
-item.sizes && item.sizes.length > 0
-? item.sizes
-: [{ name: "Regular", price: item.price }];
+  const sizeOptions =
+    item.sizes && item.sizes.length > 0
+      ? item.sizes
+      : [{ name: "Regular", price: item.price }];
 
-const toppingOptions = item.availableToppings || item.topping || [];
-const dipOptions = item.availableDips || item.dips || [];
+  const toppingOptions = item.availableToppings || item.topping || [];
+  const dipOptions = item.availableDips || item.dips || [];
 
-const [selectedSize,setSelectedSize] = useState(sizeOptions[0]);
-const [qty,setQty] = useState(1);
-const [toppings,setToppings] = useState([]);
-const [dips,setDips] = useState([]);
+  const [selectedSize, setSelectedSize] = useState(sizeOptions[0]);
+  const [qty, setQty] = useState(1);
+  const [toppings, setToppings] = useState([]);
+  const [dips, setDips] = useState([]);
 
-const goBack = ()=>navigate(-1);
+  const goBack = () => navigate(-1);
 
-/* ================= TOGGLE TOPPING ================= */
+  /* ================= TOGGLE TOPPING ================= */
 
-const toggleTopping = (top)=>{
+  const toggleTopping = (top) => {
 
-setToppings((prev)=>
-prev.find((t)=>t.name === top.name)
-? prev.filter((t)=>t.name !== top.name)
-: [...prev,top]
-);
+    setToppings((prev) =>
+      prev.find((t) => t.name === top.name)
+        ? prev.filter((t) => t.name !== top.name)
+        : [...prev, top]
+    );
 
-};
+  };
 
-/* ================= TOGGLE DIP ================= */
+  /* ================= TOGGLE DIP ================= */
 
-const toggleDip = (dip)=>{
+  const toggleDip = (dip) => {
 
-setDips((prev)=>
-prev.find((d)=>d.name === dip.name)
-? prev.filter((d)=>d.name !== dip.name)
-: [...prev,dip]
-);
+    setDips((prev) =>
+      prev.find((d) => d.name === dip.name)
+        ? prev.filter((d) => d.name !== dip.name)
+        : [...prev, dip]
+    );
 
-};
+  };
 
-/* ================= PRICE CALCULATION ================= */
+  /* ================= PRICE CALCULATION ================= */
 
-const singleItemPrice =
-Number(selectedSize.price) +
-toppings.reduce((sum,t)=>sum + Number(t.price || 0),0) +
-dips.reduce((sum,d)=>sum + Number(d.price || 0),0);
+  const singleItemPrice =
+    Number(selectedSize.price) +
+    toppings.reduce((sum, t) => sum + Number(t.price || 0), 0) +
+    dips.reduce((sum, d) => sum + Number(d.price || 0), 0);
 
-const totalPrice = singleItemPrice * qty;
+  const totalPrice = singleItemPrice * qty;
 
-/* ================= ADD TO CART ================= */
+  /* ================= ADD TO CART ================= */
 
-const addToCart = ()=>{
+  const addToCart = () => {
 
-let cart = [];
+    let cart = [];
 
-try{
-cart = JSON.parse(localStorage.getItem("cart")) || [];
-}catch{
-cart = [];
-}
+    try {
+      cart = JSON.parse(localStorage.getItem("cart")) || [];
+    } catch {
+      cart = [];
+    }
 
-const newItem = {
+    // Unique cart key: menuId + size + toppings + dips combo
+    // This ensures same item with different options = different cart entries
+    // and same item with same options = quantity gets merged
+    const cartKey = [
+      item._id || item.id,
+      selectedSize.name,
+      toppings.map((t) => t.name).sort().join(","),
+      dips.map((d) => d.name).sort().join(","),
+    ].join("|");
 
-id: Date.now(),
-menuId: item._id || item.id,
-name: item.name,
-image: item.image,
+    const existingIndex = cart.findIndex((c) => c.cartKey === cartKey);
 
-size: selectedSize.name,
-toppings: toppings.map((t)=>t.name),
-dips: dips.map((d)=>d.name),
+    if (existingIndex !== -1) {
 
-quantity: qty,
-finalPrice: singleItemPrice
+      // Merge quantity if exact same item+options already in cart
+      cart[existingIndex].quantity += qty;
 
-};
+    } else {
 
-cart.push(newItem);
+      const newItem = {
+        // FIX: use stable cartKey instead of Date.now()
+        // CartCart uses item.id || item._id for qty controls — cartKey goes into id
+        id: cartKey,
+        cartKey,
 
-localStorage.setItem("cart",JSON.stringify(cart));
+        menuId: item._id || item.id,
+        _id: item._id || item.id,      // kept for CustomerCart's order payload (menuId lookup)
 
-navigate(-1);
+        name: item.name,
+        image: item.image,
 
-};
+        size: selectedSize.name,
+        toppings: toppings.map((t) => t.name),
+        dips: dips.map((d) => d.name),
 
-return (
+        quantity: qty,
+        finalPrice: singleItemPrice,
+      };
 
-<div className="item-page">
+      cart.push(newItem);
 
-{/* HEADER */}
+    }
 
-<div className="item-header">
+    localStorage.setItem("cart", JSON.stringify(cart));
 
-<button className="back-btn" onClick={goBack}>
-←
-</button>
+    navigate(-1);
 
-</div>
+  };
 
-<div className="item-wrapper">
+  return (
 
-<div className="item-top">
+    <div className="item-page">
 
-<img
-src={item.image}
-alt={item.name}
-className="item-image"
-/>
+      {/* HEADER */}
 
-<div className="item-details">
+      <div className="item-header">
 
-<h1 className="item-title">{item.name}</h1>
+        <button className="back-btn" onClick={goBack}>
+          ←
+        </button>
 
-<p className="item-desc">
-{item.description}
-</p>
+      </div>
 
-<div className="base-price">
-₹ {singleItemPrice}
-</div>
+      <div className="item-wrapper">
 
-</div>
+        <div className="item-top">
 
-</div>
+          <img
+            src={item.image}
+            alt={item.name}
+            className="item-image"
+          />
 
-{/* SIZE */}
+          <div className="item-details">
 
-<div className="section">
+            <h1 className="item-title">{item.name}</h1>
 
-<h3>Select Size</h3>
+            <p className="item-desc">{item.description}</p>
 
-<div className="size-options">
+            <div className="base-price">₹ {singleItemPrice}</div>
 
-{sizeOptions.map((s,i)=>(
-<button
-key={i}
-className={`size-btn ${
-selectedSize.name === s.name ? "active" : ""
-}`}
-onClick={()=>setSelectedSize(s)}
->
+          </div>
 
-{s.name} — ₹{s.price}
+        </div>
 
-</button>
-))}
+        {/* SIZE */}
 
-</div>
+        <div className="section">
 
-</div>
+          <h3>Select Size</h3>
 
-{/* TOPPINGS */}
+          <div className="size-options">
 
-{toppingOptions.length > 0 && (
+            {sizeOptions.map((s, i) => (
 
-<div className="section">
+              <button
+                key={i}
+                className={`size-btn ${
+                  selectedSize.name === s.name ? "active" : ""
+                }`}
+                onClick={() => setSelectedSize(s)}
+              >
+                {s.name} — ₹{s.price}
+              </button>
 
-<h3>Add Toppings</h3>
+            ))}
 
-{toppingOptions.map((top,i)=>(
-<div key={i} className="option-row">
+          </div>
 
-<label>
+        </div>
 
-<input
-type="checkbox"
-onChange={()=>toggleTopping(top)}
-/>
+        {/* TOPPINGS */}
 
-{top.name}
+        {toppingOptions.length > 0 && (
 
-</label>
+          <div className="section">
 
-<span>+₹{top.price}</span>
+            <h3>Add Toppings</h3>
 
-</div>
-))}
+            {toppingOptions.map((top, i) => (
 
-</div>
+              <div key={i} className="option-row">
 
-)}
+                <label>
 
-{/* DIPS */}
+                  {/* FIX: controlled checkbox — checked prop added */}
+                  <input
+                    type="checkbox"
+                    checked={!!toppings.find((t) => t.name === top.name)}
+                    onChange={() => toggleTopping(top)}
+                  />
 
-{dipOptions.length > 0 && (
+                  {top.name}
 
-<div className="section">
+                </label>
 
-<h3>Add Dips</h3>
+                <span>+₹{top.price}</span>
 
-{dipOptions.map((dip,i)=>(
-<div key={i} className="option-row">
+              </div>
 
-<label>
+            ))}
 
-<input
-type="checkbox"
-onChange={()=>toggleDip(dip)}
-/>
+          </div>
 
-{dip.name}
+        )}
 
-</label>
+        {/* DIPS */}
 
-<span>+₹{dip.price}</span>
+        {dipOptions.length > 0 && (
 
-</div>
-))}
+          <div className="section">
 
-</div>
+            <h3>Add Dips</h3>
 
-)}
+            {dipOptions.map((dip, i) => (
 
-{/* QUANTITY */}
+              <div key={i} className="option-row">
 
-<div className="section">
+                <label>
 
-<h3>Quantity</h3>
+                  {/* FIX: controlled checkbox — checked prop added */}
+                  <input
+                    type="checkbox"
+                    checked={!!dips.find((d) => d.name === dip.name)}
+                    onChange={() => toggleDip(dip)}
+                  />
 
-<div className="qty-box">
+                  {dip.name}
 
-<button
-className="qty-btn"
-onClick={()=>setQty(Math.max(1,qty-1))}
->
--
-</button>
+                </label>
 
-<span className="qty-number">
-{qty}
-</span>
+                <span>+₹{dip.price}</span>
 
-<button
-className="qty-btn"
-onClick={()=>setQty(qty+1)}
->
-+
-</button>
+              </div>
 
-</div>
+            ))}
 
-</div>
+          </div>
 
-</div>
+        )}
 
-{/* FOOTER */}
+        {/* QUANTITY */}
 
-<div className="add-cart-bar">
+        <div className="section">
 
-<div className="total-price">
-₹ {totalPrice}
-</div>
+          <h3>Quantity</h3>
 
-<button
-className="add-btn"
-onClick={addToCart}
->
+          <div className="qty-box">
 
-Add To Cart
+            <button
+              className="qty-btn"
+              onClick={() => setQty(Math.max(1, qty - 1))}
+            >
+              -
+            </button>
 
-</button>
+            <span className="qty-number">{qty}</span>
 
-</div>
+            <button
+              className="qty-btn"
+              onClick={() => setQty(qty + 1)}
+            >
+              +
+            </button>
 
-</div>
+          </div>
 
-);
+        </div>
+
+      </div>
+
+      {/* FOOTER */}
+
+      <div className="add-cart-bar">
+
+        <div className="total-price">₹ {totalPrice}</div>
+
+        <button className="add-btn" onClick={addToCart}>
+          Add To Cart
+        </button>
+
+      </div>
+
+    </div>
+
+  );
 
 };
 

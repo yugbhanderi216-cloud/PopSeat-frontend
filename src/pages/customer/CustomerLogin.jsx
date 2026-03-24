@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./CustomerLogin.css";
 
+const BASE_URL = "https://popseat.onrender.com";
+
 const CustomerLogin = () => {
 
   const navigate = useNavigate();
@@ -11,12 +13,12 @@ const CustomerLogin = () => {
 
   const [email, setEmail] = useState("");
   const [otpSent, setOtpSent] = useState(false);
-  const [generatedOtp, setGeneratedOtp] = useState("");
   const [timer, setTimer] = useState(0);
-  const [otp, setOtp] = useState(["", "", "", ""]);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);  // 6-digit OTP from API
   const [loading, setLoading] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [locked, setLocked] = useState(false);
+  const [error, setError] = useState("");
 
   const inputRefs = useRef([]);
 
@@ -49,31 +51,44 @@ const CustomerLogin = () => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  /* SEND OTP */
+  /* SEND OTP — POST /api/auth/send-email-otp */
 
-  const handleSendOtp = () => {
+  const handleSendOtp = async () => {
 
     if (!validateEmail(email)) {
-      alert("Enter valid email address");
+      setError("Enter a valid email address");
       return;
     }
 
-    const randomOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    setLoading(true);
+    setError("");
 
-    setGeneratedOtp(randomOtp);
-    setOtpSent(true);
-    setTimer(30);
-    setAttempts(0);
+    try {
 
-    const otpArray = randomOtp.split("");
-    setOtp(otpArray);
+      const response = await fetch(`${BASE_URL}/api/auth/send-email-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
 
-    alert("Demo OTP: " + randomOtp);
+      const data = await response.json();
 
-    // auto verify demo
-    setTimeout(() => {
-      verifyOtp(randomOtp, randomOtp);
-    }, 500);
+      if (data.success) {
+        setOtpSent(true);
+        setTimer(30);
+        setAttempts(0);
+        setOtp(["", "", "", "", "", ""]);
+      } else {
+        setError(data.message || "Failed to send OTP. Please try again.");
+      }
+
+    } catch (err) {
+      setError("Network error. Please check your connection.");
+    } finally {
+      setLoading(false);
+    }
 
   };
 
@@ -86,12 +101,13 @@ const CustomerLogin = () => {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+    setError("");
 
-    if (value && index < 3) {
+    if (value && index < 5) {
       inputRefs.current[index + 1].focus();
     }
 
-    if (newOtp.join("").length === 4) {
+    if (newOtp.join("").length === 6) {
       verifyOtp(newOtp.join(""));
     }
 
@@ -111,30 +127,42 @@ const CustomerLogin = () => {
 
   const handleOtpPaste = (e) => {
 
-    const pasted = e.clipboardData.getData("text").slice(0, 4);
+    const pasted = e.clipboardData.getData("text").slice(0, 6);
 
-    if (!/^\d{4}$/.test(pasted)) return;
+    if (!/^\d{6}$/.test(pasted)) return;
 
     const newOtp = pasted.split("");
-
     setOtp(newOtp);
-
     verifyOtp(pasted);
 
   };
 
-  /* VERIFY OTP */
+  /* VERIFY OTP — POST /api/auth/verify-email-otp */
 
-  const verifyOtp = (enteredOtp, realOtp = generatedOtp) => {
+  const verifyOtp = async (enteredOtp) => {
 
     if (locked) return;
 
     setLoading(true);
+    setError("");
 
-    setTimeout(() => {
+    try {
 
-      if (enteredOtp === realOtp) {
+      const response = await fetch(`${BASE_URL}/api/auth/verify-email-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, otp: enteredOtp }),
+      });
 
+      const data = await response.json();
+
+      if (data.success) {
+
+        // Store token and email for subsequent authenticated requests
+        localStorage.setItem("customerToken", data.token);
+        localStorage.setItem("customerRole", data.role);
         localStorage.setItem("customerEmail", email);
 
         navigate(`/payment?theaterId=${theaterId}`);
@@ -147,17 +175,25 @@ const CustomerLogin = () => {
         if (newAttempts >= 3) {
           setLocked(true);
           setTimer(30);
+          setError("Too many incorrect attempts. Please wait 30 seconds.");
+        } else {
+          setError(data.message || "Invalid OTP. Please try again.");
         }
 
-        alert("Invalid OTP");
+        setOtp(["", "", "", "", "", ""]);
 
-        setOtp(["", "", "", ""]);
-        inputRefs.current[0].focus();
+        if (!locked && inputRefs.current[0]) {
+          inputRefs.current[0].focus();
+        }
+
       }
 
+    } catch (err) {
+      setError("Network error. Please check your connection.");
+      setOtp(["", "", "", "", "", ""]);
+    } finally {
       setLoading(false);
-
-    }, 1000);
+    }
 
   };
 
@@ -187,25 +223,41 @@ const CustomerLogin = () => {
             type="email"
             placeholder="Enter Email Address"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={otpSent}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setError("");
+            }}
+            disabled={otpSent || loading}
             className="mobile-input"
           />
+
+          {/* ERROR MESSAGE */}
+
+          {error && (
+            <p className="error-text" style={{ color: "red", fontSize: "13px", marginTop: "6px" }}>
+              {error}
+            </p>
+          )}
 
           {!otpSent ? (
 
             <button
               onClick={handleSendOtp}
               className="primary-btn"
+              disabled={loading}
             >
-              Send OTP
+              {loading ? "Sending..." : "Send OTP"}
             </button>
 
           ) : (
 
             <>
 
-              {/* OTP BOX */}
+              <p style={{ fontSize: "13px", color: "#555", marginBottom: "8px" }}>
+                OTP sent to <strong>{email}</strong>
+              </p>
+
+              {/* OTP BOX — 6 digits to match API */}
 
               <div
                 className={`otp-box ${locked ? "locked" : ""}`}
@@ -229,7 +281,7 @@ const CustomerLogin = () => {
                       handleKeyDown(e, index)
                     }
 
-                    disabled={locked}
+                    disabled={locked || loading}
                   />
 
                 ))}
@@ -240,7 +292,7 @@ const CustomerLogin = () => {
 
               {loading && <div className="spinner"></div>}
 
-              {/* TIMER */}
+              {/* TIMER / RESEND */}
 
               {locked ? (
 
@@ -259,6 +311,7 @@ const CustomerLogin = () => {
                 <button
                   onClick={handleSendOtp}
                   className="resend-btn"
+                  disabled={loading}
                 >
                   Resend OTP
                 </button>

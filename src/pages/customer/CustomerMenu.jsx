@@ -6,249 +6,332 @@ const API_BASE = "https://popseat.onrender.com";
 
 const CustomerMenu = () => {
 
-const location = useLocation();
-const navigate = useNavigate();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-const params = new URLSearchParams(location.search);
+  const params = new URLSearchParams(location.search);
 
-const theaterId =
-params.get("theaterId") || localStorage.getItem("customerTheaterId");
+  const theaterId =
+    params.get("theaterId") || localStorage.getItem("customerTheaterId");
 
-const screen =
-params.get("screen") || localStorage.getItem("screenNo");
+  const screen =
+    params.get("screen") || localStorage.getItem("screenNo");
 
-const seat =
-params.get("seat") || localStorage.getItem("seatNo");
+  const seat =
+    params.get("seat") || localStorage.getItem("seatNo");
 
-const type =
-params.get("type") || localStorage.getItem("seatType");
+  const type =
+    params.get("type") || localStorage.getItem("seatType");
 
-const [items,setItems] = useState([]);
-const [activeCategory,setActiveCategory] = useState("");
-const [cart,setCart] = useState([]);
+  const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);   // GET /api/category
+  const [activeCategory, setActiveCategory] = useState("");
+  const [cart, setCart] = useState([]);
+  const [menuLoading, setMenuLoading] = useState(true);
+  const [categoryLoading, setCategoryLoading] = useState(true);
 
-/* 🔙 GO BACK */
+  /* 🔙 GO BACK */
 
-const goBack = ()=>navigate(-1);
+  const goBack = () => navigate(-1);
 
-/* ================= SAVE INFO ================= */
+  /* ================= SAVE INFO ================= */
 
-useEffect(()=>{
+  useEffect(() => {
 
-if(screen) localStorage.setItem("screenNo",screen);
-if(seat) localStorage.setItem("seatNo",seat);
-if(theaterId) localStorage.setItem("customerTheaterId",theaterId);
-if(type) localStorage.setItem("seatType",type);
+    if (screen) localStorage.setItem("screenNo", screen);
+    if (seat) localStorage.setItem("seatNo", seat);
+    if (theaterId) localStorage.setItem("customerTheaterId", theaterId);
+    if (type) localStorage.setItem("seatType", type);
 
-},[screen,seat,theaterId,type]);
+  }, [screen, seat, theaterId, type]);
 
-/* ================= LOAD MENU FROM API ================= */
+  /* ================= LOAD CATEGORIES — GET /api/category ================= */
 
-useEffect(()=>{
+  useEffect(() => {
 
-const fetchMenu = async ()=>{
+    const fetchCategories = async () => {
 
-try{
+      setCategoryLoading(true);
 
-const res = await fetch(`${API_BASE}/api/menu`);
-const data = await res.json();
+      try {
 
-if(data.success){
+        const res = await fetch(`${API_BASE}/api/category`);
+        const data = await res.json();
 
-const availableItems = data.menu.filter(
-(item)=>item.available !== false
-);
+        if (data.success && data.categories.length > 0) {
 
-setItems(availableItems);
+          // API returns category objects — extract name for display
+          // Shape may be: { _id, name } or just strings — handle both
+          const categoryNames = data.categories.map((cat) =>
+            typeof cat === "string" ? cat : cat.name
+          );
 
-if(availableItems.length > 0){
-setActiveCategory(availableItems[0].category);
-}
+          setCategories(categoryNames);
+          setActiveCategory(categoryNames[0]);
 
-}
+        }
+        // If API returns empty [], fall back to menu-derived categories
+        // (handled after menu loads in the merged useEffect below)
 
-}catch(error){
+      } catch (error) {
+        console.log("Category fetch error:", error);
+        // Fallback handled after menu loads
+      } finally {
+        setCategoryLoading(false);
+      }
 
-console.log(error);
+    };
 
-}
+    fetchCategories();
 
-};
+  }, []);
 
-fetchMenu();
+  /* ================= LOAD MENU — GET /api/menu ================= */
 
-},[]);
+  useEffect(() => {
 
-/* ================= LOAD CART ================= */
+    const fetchMenu = async () => {
 
-useEffect(()=>{
+      setMenuLoading(true);
 
-try{
+      try {
 
-const savedCart =
-JSON.parse(localStorage.getItem("cart")) || [];
+        const res = await fetch(`${API_BASE}/api/menu`);
+        const data = await res.json();
 
-setCart(savedCart);
+        if (data.success) {
 
-}catch{
+          const availableItems = data.menu.filter(
+            (item) => item.available !== false && !item.isDeleted
+          );
 
-setCart([]);
+          setItems(availableItems);
 
-}
+          // Fallback: if category API returned empty, derive from menu
+          setCategories((prev) => {
 
-},[]);
+            if (prev.length > 0) return prev; // API already gave us categories
 
-/* ================= SAVE CART ================= */
+            const derived = [...new Set(availableItems.map((i) => i.category))];
 
-useEffect(()=>{
+            if (derived.length > 0 && !activeCategory) {
+              setActiveCategory(derived[0]);
+            }
 
-localStorage.setItem("cart",JSON.stringify(cart));
+            return derived;
 
-},[cart]);
+          });
 
-/* ================= CATEGORY ================= */
+        }
 
-const categories =
-[...new Set(items.map((i)=>i.category))];
+      } catch (error) {
+        console.log("Menu fetch error:", error);
+      } finally {
+        setMenuLoading(false);
+      }
 
-const filteredItems =
-items.filter((i)=>i.category === activeCategory);
+    };
 
-/* ================= CART TOTAL ================= */
+    fetchMenu();
 
-const total = cart.reduce(
-(sum,item)=>sum + (item.finalPrice || item.price) * item.quantity,
-0
-);
+  }, []);
 
-return (
+  /* ================= LOAD CART ================= */
 
-<div className="customer-menu-page">
+  useEffect(() => {
 
-<div className="menu-wrapper">
+    try {
+      const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
+      setCart(savedCart);
+    } catch {
+      setCart([]);
+    }
 
-{/* HEADER */}
+  }, []);
 
-<div className="customer-header">
+  /* ================= SAVE CART ================= */
 
-<button className="back-btn" onClick={goBack}>
-←
-</button>
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
 
-<div className="header-info">
+  /* ================= FILTERED ITEMS ================= */
 
-<h2>🍿 Order Food</h2>
-<p>Screen {screen} • Seat {seat}</p>
+  const filteredItems = items.filter((i) => i.category === activeCategory);
 
-</div>
+  /* ================= CART TOTALS ================= */
 
-<button
-className="cart-btn"
-onClick={()=>
-navigate(`/customer/cart?theaterId=${theaterId}&screen=${screen}&seat=${seat}`)
-}
->
-🛒 {cart.length}
-</button>
+  // FIX: show total quantity not unique entry count
+  const cartTotalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-</div>
+  const cartTotalPrice = cart.reduce(
+    (sum, item) => sum + (item.finalPrice || item.price) * item.quantity,
+    0
+  );
 
-{/* CATEGORY */}
+  /* ================= LOADING STATE ================= */
 
-<div className="category-tabs">
+  const isLoading = menuLoading || categoryLoading;
 
-{categories.map((cat)=>(
-<button
-key={cat}
-className={activeCategory === cat ? "active-tab" : ""}
-onClick={()=>setActiveCategory(cat)}
->
-{cat}
-</button>
-))}
+  return (
 
-</div>
+    <div className="customer-menu-page">
 
-{/* FOOD GRID */}
+      <div className="menu-wrapper">
 
-<div className="customer-grid">
+        {/* HEADER */}
 
-{filteredItems.map((item)=>(
+        <div className="customer-header">
 
-<div
-key={item._id}
-className="customer-card"
+          <button className="back-btn" onClick={goBack}>
+            ←
+          </button>
 
-onClick={()=>{
-if(item.available === false) return;
+          <div className="header-info">
+            <h2>🍿 Order Food</h2>
+            <p>Screen {screen} • Seat {seat}</p>
+          </div>
 
-navigate("/customer/item",{
-state:{ item,theaterId,screen,seat },
-});
+          <button
+            className="cart-btn"
+            onClick={() =>
+              navigate(
+                `/customer/cart?theaterId=${theaterId}&screen=${screen}&seat=${seat}`
+              )
+            }
+          >
+            {/* FIX: show real total quantity */}
+            🛒 {cartTotalQty}
+          </button>
 
-}}
->
+        </div>
 
-{item.image && (
+        {/* CATEGORY TABS */}
 
-<img
-src={item.image}
-alt={item.name}
-className="customer-food-img"
-/>
+        {categoryLoading ? (
 
-)}
+          <div className="category-tabs">
+            <span style={{ padding: "8px 16px", color: "#888" }}>
+              Loading categories...
+            </span>
+          </div>
 
-<div className="card-body">
+        ) : (
 
-<h3>{item.name}</h3>
+          <div className="category-tabs">
 
-<p className="desc">{item.description}</p>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                className={activeCategory === cat ? "active-tab" : ""}
+                onClick={() => setActiveCategory(cat)}
+              >
+                {cat}
+              </button>
+            ))}
 
-<p className="price">
-₹ {item.price}
-</p>
+          </div>
 
-<p className="tap-note">
-Tap to customize ➜
-</p>
+        )}
 
-</div>
+        {/* FOOD GRID */}
 
-</div>
+        {menuLoading ? (
 
-))}
+          <div
+            style={{
+              textAlign: "center",
+              padding: "40px",
+              color: "#888",
+            }}
+          >
+            Loading menu...
+          </div>
 
-</div>
+        ) : filteredItems.length === 0 ? (
 
-</div>
+          <div
+            style={{
+              textAlign: "center",
+              padding: "40px",
+              color: "#888",
+            }}
+          >
+            No items available in this category
+          </div>
 
-{/* CART BAR */}
+        ) : (
 
-{cart.length > 0 && (
+          <div className="customer-grid">
 
-<div
-className="bottom-cart-bar"
-onClick={()=>
-navigate(`/customer/cart?theaterId=${theaterId}&screen=${screen}&seat=${seat}`)
-}
->
+            {filteredItems.map((item) => (
 
-<div>
-₹ {total} | {cart.length} item(s)
-</div>
+              <div
+                key={item._id}
+                className="customer-card"
+                onClick={() =>
+                  navigate("/customer/item", {
+                    state: { item, theaterId, screen, seat },
+                  })
+                }
+              >
 
-<div>
-View Cart ➜
-</div>
+                {item.image && (
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="customer-food-img"
+                  />
+                )}
 
-</div>
+                <div className="card-body">
 
-)}
+                  <h3>{item.name}</h3>
 
-</div>
+                  <p className="desc">{item.description}</p>
 
-);
+                  <p className="price">₹ {item.price}</p>
+
+                  <p className="tap-note">Tap to customize ➜</p>
+
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        )}
+
+      </div>
+
+      {/* BOTTOM CART BAR */}
+
+      {cartTotalQty > 0 && (
+
+        <div
+          className="bottom-cart-bar"
+          onClick={() =>
+            navigate(
+              `/customer/cart?theaterId=${theaterId}&screen=${screen}&seat=${seat}`
+            )
+          }
+        >
+
+          <div>
+            ₹ {cartTotalPrice} | {cartTotalQty} item(s)
+          </div>
+
+          <div>View Cart ➜</div>
+
+        </div>
+
+      )}
+
+    </div>
+
+  );
 
 };
 

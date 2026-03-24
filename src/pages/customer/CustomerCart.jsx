@@ -6,238 +6,306 @@ const API_BASE = "https://popseat.onrender.com";
 
 const CustomerCart = () => {
 
-const navigate = useNavigate();
-const location = useLocation();
-const params = new URLSearchParams(location.search);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
 
-const theaterId =
-params.get("theaterId") || localStorage.getItem("customerTheaterId");
+  const theaterId =
+    params.get("theaterId") || localStorage.getItem("customerTheaterId");
 
-const [cart,setCart] = useState([]);
+  const [cart, setCart] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-const goBack = () => navigate(-1);
+  const goBack = () => navigate(-1);
 
-/* ===============================
-   LOAD CART
-================================ */
+  /* ===============================
+     LOAD CART
+  ================================ */
 
-useEffect(()=>{
+  useEffect(() => {
 
-try{
+    try {
+      const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
+      setCart(savedCart);
+    } catch {
+      setCart([]);
+    }
 
-const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
-setCart(savedCart);
+  }, []);
 
-}catch{
-setCart([]);
-}
+  const updateStorage = (updated) => {
+    setCart(updated);
+    localStorage.setItem("cart", JSON.stringify(updated));
+  };
 
-},[]);
+  /* ===============================
+     QUANTITY CONTROLS
+  ================================ */
 
-const updateStorage = (updated)=>{
+  const increaseQty = (id) => {
 
-setCart(updated);
-localStorage.setItem("cart",JSON.stringify(updated));
+    const updated = cart.map((item) => {
+      const itemId = item.id || item._id;
+      return itemId === id
+        ? { ...item, quantity: item.quantity + 1 }
+        : item;
+    });
+
+    updateStorage(updated);
+
+  };
+
+  const decreaseQty = (id) => {
 
-};
+    const updated = cart
+      .map((item) => {
+        const itemId = item.id || item._id;
+        return itemId === id
+          ? { ...item, quantity: item.quantity - 1 }
+          : item;
+      })
+      .filter((item) => item.quantity > 0);
+
+    updateStorage(updated);
+
+  };
 
-/* ===============================
-   QUANTITY CONTROLS
-================================ */
+  const removeItem = (id) => {
+
+    const updated = cart.filter((item) => {
+      const itemId = item.id || item._id;
+      return itemId !== id;
+    });
+
+    updateStorage(updated);
+
+  };
+
+  /* ===============================
+     TOTAL
+  ================================ */
 
-const increaseQty = (id)=>{
+  const total = cart.reduce((sum, item) => {
+    const price = Number(item.finalPrice || item.price || 0);
+    return sum + price * item.quantity;
+  }, 0);
 
-const updated = cart.map((item)=>{
+  /* ===============================
+     CHECKOUT — POST /api/order/create
+     Flow:
+       1. If user NOT logged in → go to login, come back here after
+       2. If user IS logged in  → place order directly, then go to payment
+  ================================ */
 
-const itemId = item.id || item._id;
+  const handleCheckout = async () => {
 
-return itemId === id
-? { ...item, quantity: item.quantity + 1 }
-: item;
+    if (cart.length === 0) {
+      alert("Your cart is empty");
+      return;
+    }
 
-});
+    const token = localStorage.getItem("customerToken");
 
-updateStorage(updated);
+    // ── Not logged in: send to login, return here after ──
+    if (!token) {
+      // Save current theaterId so login page can redirect back correctly
+      if (theaterId) localStorage.setItem("customerTheaterId", theaterId);
+      navigate(`/customer/login?theaterId=${theaterId}`);
+      return;
+    }
 
-};
+    // ── Logged in: place the order ──
+    const seatId = localStorage.getItem("customerSeatId");
 
-const decreaseQty = (id)=>{
+    if (!seatId) {
+      setError("Seat information is missing. Please scan your QR code again.");
+      return;
+    }
 
-const updated = cart
-.map((item)=>{
+    // Build items array as expected by POST /api/order/create
+    const items = cart.map((item) => ({
+      menuId: item._id || item.id,
+      name: item.name,
+      quantity: item.quantity,
+      price: Number(item.finalPrice || item.price || 0),
+    }));
 
-const itemId = item.id || item._id;
+    const orderPayload = {
+      seatId,
+      totalAmount: total,
+      razorpayOrderId: `order_${Date.now()}`, // temporary; replace with real Razorpay ID after payment
+      items,
+    };
 
-return itemId === id
-? { ...item, quantity: item.quantity - 1 }
-: item;
+    setLoading(true);
+    setError("");
 
-})
-.filter((item)=>item.quantity > 0);
+    try {
 
-updateStorage(updated);
+      const response = await fetch(`${API_BASE}/api/order/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(orderPayload),
+      });
 
-};
+      const data = await response.json();
 
-const removeItem = (id)=>{
+      if (data.success) {
 
-const updated = cart.filter((item)=>{
+        // Save order + payment info for the payment page
+        localStorage.setItem("currentOrderId", data.order._id);
+        localStorage.setItem(
+          "currentPaymentId",
+          data.payment?.razorpayOrderId || ""
+        );
 
-const itemId = item.id || item._id;
-return itemId !== id;
+        // Clear cart after successful order creation
+        localStorage.removeItem("cart");
+        setCart([]);
 
-});
+        // Go to payment page with theaterId
+        navigate(`/payment?theaterId=${theaterId}`);
 
-updateStorage(updated);
+      } else {
+        setError(data.message || "Failed to place order. Please try again.");
+      }
 
-};
+    } catch (err) {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
 
-/* ===============================
-   TOTAL
-================================ */
+  };
 
-const total = cart.reduce((sum,item)=>{
+  return (
 
-const price = Number(item.finalPrice || item.price || 0);
-return sum + price * item.quantity;
+    <div className="cart-page">
 
-},0);
+      <div className="cart-container">
 
-/* ===============================
-   CHECKOUT
-================================ */
+        {/* HEADER */}
 
-const handleCheckout = ()=>{
+        <div className="cart-header">
 
-if(cart.length === 0){
-alert("Your cart is empty");
-return;
-}
+          <button className="back-btn" onClick={goBack}>
+            ←
+          </button>
 
-/*
-Future API:
-POST /api/order/create
-*/
+          <h2>🛒 My Cart ({cart.length})</h2>
 
-navigate(`/customer/login?theaterId=${theaterId}`);
+        </div>
 
-};
+        {/* ERROR */}
 
-return (
+        {error && (
+          <p
+            className="error-text"
+            style={{ color: "red", fontSize: "13px", margin: "8px 16px" }}
+          >
+            {error}
+          </p>
+        )}
 
-<div className="cart-page">
+        {cart.length === 0 ? (
 
-<div className="cart-container">
+          <p className="empty-text">Your cart is empty</p>
 
-{/* HEADER */}
+        ) : (
 
-<div className="cart-header">
+          cart.map((item) => {
 
-<button className="back-btn" onClick={goBack}>
-←
-</button>
+            const itemId = item.id || item._id;
 
-<h2>🛒 My Cart ({cart.length})</h2>
+            return (
 
-</div>
+              <div key={itemId} className="cart-card">
 
-{cart.length === 0 ? (
+                {item.image && (
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="cart-img"
+                  />
+                )}
 
-<p className="empty-text">Your cart is empty</p>
+                <div className="cart-info">
 
-) : (
+                  <h3>{item.name}</h3>
 
-cart.map((item)=>{
+                  {item.size && (
+                    <p className="cart-meta">Size: {item.size}</p>
+                  )}
 
-const itemId = item.id || item._id;
+                  <p className="cart-price">
+                    ₹ {item.finalPrice || item.price} × {item.quantity}
+                  </p>
 
-return (
+                </div>
 
-<div key={itemId} className="cart-card">
+                <div className="cart-controls">
 
-{item.image && (
+                  <button
+                    className="minus-btn"
+                    onClick={() => decreaseQty(itemId)}
+                    disabled={loading}
+                  >
+                    -
+                  </button>
 
-<img
-src={item.image}
-alt={item.name}
-className="cart-img"
-/>
+                  <span>{item.quantity}</span>
 
-)}
+                  <button
+                    className="plus-btn"
+                    onClick={() => increaseQty(itemId)}
+                    disabled={loading}
+                  >
+                    +
+                  </button>
 
-<div className="cart-info">
+                  <button
+                    className="delete-btn"
+                    onClick={() => removeItem(itemId)}
+                    disabled={loading}
+                  >
+                    🗑
+                  </button>
 
-<h3>{item.name}</h3>
+                </div>
 
-{item.size && (
+              </div>
 
-<p className="cart-meta">
-Size: {item.size}
-</p>
+            );
 
-)}
+          })
 
-<p className="cart-price">
-₹ {item.finalPrice || item.price} × {item.quantity}
-</p>
+        )}
 
-</div>
+      </div>
 
-<div className="cart-controls">
+      {/* FOOTER */}
 
-<button
-className="minus-btn"
-onClick={()=>decreaseQty(itemId)}
->
--
-</button>
+      <div className="cart-footer">
 
-<span>{item.quantity}</span>
+        <h3>Total: ₹ {total}</h3>
 
-<button
-className="plus-btn"
-onClick={()=>increaseQty(itemId)}
->
-+
-</button>
+        <button
+          className="checkout-btn"
+          onClick={handleCheckout}
+          disabled={loading || cart.length === 0}
+        >
+          {loading ? "Placing Order..." : "Proceed to Checkout"}
+        </button>
 
-<button
-className="delete-btn"
-onClick={()=>removeItem(itemId)}
->
-🗑
-</button>
+      </div>
 
-</div>
+    </div>
 
-</div>
-
-);
-
-})
-
-)}
-
-</div>
-
-{/* FOOTER */}
-
-<div className="cart-footer">
-
-<h3>Total: ₹ {total}</h3>
-
-<button
-className="checkout-btn"
-onClick={handleCheckout}
->
-Proceed to Checkout
-</button>
-
-</div>
-
-</div>
-
-);
+  );
 
 };
 

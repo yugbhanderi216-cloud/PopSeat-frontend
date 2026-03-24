@@ -3,61 +3,43 @@ import { useNavigate } from "react-router-dom";
 import "./Navbar.css";
 import logo from "../PopSeat_Logo.png";
 
+// ─────────────────────────────────────────────────────────────
+// Navbar is used inside TheaterLayout only.
+// Users here are OWNER or WORKER exclusively.
+// Email + role are already in localStorage from login —
+// no API call needed at all.
+// ─────────────────────────────────────────────────────────────
+
+const ROLE_CONFIG = {
+  owner  : { label: "👑 Owner",  color: "#b5633c" },
+  worker : { label: "👷 Worker", color: "#3B82F6" },
+};
+
 const Navbar = ({ toggleSidebar }) => {
 
   const navigate = useNavigate();
 
-  const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("");
+  // Read directly from localStorage — set at login, always available
+  // FIX: triple-key fallback consistent with all other files
+  const [email] = useState(() =>
+    localStorage.getItem("ownerEmail")  ||
+    localStorage.getItem("workerEmail") ||
+    localStorage.getItem("email")       || ""
+  );
 
+  const [role] = useState(() =>
+    (
+      localStorage.getItem("ownerRole")  ||
+      localStorage.getItem("workerRole") ||
+      localStorage.getItem("role")       || ""
+    ).toLowerCase()
+  );
+
+  const [open, setOpen] = useState(false);
   const menuRef = useRef();
 
-  // Get profile from API
-  const getProfile = async () => {
+  /* ── Close dropdown on outside click ── */
 
-    try {
-
-      const token = localStorage.getItem("token");
-
-      const res = await fetch("http://localhost:5000/api/admin/profile", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setEmail(data.admin?.email || "");
-        setRole("admin");
-      }
-
-    } catch (error) {
-      console.error("Profile error:", error);
-    }
-
-  };
-
-  // Logout
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
-  };
-
-  // Avatar initial
-  const getInitial = () => {
-    return email ? email.charAt(0).toUpperCase() : "U";
-  };
-
-  // Load profile on page load
-  useEffect(() => {
-    getProfile();
-  }, []);
-
-  // Close dropdown on outside click
   useEffect(() => {
 
     const handleClickOutside = (e) => {
@@ -67,12 +49,36 @@ const Navbar = ({ toggleSidebar }) => {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
 
   }, []);
+
+  /* ── Logout — surgical key removal only ── */
+
+  const handleLogout = () => {
+
+    if (role === "owner") {
+      [
+        "ownerToken", "ownerEmail", "ownerRole",
+        "ownerPlans", "selectedPlan", "activeOwnerTheaterId",
+        "token", "email", "role",
+      ].forEach((k) => localStorage.removeItem(k));
+    } else {
+      // worker
+      [
+        "workerToken", "workerEmail", "workerRole",
+        "assignedTheaterId",
+        "token", "email", "role",
+      ].forEach((k) => localStorage.removeItem(k));
+    }
+
+    navigate("/login");
+
+  };
+
+  const roleConfig = ROLE_CONFIG[role] || { label: role || "User", color: "#888" };
+
+  const getInitial = () => email ? email.charAt(0).toUpperCase() : "U";
 
   return (
 
@@ -92,29 +98,41 @@ const Navbar = ({ toggleSidebar }) => {
 
       </div>
 
-
       {/* RIGHT */}
       <div className="nav-right" ref={menuRef}>
 
-        <span className="role-chip">
-          {role}
+        {/* Role chip — color coded per role */}
+        <span
+          className="role-chip"
+          style={{
+            background : `${roleConfig.color}18`,
+            color      : roleConfig.color,
+            border     : `1px solid ${roleConfig.color}40`,
+          }}
+        >
+          {roleConfig.label}
         </span>
 
+        {/* Avatar */}
         <div className="profile" onClick={() => setOpen(!open)}>
-          <div className="avatar">
+          <div
+            className="avatar"
+            style={{ background: roleConfig.color }}
+          >
             {getInitial()}
           </div>
         </div>
 
+        {/* Dropdown */}
         {open && (
 
           <div className="profile-menu">
 
-            <div className="email">
-              {email}
+            <div className="email" style={{ fontSize: 12, color: "#888" }}>
+              {email || "No email"}
             </div>
 
-            <div className="divider"></div>
+            <div className="divider" />
 
             <button onClick={handleLogout}>
               Logout

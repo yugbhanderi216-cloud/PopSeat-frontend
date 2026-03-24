@@ -1,414 +1,647 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./Menu.css";
 
-/* ---------- DATA SANITIZER ---------- */
-const ensureArray = (value) => {
-  if (Array.isArray(value)) return value;
-  if (!value) return [];
-  return [value];
+// APIs USED:
+//   GET    /api/menu         ✅ confirmed
+//   POST   /api/menu         ✅ confirmed
+//   PUT    /api/menu/:id     ✅ confirmed
+//   DELETE /api/menu/:id     ✅ confirmed
+//
+// IMAGE HANDLING:
+//   No dedicated upload endpoint in API docs.
+//   Images are compressed client-side to JPEG < 200KB,
+//   converted to base64, and sent in the POST/PUT body as the `image` field.
+//   Backend must accept base64 strings in the image field.
+//
+// ⚠️  500 ERROR ON GET /api/menu:
+//   This is a backend issue — the server is crashing when fetching menu.
+//   Check backend logs. Common causes:
+//     - DB connection issue
+//     - Unhandled schema error (missing field, bad ObjectId, etc.)
+//   Frontend now handles the 500 gracefully and shows a clear message.
+
+const API_BASE = "https://popseat.onrender.com/api";
+
+const authHeaders = () => ({
+  "Content-Type": "application/json",
+  Authorization : `Bearer ${
+    localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
+  }`,
+});
+
+const ensureArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+
+// FIX: Category — first letter always capital, rest lowercase per word
+const capitalizeCategory = (text) => {
+  if (!text) return "";
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/(^|\s)\w/g, (c) => c.toUpperCase());
 };
 
-/* ---------- AUTO CAPITALIZE ---------- */
-const capitalizeWords = (text) => {
-  return text.replace(/\b\w/g, (char) => char.toUpperCase());
-};
+const capitalizeWords = (text) =>
+  (text || "").replace(/\b\w/g, (c) => c.toUpperCase());
+
+// ── Image compression helper ──
+// Compresses uploaded file to JPEG, max 800px wide, quality 0.75
+// Returns base64 data URL string
+const compressImage = (file, maxWidth = 800, quality = 0.75) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Failed to read file."));
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Invalid image file."));
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const scale  = Math.min(1, maxWidth / img.width);
+        canvas.width  = img.width  * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+const MAX_FILE_SIZE_MB = 5;
+const ACCEPTED_TYPES   = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+const EMPTY_FORM = { name: "", description: "", category: "", image: "" };
 
 const Menu = () => {
+  const [items,        setItems]        = useState([]);
+  const [showModal,    setShowModal]    = useState(false);
+  const [editId,       setEditId]       = useState(null);
+  const [form,         setForm]         = useState(EMPTY_FORM);
+  const [sizes,        setSizes]        = useState([]);
+  const [toppings,     setToppings]     = useState([]);
+  const [dips,         setDips]         = useState([]);
+  const [tempSize,     setTempSize]     = useState({ name: "", price: "" });
+  const [tempTopping,  setTempTopping]  = useState({ name: "", price: "" });
+  const [tempDip,      setTempDip]      = useState({ name: "", price: "" });
+  const [loading,      setLoading]      = useState(true);
+  const [saving,       setSaving]       = useState(false);
+  const [imgLoading,   setImgLoading]   = useState(false);
+  const [error,        setError]        = useState("");
+  const [imgError,     setImgError]     = useState("");
+  const [confirmDel,   setConfirmDel]   = useState(null);
+  const fileInputRef = useRef(null);
 
-  const [items, setItems] = useState([]);
-
-  const [showModal, setShowModal] = useState(false);
-  const [editId, setEditId] = useState(null);
-
-  const emptyForm = { name: "", description: "", category: "", image: null };
-  const [form, setForm] = useState(emptyForm);
-
-  const [sizes, setSizes] = useState([]);
-  const [toppings, setToppings] = useState([]);
-  const [dips, setDips] = useState([]);
-
-  const [tempSize, setTempSize] = useState({ name: "", price: "" });
-  const [tempTopping, setTempTopping] = useState({ name: "", price: "", image: null });
-  const [tempDip, setTempDip] = useState({ name: "", price: "", image: null });
-
-  /* ---------- Load Menu From API ---------- */
-  const loadMenu = async () => {
-
+  /* ═══════════════════════════════════
+     GET /api/menu ✅
+     ⚠️ 500 error = backend crash — handled gracefully
+  ═══════════════════════════════════ */
+  const loadMenu = useCallback(async () => {
+    setLoading(true);
+    setError("");
     try {
+      const res  = await fetch(`${API_BASE}/menu`, { headers: authHeaders() });
 
-      const res = await fetch("http://localhost:5000/api/menu");
+      // ⚠️ Handle 500 server error explicitly
+      if (res.status === 500) {
+        setError("Server error (500) — the backend crashed while loading the menu. Please check your backend logs and try again.");
+        setLoading(false);
+        return;
+      }
+
       const data = await res.json();
 
       if (data.success) {
-
-        const cleanedItems = data.menu.map((item) => ({
-          id: item._id,
-          name: item.name,
-          description: item.description || "",
-          category: capitalizeWords(item.category || "Others"),
-          image: item.image,
-          sizes: [{ name: "Regular", price: item.price }],
-          availableToppings: ensureArray(item.topping),
-          availableDips: ensureArray(item.dips),
-          isAvailable: item.available
-        }));
-
-        setItems(cleanedItems);
-
+        const cleaned = (data.menu || [])
+          .filter((item) => !item.isDeleted)
+          .map((item) => ({
+            id               : item._id,
+            _id              : item._id,
+            name             : item.name,
+            description      : item.description || "",
+            // FIX: Always capitalize category correctly
+            category         : capitalizeCategory(item.category || "Others"),
+            image            : item.image || "",
+            sizes            : [{ name: item.size || "Regular", price: item.price }],
+            availableToppings: ensureArray(item.topping),
+            availableDips    : ensureArray(item.dips),
+            isAvailable      : item.available !== false,
+          }));
+        setItems(cleaned);
+        if (!cleaned.length) setError("");
+      } else {
+        setError(data.message || "Failed to load menu.");
       }
-
-    } catch (error) {
-
-      console.error("Menu API error:", error);
-
+    } catch (err) {
+      console.error("Menu API error:", err);
+      setError("Network error — could not reach the server. Please check your connection.");
+    } finally {
+      setLoading(false);
     }
-
-  };
-
-  useEffect(() => {
-    loadMenu();
   }, []);
 
-  /* ---------- Image Upload ---------- */
-  const handleImageUpload = (e, setter) => {
+  useEffect(() => { loadMenu(); }, [loadMenu]);
+
+  /* ═══════════════════════════════════
+     IMAGE UPLOAD — File System
+     Validates file type + size,
+     compresses to JPEG < ~200KB,
+     stores as base64 in form.image
+  ═══════════════════════════════════ */
+  const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => setter(reader.result);
-    reader.readAsDataURL(file);
-  };
+    setImgError("");
 
-  /* ---------- Add Options ---------- */
-  const addSize = () => {
-    if (!tempSize.name || !tempSize.price) return;
-
-    setSizes([
-      ...sizes,
-      {
-        name: capitalizeWords(tempSize.name),
-        price: Number(tempSize.price)
-      }
-    ]);
-
-    setTempSize({ name: "", price: "" });
-  };
-
-  const addTopping = () => {
-    if (!tempTopping.name || !tempTopping.price) return;
-
-    setToppings([
-      ...toppings,
-      {
-        ...tempTopping,
-        name: capitalizeWords(tempTopping.name),
-        price: Number(tempTopping.price)
-      }
-    ]);
-
-    setTempTopping({ name: "", price: "", image: null });
-  };
-
-  const addDip = () => {
-    if (!tempDip.name || !tempDip.price) return;
-
-    setDips([
-      ...dips,
-      {
-        ...tempDip,
-        name: capitalizeWords(tempDip.name),
-        price: Number(tempDip.price)
-      }
-    ]);
-
-    setTempDip({ name: "", price: "", image: null });
-  };
-
-  /* ---------- Save Item (Local Temporary) ---------- */
-  const handleSubmit = () => {
-
-    if (!form.name || !form.category || sizes.length === 0) {
-      alert("Add name, category and at least one size");
+    // Validate type
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      setImgError("Only JPG, PNG, WebP, or GIF files are allowed.");
+      e.target.value = "";
       return;
     }
 
-    const newItem = {
-      id: editId || Date.now(),
-      ...form,
-      name: capitalizeWords(form.name),
-      category: capitalizeWords(form.category),
-      description: capitalizeWords(form.description),
-      sizes,
-      availableToppings: toppings,
-      availableDips: dips,
-      isAvailable: true
-    };
-
-    let updated;
-
-    if (editId) {
-      updated = items.map((i) => (i.id === editId ? newItem : i));
-    } else {
-      updated = [...items, newItem];
+    // Validate size (before compression)
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      setImgError(`File too large. Max ${MAX_FILE_SIZE_MB}MB allowed.`);
+      e.target.value = "";
+      return;
     }
 
-    setItems(updated);
-
-    closeModal();
+    setImgLoading(true);
+    try {
+      const compressed = await compressImage(file);
+      setForm((prev) => ({ ...prev, image: compressed }));
+    } catch (err) {
+      setImgError("Could not process image. Please try a different file.");
+    } finally {
+      setImgLoading(false);
+      e.target.value = ""; // reset so same file can be re-selected
+    }
   };
 
-  /* ---------- CRUD ---------- */
+  const removeImage = () => {
+    setForm((prev) => ({ ...prev, image: "" }));
+    setImgError("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
+  /* ── Size / topping / dip helpers ── */
+  const addSize = () => {
+    if (!tempSize.name.trim() || !tempSize.price) return;
+    setSizes([...sizes, { name: capitalizeWords(tempSize.name), price: Number(tempSize.price) }]);
+    setTempSize({ name: "", price: "" });
+  };
+  const removeSize    = (i) => setSizes(sizes.filter((_, idx) => idx !== i));
+
+  const addTopping = () => {
+    if (!tempTopping.name.trim() || !tempTopping.price) return;
+    setToppings([...toppings, { name: capitalizeWords(tempTopping.name), price: Number(tempTopping.price) }]);
+    setTempTopping({ name: "", price: "" });
+  };
+  const removeTopping = (i) => setToppings(toppings.filter((_, idx) => idx !== i));
+
+  const addDip = () => {
+    if (!tempDip.name.trim() || !tempDip.price) return;
+    setDips([...dips, { name: capitalizeWords(tempDip.name), price: Number(tempDip.price) }]);
+    setTempDip({ name: "", price: "" });
+  };
+  const removeDip = (i) => setDips(dips.filter((_, idx) => idx !== i));
+
+  /* ── Validation ── */
+  const validate = () => {
+    if (!form.name?.trim())     return "Item name is required.";
+    if (!form.category?.trim()) return "Category is required.";
+    if (sizes.length === 0)     return "Add at least one size with a price.";
+    return null;
+  };
+
+  /* ── Build API payload ── */
+  const buildPayload = () => ({
+    name       : capitalizeWords(form.name),
+    // FIX: category stored lowercase in DB, displayed capitalized in UI
+    category   : form.category.trim().toLowerCase(),
+    description: capitalizeWords(form.description),
+    price      : sizes[0]?.price || 0,
+    size       : sizes[0]?.name  || "Regular",
+    image      : form.image || "",   // base64 JPEG string
+    available  : true,
+    topping    : toppings.map(({ name, price }) => ({ name, price })),
+    dips       : dips.map(({ name, price })     => ({ name, price })),
+  });
+
+  /* ═══════════════════════════════════
+     POST /api/menu ✅  |  PUT /api/menu/:id ✅
+  ═══════════════════════════════════ */
+  const handleSubmit = async () => {
+    setError("");
+    const err = validate();
+    if (err) { setError(err); return; }
+
+    setSaving(true);
+    const payload = buildPayload();
+
+    try {
+      const url    = editId ? `${API_BASE}/menu/${editId}` : `${API_BASE}/menu`;
+      const method = editId ? "PUT" : "POST";
+      const res    = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
+      const data   = await res.json();
+
+      if (!data.success) {
+        setError(data.message || `Failed to ${editId ? "update" : "create"} item.`);
+        setSaving(false);
+        return;
+      }
+
+      const saved     = data.menu;
+      const localItem = {
+        id               : saved._id,
+        _id              : saved._id,
+        name             : saved.name,
+        description      : saved.description || "",
+        category         : capitalizeCategory(saved.category || "Others"),
+        image            : saved.image || "",
+        sizes            : [{ name: saved.size || "Regular", price: saved.price }],
+        availableToppings: ensureArray(saved.topping),
+        availableDips    : ensureArray(saved.dips),
+        isAvailable      : saved.available !== false,
+      };
+
+      setItems((prev) =>
+        editId
+          ? prev.map((i) => (i.id === editId ? localItem : i))
+          : [...prev, localItem]
+      );
+      closeModal();
+    } catch (err) {
+      console.error("Save error:", err);
+      setError("Network error. Could not save item.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* ═══════════════════════════════════
+     DELETE /api/menu/:id ✅
+  ═══════════════════════════════════ */
+  const handleDeleteConfirmed = async () => {
+    const { id } = confirmDel;
+    setConfirmDel(null);
+    setError("");
+    try {
+      const res  = await fetch(`${API_BASE}/menu/${id}`, {
+        method: "DELETE", headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (!data.success) { setError(data.message || "Failed to delete item."); return; }
+      setItems((prev) => prev.filter((i) => i.id !== id));
+    } catch (err) {
+      console.error("Delete error:", err);
+      setError("Network error. Could not delete item.");
+    }
+  };
+
+  /* ═══════════════════════════════════
+     PUT /api/menu/:id ✅ — toggle availability
+  ═══════════════════════════════════ */
+  const toggleAvailability = async (id) => {
+    const item   = items.find((i) => i.id === id);
+    const newVal = !item?.isAvailable;
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, isAvailable: newVal } : i)));
+    try {
+      const res  = await fetch(`${API_BASE}/menu/${id}`, {
+        method: "PUT", headers: authHeaders(),
+        body  : JSON.stringify({ available: newVal }),
+      });
+      const data = await res.json();
+      if (!data.success)
+        setItems((prev) => prev.map((i) => (i.id === id ? { ...i, isAvailable: !newVal } : i)));
+    } catch {
+      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, isAvailable: !newVal } : i)));
+    }
+  };
+
+  /* ── Modal helpers ── */
   const openAddModal = () => {
     setEditId(null);
-    setForm(emptyForm);
+    setForm(EMPTY_FORM);
     setSizes([]);
     setToppings([]);
     setDips([]);
+    setError("");
+    setImgError("");
     setShowModal(true);
   };
 
-  const closeModal = () => setShowModal(false);
+  const closeModal = () => {
+    setShowModal(false);
+    setError("");
+    setImgError("");
+  };
 
   const handleEdit = (item) => {
-
     setEditId(item.id);
-    setForm(item);
+    setForm({ name: item.name, description: item.description, category: item.category, image: item.image || "" });
     setSizes(ensureArray(item.sizes));
     setToppings(ensureArray(item.availableToppings));
     setDips(ensureArray(item.availableDips));
-
+    setError("");
+    setImgError("");
     setShowModal(true);
-
   };
 
-  const handleDelete = (id) => {
-    const filtered = items.filter((i) => i.id !== id);
-    setItems(filtered);
-  };
-
-  /* ---------- TOGGLE AVAILABILITY ---------- */
-  const toggleAvailability = (id) => {
-
-    const updated = items.map((item) =>
-      item.id === id
-        ? { ...item, isAvailable: !item.isAvailable }
-        : item
-    );
-
-    setItems(updated);
-
-  };
-
-  /* ---------- GROUP BY CATEGORY ---------- */
-
+  /* ── Group by category ── */
   const groupedItems = items.reduce((acc, item) => {
-
     const key = item.category || "Others";
-
     if (!acc[key]) acc[key] = [];
-
     acc[key].push(item);
-
     return acc;
-
   }, {});
 
-  return (
+  /* ── Loading ── */
+  if (loading) return (
+    <div className="menu-page">
+      <div className="menu-header"><h2>🍔 Food Menu</h2></div>
+      <div className="menu-loading">
+        <div className="menu-spinner" />
+        <p>Loading menu...</p>
+      </div>
+    </div>
+  );
 
+  return (
     <div className="menu-page">
 
+      {/* HEADER */}
       <div className="menu-header">
-
         <h2>🍔 Food Menu</h2>
-
-        <button className="add-btn" onClick={openAddModal}>
-          + Add Item
-        </button>
-
+        <div className="menu-header-actions">
+          <button className="menu-refresh-btn" onClick={loadMenu}>↻ Refresh</button>
+          <button className="add-btn" onClick={openAddModal}>+ Add Item</button>
+        </div>
       </div>
 
-
-      {Object.keys(groupedItems).map((category) => (
-
-        <div key={category}>
-
-          <h2 className="category-title">
-            {category}
-          </h2>
-
-          <div className="menu-grid">
-
-            {groupedItems[category].map((item) => (
-
-              <div
-                key={item.id}
-                className={`menu-card ${item.isAvailable === false ? "disabled" : ""}`}
-              >
-
-                {item.image && (
-                  <img src={item.image} alt={item.name} />
-                )}
-
-                <h3>{item.name}</h3>
-
-                <p>{item.description}</p>
-
-                <div className="card-sizes">
-
-                  {ensureArray(item.sizes).map((s, i) => (
-
-                    <span key={i}>
-                      {s.name} ₹{s.price}
-                    </span>
-
-                  ))}
-
-                </div>
-
-                <button
-                  className="edit-btn"
-                  onClick={() => handleEdit(item)}
-                >
-                  Edit
-                </button>
-
-                <button
-                  className="delete-btn"
-                  onClick={() => handleDelete(item.id)}
-                >
-                  Delete
-                </button>
-
-                <button
-                  className="toggle-btn"
-                  onClick={() => toggleAvailability(item.id)}
-                >
-                  {item.isAvailable === false ? "Enable" : "Disable"}
-                </button>
-
-              </div>
-
-            ))}
-
-          </div>
-
+      {/* ERROR BANNER */}
+      {error && !showModal && (
+        <div className="menu-error-bar">
+          <span>{error}</span>
+          <button className="menu-error-close" onClick={() => setError("")}>✕</button>
         </div>
+      )}
 
+      {/* EMPTY STATE */}
+      {items.length === 0 && !error && (
+        <div className="menu-empty">
+          <div className="menu-empty-icon">🍿</div>
+          <p>No menu items yet. Click <strong>"+ Add Item"</strong> to add one.</p>
+        </div>
+      )}
+
+      {/* MENU GRID — grouped by category */}
+      {Object.keys(groupedItems).sort().map((category) => (
+        <div key={category}>
+          <h2 className="category-title">{category}</h2>
+          <div className="menu-grid">
+            {groupedItems[category].map((item) => (
+              <div key={item.id} className={`menu-card ${!item.isAvailable ? "disabled" : ""}`}>
+                <div className="menu-card-img-wrap">
+                  {item.image ? (
+                    <img src={item.image} alt={item.name}
+                      onError={(e) => { e.target.style.display = "none"; }} />
+                  ) : (
+                    <div className="menu-card-img-placeholder">🍽️</div>
+                  )}
+                  {!item.isAvailable && (
+                    <span className="menu-unavailable-badge">Unavailable</span>
+                  )}
+                </div>
+                <div className="menu-card-body">
+                  <h3>{item.name}</h3>
+                  {item.description && <p className="menu-card-desc">{item.description}</p>}
+                  <div className="card-sizes">
+                    {ensureArray(item.sizes).map((s) => (
+                      <span key={`${s.name}-${s.price}`}>{s.name} · ₹{s.price}</span>
+                    ))}
+                  </div>
+                  {(ensureArray(item.availableToppings).length > 0 || ensureArray(item.availableDips).length > 0) && (
+                    <p className="menu-extras-note">
+                      {ensureArray(item.availableToppings).length > 0 &&
+                        `${item.availableToppings.length} topping${item.availableToppings.length > 1 ? "s" : ""}`}
+                      {ensureArray(item.availableToppings).length > 0 && ensureArray(item.availableDips).length > 0 && " · "}
+                      {ensureArray(item.availableDips).length > 0 &&
+                        `${item.availableDips.length} dip${item.availableDips.length > 1 ? "s" : ""}`}
+                    </p>
+                  )}
+                  <div className="menu-card-actions">
+                    <button className="edit-btn"   onClick={() => handleEdit(item)}>✏ Edit</button>
+                    <button className="delete-btn" onClick={() => setConfirmDel({ id: item.id, name: item.name })}>🗑 Delete</button>
+                    <button
+                      className={`toggle-btn ${item.isAvailable ? "toggle-disable" : "toggle-enable"}`}
+                      onClick={() => toggleAvailability(item.id)}
+                    >
+                      {item.isAvailable ? "Disable" : "Enable"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ))}
 
+      {/* DELETE CONFIRM MODAL */}
+      {confirmDel && (
+        <div className="modal-overlay" onClick={() => setConfirmDel(null)}>
+          <div className="modal-box modal-box--confirm" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-icon">🗑️</div>
+            <h3 className="confirm-title">Delete "{confirmDel.name}"?</h3>
+            <p className="confirm-sub">This action cannot be undone. The item will be permanently removed from the menu.</p>
+            <div className="modal-actions">
+              <button className="modal-btn modal-btn--cancel" onClick={() => setConfirmDel(null)}>Cancel</button>
+              <button className="modal-btn modal-btn--danger" onClick={handleDeleteConfirmed}>Yes, Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
 
+      {/* ADD / EDIT MODAL */}
       {showModal && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
 
-        <div className="modal-overlay">
+            <div className="modal-header">
+              <h3 className="modal-title">{editId ? "Edit Menu Item" : "Add Menu Item"}</h3>
+              <button className="modal-close-btn" onClick={closeModal}>✕</button>
+            </div>
 
-          <div className="modal-box">
+            {error && <div className="modal-error">{error}</div>}
 
-            <h3>{editId ? "Edit Item" : "Add Item"}</h3>
+            {/* BASIC INFO */}
+            <div className="modal-section">
+              <h4 className="modal-section-title">Basic Info</h4>
 
-            <input
-              placeholder="Item Name"
-              value={form.name}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  name: capitalizeWords(e.target.value)
-                })
-              }
-            />
+              <label className="modal-label">Item Name <span className="modal-required">*</span></label>
+              <input className="modal-input" placeholder="e.g. Cheese Popcorn"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: capitalizeWords(e.target.value) })} />
 
-            <input
-              placeholder="Category"
-              value={form.category}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  category: capitalizeWords(e.target.value)
-                })
-              }
-            />
+              {/* FIX: category auto-capitalizes first letter of each word */}
+              <label className="modal-label">
+                Category <span className="modal-required">*</span>
+                <span className="modal-label-hint"> (auto-capitalized)</span>
+              </label>
+              <input className="modal-input" placeholder="e.g. Popcorn, Drinks, Snacks"
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: capitalizeCategory(e.target.value) })} />
 
-            <input
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  description: capitalizeWords(e.target.value)
-                })
-              }
-            />
+              <label className="modal-label">Description</label>
+              <input className="modal-input" placeholder="Short description (optional)"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: capitalizeWords(e.target.value) })} />
+            </div>
 
-            <input
-              type="file"
-              onChange={(e) =>
-                handleImageUpload(e, (img) =>
-                  setForm({ ...form, image: img })
-                )
-              }
-            />
+            {/* IMAGE UPLOAD — File System */}
+            <div className="modal-section">
+              <h4 className="modal-section-title">Item Image</h4>
 
-            {/* Sizes */}
-            <h4>Sizes</h4>
-
-            <div className="option-preview">
-
-              {sizes.map((s, i) => (
-                <div key={i} className="option-chip">
-                  {s.name} ₹{s.price}
+              {/* Image preview */}
+              {form.image ? (
+                <div className="img-upload-preview">
+                  <img src={form.image} alt="preview" />
+                  <div className="img-upload-info">
+                    <span className="img-upload-status">✅ Image ready</span>
+                    <button className="img-remove-btn" onClick={removeImage}>Remove</button>
+                  </div>
                 </div>
-              ))}
+              ) : (
+                <div
+                  className={`img-dropzone ${imgLoading ? "img-dropzone--loading" : ""}`}
+                  onClick={() => !imgLoading && fileInputRef.current?.click()}
+                >
+                  {imgLoading ? (
+                    <>
+                      <div className="menu-spinner" />
+                      <p>Compressing image...</p>
+                    </>
+                  ) : (
+                    <>
+                      <span className="img-dropzone-icon">📷</span>
+                      <p className="img-dropzone-text">Click to upload image</p>
+                      <p className="img-dropzone-hint">JPG, PNG, WebP or GIF · Max {MAX_FILE_SIZE_MB}MB</p>
+                    </>
+                  )}
+                </div>
+              )}
 
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                style={{ display: "none" }}
+                onChange={handleImageUpload}
+              />
+
+              {imgError && <p className="img-error">{imgError}</p>}
+
+              {/* Change image button when preview shown */}
+              {form.image && !imgLoading && (
+                <button className="img-change-btn" onClick={() => fileInputRef.current?.click()}>
+                  📷 Change Image
+                </button>
+              )}
             </div>
 
-            <div className="inline-row">
+            {/* SIZES */}
+            <div className="modal-section">
+              <h4 className="modal-section-title">
+                Sizes <span className="modal-section-note">* first size = price sent to API</span>
+              </h4>
+              <div className="option-preview">
+                {sizes.map((s, i) => (
+                  <div key={`${s.name}-${s.price}-${i}`} className="option-chip">
+                    {s.name} · ₹{s.price}
+                    <button className="chip-remove" onClick={() => removeSize(i)}>✕</button>
+                  </div>
+                ))}
+              </div>
+              <div className="inline-row">
+                <input className="modal-input inline-input" placeholder="Size name"
+                  value={tempSize.name}
+                  onChange={(e) => setTempSize({ ...tempSize, name: capitalizeWords(e.target.value) })} />
+                <input className="modal-input inline-input" placeholder="Price" type="number" min="0"
+                  value={tempSize.price}
+                  onChange={(e) => setTempSize({ ...tempSize, price: e.target.value })} />
+                <button className="inline-add-btn" onClick={addSize}>Add</button>
+              </div>
+            </div>
 
-              <input
-                placeholder="Size"
-                value={tempSize.name}
-                onChange={(e) =>
-                  setTempSize({
-                    ...tempSize,
-                    name: capitalizeWords(e.target.value)
-                  })
-                }
-              />
+            {/* TOPPINGS */}
+            <div className="modal-section">
+              <h4 className="modal-section-title">Toppings <span className="modal-section-note">optional</span></h4>
+              <div className="option-preview">
+                {toppings.map((t, i) => (
+                  <div key={`${t.name}-${t.price}-${i}`} className="option-chip">
+                    {t.name} +₹{t.price}
+                    <button className="chip-remove" onClick={() => removeTopping(i)}>✕</button>
+                  </div>
+                ))}
+              </div>
+              <div className="inline-row">
+                <input className="modal-input inline-input" placeholder="Topping name"
+                  value={tempTopping.name}
+                  onChange={(e) => setTempTopping({ ...tempTopping, name: capitalizeWords(e.target.value) })} />
+                <input className="modal-input inline-input" placeholder="Price" type="number" min="0"
+                  value={tempTopping.price}
+                  onChange={(e) => setTempTopping({ ...tempTopping, price: e.target.value })} />
+                <button className="inline-add-btn" onClick={addTopping}>Add</button>
+              </div>
+            </div>
 
-              <input
-                placeholder="Price"
-                value={tempSize.price}
-                onChange={(e) =>
-                  setTempSize({
-                    ...tempSize,
-                    price: e.target.value
-                  })
-                }
-              />
+            {/* DIPS */}
+            <div className="modal-section">
+              <h4 className="modal-section-title">Dips <span className="modal-section-note">optional</span></h4>
+              <div className="option-preview">
+                {dips.map((d, i) => (
+                  <div key={`${d.name}-${d.price}-${i}`} className="option-chip">
+                    {d.name} +₹{d.price}
+                    <button className="chip-remove" onClick={() => removeDip(i)}>✕</button>
+                  </div>
+                ))}
+              </div>
+              <div className="inline-row">
+                <input className="modal-input inline-input" placeholder="Dip name"
+                  value={tempDip.name}
+                  onChange={(e) => setTempDip({ ...tempDip, name: capitalizeWords(e.target.value) })} />
+                <input className="modal-input inline-input" placeholder="Price" type="number" min="0"
+                  value={tempDip.price}
+                  onChange={(e) => setTempDip({ ...tempDip, price: e.target.value })} />
+                <button className="inline-add-btn" onClick={addDip}>Add</button>
+              </div>
+            </div>
 
-              <button onClick={addSize}>
-                Add
+            {/* ACTION BUTTONS */}
+            <div className="modal-actions">
+              <button className="modal-btn modal-btn--cancel" onClick={closeModal} disabled={saving}>
+                Cancel
               </button>
-
+              <button className="modal-btn modal-btn--save" onClick={handleSubmit} disabled={saving || imgLoading}>
+                {saving ? (
+                  <span className="modal-saving">
+                    <span className="modal-spinner" />
+                    Saving...
+                  </span>
+                ) : (
+                  editId ? "Update Item" : "Add Item"
+                )}
+              </button>
             </div>
-
-            <button onClick={handleSubmit}>
-              Save Item
-            </button>
-
-            <button onClick={closeModal}>
-              Cancel
-            </button>
 
           </div>
-
         </div>
-
       )}
 
     </div>
-
   );
-
 };
 
 export default Menu;
