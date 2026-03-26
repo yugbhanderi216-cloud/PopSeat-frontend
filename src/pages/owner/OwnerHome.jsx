@@ -9,11 +9,7 @@ import logo from "../PopSeat_Logo.png";
 //   DELETE /api/owner/delete-worker/:id   ✅ confirmed
 //   POST   /api/owner/create-worker       ✅ confirmed
 //   GET    /api/subscription/my           ✅ confirmed
-//
-// ❌ MISSING API (no delete cinema endpoint in API docs):
-//   DELETE /api/cinema/:id  — does NOT exist yet.
-//   handleDeleteTheater currently only removes from local UI view.
-//   Ask backend to add this route when ready.
+//   DELETE /api/cinema/:id               ✅ confirmed
 
 const API_BASE = "https://popseat.onrender.com";
 
@@ -51,17 +47,15 @@ const ConfirmModal = ({ confirmDelete, onCancel, onConfirm }) => {
         maxWidth: 320, textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
       }}>
         <p style={{ marginBottom: 8, fontSize: 15 }}>
-          {type === "theater"
-            ? `Remove "${label}" from your view?`
-            : `Delete worker "${label}"?`}
+         {type === "theater" ? `Delete theater "${label}"?` : `Delete worker "${label}"?`}
         </p>
         {/* FIX 5: Warn user that theater delete is UI-only (no API yet) */}
-        {type === "theater" && (
+        {/* {type === "theater" && (
           <p style={{ fontSize: 12, color: "#e65100", marginBottom: 16 }}>
             ⚠️ This only removes the theater from your current view.
             The theater record will still exist in the database until a delete API is available.
           </p>
-        )}
+        )} */}
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
           <button
             onClick={onCancel}
@@ -332,13 +326,27 @@ const OwnerHome = () => {
      FIX 5: Only removes from local UI view.
      Backend needs: DELETE /api/cinema/:id
   ═══════════════════════════════ */
-  const handleDeleteTheater = (cinemaId) => {
-    setConfirmDelete(null);
-    setTheaters((prev) => prev.filter((t) => t._id !== cinemaId));
-    // NOTE: This is UI-only. Theater still exists in DB.
-    // When DELETE /api/cinema/:id is ready, call it here.
-  };
-
+ const handleDeleteTheater = async (cinemaId) => {
+  setConfirmDelete(null);
+  setDeleteLoading((prev) => ({ ...prev, [cinemaId]: true }));
+  try {
+    const res  = await fetch(`${API_BASE}/api/cinema/${cinemaId}`, {
+      method : "DELETE",
+      headers: authHeaders(),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setTheaters((prev) => prev.filter((t) => t._id !== cinemaId));
+    } else {
+      setError(data.message || "Failed to delete theater.");
+    }
+  } catch (err) {
+    console.error("Delete theater error:", err);
+    setError("Network error. Could not delete theater.");
+  } finally {
+    setDeleteLoading((prev) => ({ ...prev, [cinemaId]: false }));
+  }
+};
   /* ── Open dashboard ── */
   const openDashboard = (theater) => {
     if (!theater.isActive) {
