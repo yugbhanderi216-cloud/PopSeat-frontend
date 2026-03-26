@@ -5,176 +5,143 @@ import "./QRGenerator.css";
 
 // ─────────────────────────────────────────────────────────────
 // APIs USED:
-//   GET  /api/cinema          ✅ — load owner's theater
-//   GET  /api/hall            ✅ — load halls for theaterId
-//   POST /api/seat            ✅ — create seat, returns qrCode + _id
-//   GET  /api/seat            ✅ — list existing seats (dedup check)
+//   GET  /api/cinema/:theaterId  ✅ — load one specific theater
+//   GET  /api/hall               ✅ — load halls for theaterId
+//   POST /api/seat               ✅ — create seat, returns _id
+//   GET  /api/seat               ✅ — list existing seats (dedup)
 //
-// QR URL now points to production CustomerWelcome route:
-//   /customer/welcome?seatId=<_id from POST /api/seat>
-//   CustomerWelcome calls GET /api/seat/:id to load theater info
+// QR URL points to CustomerWelcome route:
+//   /customer/welcome?seatId=<_id>&screen=<screenNo>&seat=<seatNumber>
+//   CustomerWelcome calls GET /api/seat/:id to load theater info.
 // ─────────────────────────────────────────────────────────────
 
 const API_BASE = "https://popseat.onrender.com/api";
-
-// Production base URL for QR codes — update if your domain changes
-const APP_BASE  = window.location.origin; // e.g. https://popseat.vercel.app
+const APP_BASE = window.location.origin;
 
 const authHeaders = () => ({
-  "Content-Type" : "application/json",
-  Authorization  : `Bearer ${
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${
     localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
   }`,
 });
 
 const QRGenerator = () => {
-
   const { state } = useLocation();
   const navigate  = useNavigate();
 
-  // FIX: was "OWNER"/"BRANCH" — API returns "owner"/"worker" (lowercase)
   const ownerEmail = localStorage.getItem("ownerEmail") || localStorage.getItem("email") || "";
   const role       = (localStorage.getItem("ownerRole") || localStorage.getItem("role") || "").toLowerCase();
 
-  const [theaterData, setTheaterData] = useState(null);
-  const [halls,       setHalls]       = useState([]);       // from GET /api/hall
-  const [selectedHall,setSelectedHall]= useState("");       // hallId for POST /api/seat
-  const [screenNo,    setScreenNo]    = useState("");
-  const [generatedSeats, setGeneratedSeats] = useState([]); // { seatNumber, _id, qrCode }
+  // Resolve theaterId once — prefer navigation state, fall back to localStorage
+  const theaterId =
+    state?.theaterId ||
+    localStorage.getItem("activeOwnerTheaterId") ||
+    localStorage.getItem("customerTheaterId") ||
+    "";
 
-  const [rowName,    setRowName]    = useState("");
-  const [seatCount,  setSeatCount]  = useState("");
-  const [layout,     setLayout]     = useState([]);
+  const [theaterData,    setTheaterData]    = useState(null);
+  const [halls,          setHalls]          = useState([]);
+  const [selectedHall,   setSelectedHall]   = useState("");
+  const [screenNo,       setScreenNo]       = useState("");
+  const [generatedSeats, setGeneratedSeats] = useState([]);
+
+  const [rowName,   setRowName]   = useState("");
+  const [seatCount, setSeatCount] = useState("");
+  const [layout,    setLayout]    = useState([]);
 
   const [theaterLoading, setTheaterLoading] = useState(true);
   const [hallLoading,    setHallLoading]    = useState(false);
   const [generating,     setGenerating]     = useState(false);
   const [error,          setError]          = useState("");
-  const [progress,       setProgress]       = useState(""); // "Creating seat 3/12..."
+  const [progress,       setProgress]       = useState("");
 
-  /* ── Auth guard ── */
-
+  // ── Auth guard ──
   useEffect(() => {
     if (!ownerEmail || (role !== "owner" && role !== "worker")) {
       navigate("/login", { replace: true });
     }
   }, [ownerEmail, role, navigate]);
 
-  /* ===============================
-     LOAD THEATER — GET /api/cinema
-     FIX: was reading from localStorage.getItem("theaters")
-          which is a local array never synced with server
-  =============================== */
-
+  // ─────────────────────────────────────────────────────────
+  //  LOAD THEATER — GET /api/cinema/:theaterId
+  //
+  //  FIX: was calling GET /api/cinema (all cinemas) and then
+  //  filtering by email — unreliable if owner has multiple
+  //  theaters or if email fields differ across records.
+  //  theaterId is already available from navigation state and
+  //  localStorage, so we call the specific endpoint directly.
+  // ─────────────────────────────────────────────────────────
   useEffect(() => {
-
     const fetchTheater = async () => {
-
       setTheaterLoading(true);
       setError("");
 
-      // theaterId can come from navigation state or localStorage
-      const theaterId =
-        state?.theaterId                              ||
-        localStorage.getItem("activeOwnerTheaterId") ||
-        localStorage.getItem("customerTheaterId")    || "";
+      if (!theaterId) {
+        setError("No theater selected. Please go back and select a theater.");
+        setTheaterLoading(false);
+        return;
+      }
 
       try {
-
-        const res  = await fetch(`${API_BASE}/cinema`, {
+        const res  = await fetch(`${API_BASE}/cinema/${theaterId}`, {
           headers: authHeaders(),
         });
         const data = await res.json();
 
-        if (data.success) {
-
-          let theater = null;
-
-          if (theaterId) {
-            // Prefer exact ID match if we have one
-            theater = data.cinemas.find((c) => c._id === theaterId);
-          }
-
-          if (!theater) {
-            // Fall back to owner email match
-            theater = data.cinemas.find(
-              (c) =>
-                c.email?.toLowerCase()      === ownerEmail.toLowerCase() ||
-                c.ownerEmail?.toLowerCase() === ownerEmail.toLowerCase()
-            );
-          }
-
-          if (theater) {
-            setTheaterData(theater);
-          } else {
-            setError("No theater found for your account.");
-          }
-
+        if (res.ok && data.success && data.cinema) {
+          setTheaterData(data.cinema);
+        } else if (res.status === 404) {
+          setError("Theater not found. Please go back and select a valid theater.");
         } else {
           setError(data.message || "Failed to load theater.");
         }
-
       } catch (err) {
         console.error("Theater fetch error:", err);
         setError("Network error. Could not load theater.");
       } finally {
         setTheaterLoading(false);
       }
-
     };
 
     if (ownerEmail) fetchTheater();
+  }, [theaterId, ownerEmail]);
 
-  }, [ownerEmail, state]);
-
-  /* ===============================
-     LOAD HALLS — GET /api/hall
-     Called after theater is loaded.
-     hallId is required for POST /api/seat.
-  =============================== */
-
+  // ─────────────────────────────────────────────────────────
+  //  LOAD HALLS — GET /api/hall?cinemaId=:theaterId
+  // ─────────────────────────────────────────────────────────
   const loadHalls = useCallback(async (cinemaId) => {
-
     setHallLoading(true);
-
     try {
-
       const res  = await fetch(`${API_BASE}/hall?cinemaId=${cinemaId}`, {
         headers: authHeaders(),
       });
       const data = await res.json();
 
       if (data.success) {
-        // Filter halls belonging to this cinema
         const cinemaHalls = (data.halls || []).filter(
-          (h) =>
-            h.cinemaId === cinemaId ||
-            h.cinemaId?._id === cinemaId
+          (h) => h.cinemaId === cinemaId || h.cinemaId?._id === cinemaId
         );
         setHalls(cinemaHalls);
+        // Auto-select the only hall if there is just one
         if (cinemaHalls.length === 1) {
-          // Auto-select if only one hall
           setSelectedHall(cinemaHalls[0]._id);
           setScreenNo(cinemaHalls[0].hallNumber || "1");
         }
       }
-
     } catch (err) {
       console.warn("Hall fetch error:", err);
     } finally {
       setHallLoading(false);
     }
-
   }, []);
 
   useEffect(() => {
-    if (theaterData?._id) {
-      loadHalls(theaterData._id);
-    }
+    if (theaterData?._id) loadHalls(theaterData._id);
   }, [theaterData, loadHalls]);
 
-  /* ── Row builder ── */
-
+  // ─────────────────────────────────────────────────────────
+  //  ROW BUILDER
+  // ─────────────────────────────────────────────────────────
   const addRow = () => {
     if (!rowName.trim() || !seatCount) {
       setError("Enter both a row name and seat count.");
@@ -195,30 +162,21 @@ const QRGenerator = () => {
 
   const removeRow = (i) => setLayout(layout.filter((_, idx) => idx !== i));
 
-  /* ===============================
-     GENERATE SEATS — POST /api/seat ✅
-     FIX: was generating QR codes client-side with localhost URL.
-          Now creates each seat on server via POST /api/seat,
-          which returns the real _id and a server-generated qrCode.
-          The QR URL uses the real seat _id so CustomerWelcome
-          can call GET /api/seat/:id successfully.
-  =============================== */
-
+  // ─────────────────────────────────────────────────────────
+  //  GENERATE SEATS — POST /api/seat (one per seat)
+  // ─────────────────────────────────────────────────────────
   const generateSeats = async () => {
-
     setError("");
 
     if (!selectedHall) {
       setError("Please select a hall / screen first.");
       return;
     }
-
     if (layout.length === 0) {
       setError("Please add at least one row.");
       return;
     }
 
-    // Build flat seat number list from layout
     const seatNumbers = [];
     layout.forEach((r) => {
       for (let i = 1; i <= r.count; i++) {
@@ -233,46 +191,31 @@ const QRGenerator = () => {
     let failed    = 0;
 
     for (let i = 0; i < seatNumbers.length; i++) {
-
       const seatNumber = seatNumbers[i];
-      setProgress(`Creating seat ${i + 1} / ${seatNumbers.length}...`);
+      setProgress(`Creating seat ${i + 1} / ${seatNumbers.length}…`);
 
       try {
-
         const res  = await fetch(`${API_BASE}/seat`, {
-          method  : "POST",
-          headers : authHeaders(),
-          body    : JSON.stringify({
-            hallId    : selectedHall,
-            seatNumber,
-          }),
+          method:  "POST",
+          headers: authHeaders(),
+          body:    JSON.stringify({ hallId: selectedHall, seatNumber }),
         });
-
         const data = await res.json();
 
         if (data.success && data.seat) {
-
-          // FIX: QR URL uses production origin + real seat _id
-          // CustomerWelcome reads seatId param → GET /api/seat/:id
           const qrUrl = `${APP_BASE}/customer/welcome?seatId=${data.seat._id}&screen=${screenNo}&seat=${seatNumber}`;
-
           created.push({
             seatNumber,
-            _id    : data.seat._id,
-            // Use server-generated QR if available, else build our own URL
-            qrUrl  : data.seat.qrCode || qrUrl,
-            qrValue: qrUrl,   // always use our structured URL for QRCodeCanvas
+            _id:      data.seat._id,
+            qrValue:  qrUrl,
           });
-
         } else {
           failed++;
         }
-
       } catch (err) {
         console.error(`Failed to create seat ${seatNumber}:`, err);
         failed++;
       }
-
     }
 
     setGeneratedSeats(created);
@@ -282,11 +225,9 @@ const QRGenerator = () => {
     if (failed > 0) {
       setError(`${failed} seat(s) could not be created. The rest were saved.`);
     }
-
   };
 
-  /* ── Clear ── */
-
+  // ── Clear ──
   const clearLayout = () => {
     setLayout([]);
     setGeneratedSeats([]);
@@ -298,20 +239,19 @@ const QRGenerator = () => {
     setProgress("");
   };
 
-  /* ── Loading ── */
-
+  // ─────────────────────────────────────────────────────────
+  //  LOADING / ERROR STATES
+  // ─────────────────────────────────────────────────────────
   if (theaterLoading) {
     return (
       <div className="qr-page">
         <h2>🎟 QR Generator</h2>
         <p style={{ color: "#888", textAlign: "center", padding: 40 }}>
-          Loading theater...
+          Loading theater…
         </p>
       </div>
     );
   }
-
-  /* ── Auth / no theater ── */
 
   if (role !== "owner" && role !== "worker") {
     return <h3 style={{ padding: 20 }}>Access Denied</h3>;
@@ -322,43 +262,44 @@ const QRGenerator = () => {
       <div className="qr-page">
         <h2>🎟 QR Generator</h2>
         <p style={{ color: "#e55", textAlign: "center", padding: 40 }}>
-          {error || "No theater found. Please register a theater first."}
+          {error || "No theater found. Please go back and select a theater."}
         </p>
+        <button
+          onClick={() => navigate(-1)}
+          style={{ display: "block", margin: "0 auto", padding: "8px 20px", cursor: "pointer" }}
+        >
+          ← Go Back
+        </button>
       </div>
     );
   }
 
-  /* ── Render ── */
-
+  // ─────────────────────────────────────────────────────────
+  //  RENDER
+  // ─────────────────────────────────────────────────────────
   return (
-
     <div className="qr-page">
-
       <h2>🎟 QR Generator</h2>
 
-      {/* THEATER INFO */}
+      {/* Theater info banner */}
       <div style={{
         background: "#f9f9f9", border: "1px solid #eee", borderRadius: 8,
         padding: "10px 16px", marginBottom: 16, fontSize: 13, color: "#555",
       }}>
-        {/* FIX: was theaterData.branch — API field is branchName */}
         🎬 <strong>{theaterData.name}</strong>
         {theaterData.branchName && ` — ${theaterData.branchName}`}
-        {theaterData.city && ` · ${theaterData.city}`}
+        {theaterData.city       && ` · ${theaterData.city}`}
       </div>
 
       <div className="qr-controls">
 
-        {/* HALL / SCREEN SELECT
-            FIX: was a simple screenNo dropdown using totalScreens count
-                 Now selects real halls from GET /api/hall
-                 hallId is required by POST /api/seat */}
+        {/* Hall selector */}
         <div>
           <label style={{ fontSize: 13, color: "#555", display: "block", marginBottom: 4 }}>
             Select Hall / Screen *
           </label>
           {hallLoading ? (
-            <p style={{ fontSize: 13, color: "#888" }}>Loading halls...</p>
+            <p style={{ fontSize: 13, color: "#888" }}>Loading halls…</p>
           ) : halls.length === 0 ? (
             <p style={{ fontSize: 13, color: "#e55" }}>
               No halls found. Please create a hall for this theater first.
@@ -382,7 +323,7 @@ const QRGenerator = () => {
           )}
         </div>
 
-        {/* ROW BUILDER */}
+        {/* Row builder */}
         <div className="row-builder">
           <input
             placeholder="Row letter (A, B, C)"
@@ -403,7 +344,7 @@ const QRGenerator = () => {
           </button>
         </div>
 
-        {/* LAYOUT PREVIEW with remove */}
+        {/* Layout preview */}
         {layout.length > 0 && (
           <div className="layout-preview">
             {layout.map((r, i) => (
@@ -428,17 +369,10 @@ const QRGenerator = () => {
           </div>
         )}
 
-        {/* ERROR */}
-        {error && (
-          <p style={{ color: "#e55", fontSize: 13, margin: "4px 0" }}>{error}</p>
-        )}
+        {error    && <p style={{ color: "#e55", fontSize: 13, margin: "4px 0" }}>{error}</p>}
+        {progress && <p style={{ color: "#888", fontSize: 13, margin: "4px 0" }}>{progress}</p>}
 
-        {/* PROGRESS */}
-        {progress && (
-          <p style={{ color: "#888", fontSize: 13, margin: "4px 0" }}>{progress}</p>
-        )}
-
-        {/* ACTION BUTTONS */}
+        {/* Action buttons */}
         <div className="qr-action-buttons">
           <button
             className="generate-btn"
@@ -446,7 +380,7 @@ const QRGenerator = () => {
             disabled={generating || halls.length === 0}
             style={{ opacity: generating ? 0.6 : 1 }}
           >
-            {generating ? "Generating..." : "Generate & Save Seats"}
+            {generating ? "Generating…" : "Generate & Save Seats"}
           </button>
           <button className="clear-btn" onClick={clearLayout} disabled={generating}>
             Clear
@@ -458,25 +392,15 @@ const QRGenerator = () => {
             🖨 Print QR Sheet ({generatedSeats.length} seats)
           </button>
         )}
-
       </div>
 
-      {/* QR GRID
-          FIX: was using localhost:5173 URL
-               Now shows real seat _id in QR value
-               CustomerWelcome → GET /api/seat/:id works correctly */}
+      {/* QR grid */}
       {generatedSeats.length > 0 && (
         <div className="qr-grid print-area">
           {generatedSeats.map((seat) => (
             <div key={seat._id} className="qr-card">
-
-              <QRCodeCanvas
-                value={seat.qrValue}
-                size={120}
-              />
-
+              <QRCodeCanvas value={seat.qrValue} size={120} />
               <h4>Seat {seat.seatNumber}</h4>
-              {/* FIX: was theaterData.branch → branchName */}
               <p>Screen {screenNo}</p>
               <p style={{ fontSize: 11 }}>
                 {theaterData.branchName || theaterData.name}
@@ -484,16 +408,12 @@ const QRGenerator = () => {
               <p style={{ fontSize: 9, color: "#aaa", wordBreak: "break-all" }}>
                 ID: {seat._id}
               </p>
-
             </div>
           ))}
         </div>
       )}
-
     </div>
-
   );
-
 };
 
 export default QRGenerator;

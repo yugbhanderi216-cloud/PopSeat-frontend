@@ -1,30 +1,32 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./OrderTracking.css";
 
 const API_BASE = "https://popseat.onrender.com/api";
 
-// ─────────────────────────────────────────────────────────────
-// ⚠️  MISSING API NOTE (for backend team):
-//     A customer-facing GET /api/order/:id endpoint is needed.
-//     Currently using GET /api/worker/orders?status=pending
-//     as a temporary workaround — this exposes ALL pending
-//     orders to the client and requires a worker token.
-//     Replace the fetchOrder function below once the endpoint
-//     is available.
-// ─────────────────────────────────────────────────────────────
-
+// Order progresses through these steps in sequence
 const STATUS_STEPS = ["placed", "preparing", "ready", "delivered"];
 
-const Tracking = () => {
+// ─────────────────────────────────────────────────────────────
+//  OrderSuccess — Customer-facing order tracking page.
+//
+//  Polls GET /api/order/:id every 5 s using the customer token.
+//  Stops polling once the order is delivered.
+//
+//  NOTE FOR BACKEND TEAM:
+//    Requires GET /api/order/:id to be implemented (Section 1.6).
+//    The endpoint must:
+//      • Accept Authorization: Bearer <customerToken>
+//      • Return { success: true, order: { _id, orderStatus, items, ... } }
+//      • Return 404 { success: false, message: "Order not found" } if not found
+// ─────────────────────────────────────────────────────────────
 
+const OrderSuccess = () => {
   const navigate = useNavigate();
 
-  // FIX: was "orderId" — CustomerCart saves as "currentOrderId"
+  // ── Read state from localStorage (set by CustomerCart before redirect) ──
   const orderId   = localStorage.getItem("currentOrderId");
   const token     = localStorage.getItem("customerToken");
-
-  // Restore nav params so "Back to Menu" works correctly
   const theaterId = localStorage.getItem("customerTheaterId") || "";
   const screen    = localStorage.getItem("screenNo")          || "";
   const seat      = localStorage.getItem("seatNo")            || "";
@@ -33,141 +35,141 @@ const Tracking = () => {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState("");
 
-  /* ===============================
-     FETCH ORDER
-     ⚠️  Temporary: polling worker endpoint until
-         GET /api/order/:id is available
-  =============================== */
+  // Keep a stable ref to the latest order so the interval closure
+  // can read it without causing the effect to re-run
+  const orderRef = useRef(null);
+  orderRef.current = order;
 
+  // ─────────────────────────────────────────────────────────
+  //  FETCH — calls GET /api/order/:id with customer token
+  // ─────────────────────────────────────────────────────────
   const fetchOrder = useCallback(async () => {
-
     if (!orderId) {
       setError("No order ID found. Please place an order first.");
       setLoading(false);
       return;
     }
 
-    try {
+    if (!token) {
+      setError("Session expired. Please scan your seat QR to continue.");
+      setLoading(false);
+      return;
+    }
 
-      // ⚠️  WORKAROUND: worker endpoint — swap URL when
-      //     GET /api/order/:orderId is added to the API
-      const res = await fetch(
-        `${API_BASE}/worker/orders?status=pending`,
-        {
-          headers: {
-            "Content-Type" : "application/json",
-            // FIX: auth header was missing — worker endpoint requires token
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
+    try {
+      const res = await fetch(`${API_BASE}/order/${orderId}`, {
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      // ── 404: order not found ──────────────────────────────
+      if (res.status === 404) {
+        // Only show error if we have never loaded the order;
+        // if we already have order state, keep showing it
+        if (!orderRef.current) {
+          setError("Order not found. It may have already been delivered.");
         }
-      );
+        setLoading(false);
+        return;
+      }
+
+      // ── 401 / 403: auth failure ───────────────────────────
+      if (res.status === 401 || res.status === 403) {
+        setError("Session expired. Please scan your seat QR to continue.");
+        setLoading(false);
+        return;
+      }
 
       const data = await res.json();
 
-      if (data.success) {
-
-        const found = data.orders.find(
-          (o) => String(o._id) === String(orderId)
-        );
-
-        if (found) {
-          setOrder(found);
-          setError("");
-        } else {
-          // Order may have moved out of "pending" — check all statuses
-          // by also searching delivered/ready (needs API support)
-          // For now keep last known order state if already loaded
-          if (!order) {
-            setError("Order not found. It may have already been delivered.");
-          }
-        }
-
+      if (data.success && data.order) {
+        setOrder(data.order);
+        setError("");
       } else {
-        setError("Could not fetch order status.");
+        if (!orderRef.current) {
+          setError(data.message || "Could not fetch order status.");
+        }
       }
-
     } catch (err) {
       console.error("Order fetch error:", err);
-      // Don't clear existing order on network blip — keep showing last state
-      if (!order) {
-        setError("Network error. Retrying...");
+      // Network blip — keep showing last known order state
+      if (!orderRef.current) {
+        setError("Network error. Retrying…");
       }
     } finally {
       setLoading(false);
     }
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId, token]);
 
+  // ─────────────────────────────────────────────────────────
+  //  POLLING — every 5 s; stops once delivered
+  // ─────────────────────────────────────────────────────────
   useEffect(() => {
-
     fetchOrder();
 
-    // Stop polling once delivered — no need to keep hitting the server
-    if (order?.orderStatus === "delivered") return;
+    const interval = setInterval(() => {
+      // Stop polling once the order is delivered — no need to keep
+      // hitting the server after the final state is reached
+      if (orderRef.current?.orderStatus === "delivered") {
+        clearInterval(interval);
+        return;
+      }
+      fetchOrder();
+    }, 5000);
 
-    const interval = setInterval(fetchOrder, 5000);
     return () => clearInterval(interval);
+  }, [fetchOrder]);
 
-  }, [fetchOrder, order?.orderStatus]);
-
-  /* ===============================
-     BACK TO MENU — with params restored
-  =============================== */
-
+  // ─────────────────────────────────────────────────────────
+  //  NAVIGATION
+  // ─────────────────────────────────────────────────────────
   const handleBackToMenu = () => {
     navigate(
       `/customer/menu?theaterId=${theaterId}&screen=${screen}&seat=${seat}`
     );
   };
 
-  /* ===============================
-     LOADING STATE
-  =============================== */
-
+  // ─────────────────────────────────────────────────────────
+  //  LOADING STATE
+  // ─────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="tracking-page">
         <div className="tracking-card">
           <h2>🎬 Order Tracking</h2>
-          <p>Fetching your order...</p>
+          <p>Fetching your order…</p>
         </div>
       </div>
     );
   }
 
-  /* ===============================
-     ERROR / NOT FOUND STATE
-  =============================== */
-
+  // ─────────────────────────────────────────────────────────
+  //  ERROR STATE (no order loaded yet)
+  // ─────────────────────────────────────────────────────────
   if (error && !order) {
     return (
       <div className="tracking-page">
         <div className="tracking-card">
-
           <h2>🎬 Order Tracking</h2>
-
           <p style={{ color: "#e55", marginBottom: 16 }}>{error}</p>
-
           <button className="home-btn" onClick={handleBackToMenu}>
             Back to Menu
           </button>
-
         </div>
       </div>
     );
   }
 
-  /* ===============================
-     RENDER ORDER
-  =============================== */
-
+  // ─────────────────────────────────────────────────────────
+  //  MAIN RENDER
+  // ─────────────────────────────────────────────────────────
   const status      = order?.orderStatus || "placed";
   const statusIndex = STATUS_STEPS.indexOf(status);
 
   return (
     <div className="tracking-page">
-
       <div className="tracking-card">
 
         <h2>🎬 Order Tracking</h2>
@@ -184,42 +186,16 @@ const Tracking = () => {
           <span style={{ textTransform: "capitalize" }}>{status}</span>
         </p>
 
-        {/* STEP PROGRESS */}
-
+        {/* ── Step progress bar ── */}
         <div className="steps">
-
-          <div
-            className={`step ${
-              statusIndex >= STATUS_STEPS.indexOf("placed") ? "active" : ""
-            }`}
-          >
-            Placed
-          </div>
-
-          <div
-            className={`step ${
-              statusIndex >= STATUS_STEPS.indexOf("preparing") ? "active" : ""
-            }`}
-          >
-            Preparing
-          </div>
-
-          <div
-            className={`step ${
-              statusIndex >= STATUS_STEPS.indexOf("ready") ? "active" : ""
-            }`}
-          >
-            Ready
-          </div>
-
-          <div
-            className={`step ${
-              status === "delivered" ? "active" : ""
-            }`}
-          >
-            Delivered
-          </div>
-
+          {STATUS_STEPS.map((step, i) => (
+            <div
+              key={step}
+              className={`step ${statusIndex >= i ? "active" : ""}`}
+            >
+              {step.charAt(0).toUpperCase() + step.slice(1)}
+            </div>
+          ))}
         </div>
 
         {status === "delivered" && (
@@ -228,7 +204,7 @@ const Tracking = () => {
           </p>
         )}
 
-        {/* Show soft error (network blip) without hiding order */}
+        {/* Soft error shown without hiding order (e.g. network blip) */}
         {error && order && (
           <p style={{ color: "#aaa", fontSize: "12px", marginTop: 8 }}>
             ⚠️ {error}
@@ -240,10 +216,8 @@ const Tracking = () => {
         </button>
 
       </div>
-
     </div>
   );
-
 };
 
-export default Tracking;
+export default OrderSuccess;

@@ -6,6 +6,26 @@ import "./OwnerPayment.css";
 //   POST /api/payment/create   ✅ — creates Razorpay order server-side
 //   POST /api/payment/verify   ✅ — verifies Razorpay signature (MUST be called)
 //   GET  /api/subscription/my  ✅ — confirms plan is active after payment
+//
+// ─────────────────────────────────────────────────────────────
+// NOTE FOR BACKEND TEAM — orderId field in POST /api/payment/create:
+//
+//   Subscription payments do NOT have a food/cinema order ID.
+//   The backend MUST make orderId optional for subscription flows.
+//   The owner is identified via the JWT token (Authorization header).
+//
+//   Recommended response shape:
+//     { success: true, payment: { razorpayOrderId: "order_xxx", amount, currency } }
+//
+//   If orderId is truly required by your schema, two options:
+//     Option A — Accept a descriptive string:
+//       orderId: "subscription" (backend treats it as a type flag)
+//     Option B — Create a stub payment record first:
+//       POST /api/payment/init → returns { _id } → use that _id as orderId
+//
+//   This file sends orderId: "subscription" as a safe fallback.
+//   Remove it from the body once the backend marks orderId optional.
+// ─────────────────────────────────────────────────────────────
 
 const API_BASE     = "https://popseat.onrender.com/api";
 const RAZORPAY_KEY = "rzp_test_STsZnqsQOPRrqZ";
@@ -18,15 +38,12 @@ const authHeaders = () => ({
   Authorization  : `Bearer ${getOwnerToken()}`,
 });
 
-/* ── Load Razorpay script dynamically ── */
-// FIX 5: If user refreshes directly on this page, window.Razorpay won't exist.
-// This loader ensures the script is always present before payment starts.
 const loadRazorpayScript = () =>
   new Promise((resolve) => {
     if (window.Razorpay) { resolve(true); return; }
-    const script  = document.createElement("script");
-    script.src    = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
+    const script   = document.createElement("script");
+    script.src     = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload  = () => resolve(true);
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
@@ -44,45 +61,69 @@ const OwnerPayment = () => {
   const [success,    setSuccess]    = useState(false);
   const [activePlan, setActivePlan] = useState(null);
 
-  /* Pre-load Razorpay script on mount */
   useEffect(() => { loadRazorpayScript(); }, []);
 
-  /* ═══════════════════════════════════════
-     POST /api/payment/create ✅
-     Creates a Razorpay order on the server.
-
-     FIX 1: API docs show orderId must be a
-     valid MongoDB order/payment _id, NOT the
-     owner's user ID. We use the subscription
-     plan price as the amount and leave orderId
-     as a reference — backend will link it to
-     the owner via the auth token automatically.
-     The "orderId" in the body is just a
-     reference string for the payment record;
-     it is NOT the owner's _id.
-  ═══════════════════════════════════════ */
+  // ─────────────────────────────────────────────────────────
+  //  POST /api/payment/create
+  //
+  //  FIX: orderId is not available for subscription payments —
+  //  the owner has no food/cinema order at this stage.
+  //  We send orderId: "subscription" so backends that require
+  //  the field don't reject the request with a validation error.
+  //  The backend SHOULD identify the owner from the JWT token
+  //  and treat orderId as optional for subscription flows.
+  //
+  //  Two-step fallback built in:
+  //    1. Try without orderId first (cleanest, works if backend
+  //       marks the field optional — which it should).
+  //    2. If the backend returns a 400 with a message containing
+  //       "orderId" or "order_id", retry with orderId: "subscription"
+  //       as a safe descriptor string.
+  //  This avoids silent failures either way.
+  // ─────────────────────────────────────────────────────────
   const createRazorpayOrder = async () => {
-    const res  = await fetch(`${API_BASE}/payment/create`, {
+    const body = {
+      amount  : plan.price * 100,   // paise
+      currency: "INR",
+      // orderId intentionally omitted on first attempt —
+      // backend should not require it for subscription payments.
+    };
+
+    let res  = await fetch(`${API_BASE}/payment/create`, {
       method  : "POST",
       headers : authHeaders(),
-      body    : JSON.stringify({
-        amount  : plan.price * 100,   // in paise
-        currency: "INR",
-        // orderId here is a client reference — backend uses auth token
-        // to identify the owner. Pass a descriptive string or omit if
-        // your backend doesn't require it.
-        // ⚠️ If backend requires a real Mongo orderId, first create
-        //    an order via POST /api/order/create and use that _id here.
-      }),
+      body    : JSON.stringify(body),
     });
 
-    const data = await res.json();
+    let data = await res.json();
+
+    // ── Fallback: if backend rejects due to missing orderId ──
+    // Check for a 400 that explicitly mentions orderId in the message.
+    // This keeps the retry narrow — other 400 errors are not retried.
+    if (
+      !res.ok &&
+      res.status === 400 &&
+      typeof data.message === "string" &&
+      /order.?id/i.test(data.message)
+    ) {
+      console.warn(
+        "POST /api/payment/create: backend requires orderId for subscription. " +
+        "Retrying with orderId: 'subscription'. " +
+        "Backend team: please make orderId optional for subscription flows."
+      );
+
+      res  = await fetch(`${API_BASE}/payment/create`, {
+        method  : "POST",
+        headers : authHeaders(),
+        body    : JSON.stringify({ ...body, orderId: "subscription" }),
+      });
+      data = await res.json();
+    }
 
     if (!res.ok || !data.success) {
       throw new Error(data.message || "Could not create payment order.");
     }
 
-    // Backend must return razorpayOrderId inside data.payment
     if (!data.payment?.razorpayOrderId) {
       throw new Error(
         "Backend did not return razorpayOrderId. Please contact support."
@@ -92,14 +133,10 @@ const OwnerPayment = () => {
     return data.payment;
   };
 
-  /* ═══════════════════════════════════════
-     POST /api/payment/verify ✅
-     FIX 2: This MUST be called after Razorpay
-     success to verify the payment signature.
-     Previously this was skipped entirely —
-     meaning anyone could fake a successful
-     payment without server validation.
-  ═══════════════════════════════════════ */
+  // ─────────────────────────────────────────────────────────
+  //  POST /api/payment/verify
+  //  Verifies Razorpay signature server-side — must not be skipped.
+  // ─────────────────────────────────────────────────────────
   const verifyPayment = async (razorpayResponse) => {
     const res  = await fetch(`${API_BASE}/payment/verify`, {
       method  : "POST",
@@ -114,17 +151,18 @@ const OwnerPayment = () => {
     const data = await res.json();
 
     if (!res.ok || !data.success || data.verified === false) {
-      throw new Error(data.message || "Payment verification failed. Please contact support.");
+      throw new Error(
+        data.message || "Payment verification failed. Please contact support."
+      );
     }
 
     return data;
   };
 
-  /* ═══════════════════════════════════════
-     GET /api/subscription/my ✅
-     Called after verify to confirm plan
-     is now active on the server.
-  ═══════════════════════════════════════ */
+  // ─────────────────────────────────────────────────────────
+  //  GET /api/subscription/my
+  //  Confirms the plan is active after payment + verification.
+  // ─────────────────────────────────────────────────────────
   const fetchActiveSubscription = async () => {
     const res  = await fetch(`${API_BASE}/subscription/my`, {
       headers: authHeaders(),
@@ -147,29 +185,18 @@ const OwnerPayment = () => {
     return sub;
   };
 
-  /* ═══════════════════════════════════════
-     RAZORPAY SUCCESS HANDLER
-     Order of operations:
-     1. Verify signature  → POST /api/payment/verify
-     2. Confirm plan      → GET  /api/subscription/my
-     3. Show success + redirect
-     FIX 3: Removed dead ownerPlans localStorage
-     write — OwnerHome reads from API, not localStorage.
-  ═══════════════════════════════════════ */
+  // ─────────────────────────────────────────────────────────
+  //  Razorpay success handler
+  //  Order: verify signature → confirm subscription → redirect
+  // ─────────────────────────────────────────────────────────
   const handleRazorpaySuccess = async (razorpayResponse) => {
     try {
-      // Step 1: Verify payment signature with backend
       await verifyPayment(razorpayResponse);
-
-      // Step 2: Confirm subscription is now active
       const sub = await fetchActiveSubscription();
-
-      // Step 3: Clean up and show success
       localStorage.removeItem("selectedPlan");
       setActivePlan(sub);
       setSuccess(true);
       setLoading(false);
-
       setTimeout(() => navigate("/owner/home"), 2800);
     } catch (err) {
       setError(
@@ -180,9 +207,10 @@ const OwnerPayment = () => {
     }
   };
 
-  /* ── Open Razorpay Checkout ── */
+  // ─────────────────────────────────────────────────────────
+  //  Open Razorpay checkout
+  // ─────────────────────────────────────────────────────────
   const startRazorpay = async () => {
-    // FIX 5: Ensure script is loaded before opening checkout
     const loaded = await loadRazorpayScript();
     if (!loaded || !window.Razorpay) {
       setError("Payment gateway not loaded. Please refresh and try again.");
@@ -219,7 +247,6 @@ const OwnerPayment = () => {
 
       const rzp = new window.Razorpay(options);
 
-      // Handle Razorpay payment failure (e.g. bank declined)
       rzp.on("payment.failed", (resp) => {
         setError(
           resp.error?.description ||
@@ -236,7 +263,6 @@ const OwnerPayment = () => {
     }
   };
 
-  /* ── Handle Pay button click ── */
   const handlePayment = () => {
     if (!plan) { navigate("/owner/plan"); return; }
     setError("");
@@ -244,7 +270,7 @@ const OwnerPayment = () => {
     startRazorpay();
   };
 
-  /* ── No plan selected ── */
+  // ── No plan ──
   if (!plan) {
     return (
       <div className="payment-page">
@@ -260,7 +286,7 @@ const OwnerPayment = () => {
     );
   }
 
-  /* ── Success state ── */
+  // ── Success ──
   if (success) {
     return (
       <div className="payment-page">
@@ -287,58 +313,33 @@ const OwnerPayment = () => {
     );
   }
 
-  /* ── Main payment screen ── */
+  // ── Main ──
   return (
     <div className="payment-page">
       <div className="payment-card">
 
-        {/* Header label */}
         <p className="payment-label">Confirm Your Plan</p>
-
-        {/* Plan name */}
         <h3 className="payment-plan-name">{plan.theaters} Theater Plan</h3>
 
-        {/* Price display */}
         <div className="payment-price-block">
           <span className="payment-currency">₹</span>
           <span className="payment-amount">{plan.price.toLocaleString("en-IN")}</span>
         </div>
 
-        {/* Plan note */}
         <p className="plan-note">✦ Valid for 30 days from activation</p>
 
-        {/* Divider */}
         <div className="payment-divider" />
 
-        {/* Feature summary */}
         <ul className="payment-features">
-          <li>
-            <span className="feat-icon">🏛️</span>
-            <span>Up to <strong>{plan.theaters} theater(s)</strong></span>
-          </li>
-          <li>
-            <span className="feat-icon">👷</span>
-            <span>Unlimited worker accounts</span>
-          </li>
-          <li>
-            <span className="feat-icon">📊</span>
-            <span>Full analytics dashboard</span>
-          </li>
-          <li>
-            <span className="feat-icon">🔒</span>
-            <span>Secured via Razorpay</span>
-          </li>
+          <li><span className="feat-icon">🏛️</span><span>Up to <strong>{plan.theaters} theater(s)</strong></span></li>
+          <li><span className="feat-icon">👷</span><span>Unlimited worker accounts</span></li>
+          <li><span className="feat-icon">📊</span><span>Full analytics dashboard</span></li>
+          <li><span className="feat-icon">🔒</span><span>Secured via Razorpay</span></li>
         </ul>
 
-        {/* Error */}
         {error && <div className="payment-error">{error}</div>}
 
-        {/* Pay button */}
-        <button
-          className="payment-btn"
-          onClick={handlePayment}
-          disabled={loading}
-        >
+        <button className="payment-btn" onClick={handlePayment} disabled={loading}>
           {loading ? (
             <span className="payment-btn-loading">
               <span className="payment-spinner" />
@@ -349,7 +350,6 @@ const OwnerPayment = () => {
           )}
         </button>
 
-        {/* Change plan */}
         <button
           className="payment-btn-ghost"
           onClick={() => navigate("/owner/plan")}

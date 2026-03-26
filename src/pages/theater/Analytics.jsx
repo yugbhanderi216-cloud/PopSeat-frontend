@@ -8,13 +8,21 @@ import {
 import "./Analytics.css";
 
 // APIs USED:
-//   GET /api/orders?cinemaId=:id     ✅ confirmed — owner analytics
-//   GET /api/worker/orders?status=   ✅ confirmed — worker analytics
+//   GET /api/orders?cinemaId=:id     ✅ — owner analytics
+//   GET /api/worker/orders?status=   ✅ — worker analytics
+//
+// cinemaId resolution (in priority order):
+//   1. URL param  ?theaterId=
+//   2. navigation state.theaterId
+//   3. localStorage "currentTheaterId"      (owner)
+//   4. localStorage "activeOwnerTheaterId"  (owner)
+//   5. localStorage "assignedTheaterId"     (worker — set by login after Section 2.1)
+//   6. localStorage "theaterId"             (legacy fallback)
 //
 // ⚠️  KNOWN LIMITATION:
-//   GET /api/orders?cinemaId= does NOT include items array in list response.
+//   GET /api/orders?cinemaId= does NOT include items[] in list response.
 //   Only GET /api/order/:id includes items. Top Selling Items will be empty
-//   for owner role until backend populates items in list endpoint.
+//   for owner role until backend populates items in the list endpoint.
 
 const API_BASE     = "https://popseat.onrender.com/api";
 const ALL_STATUSES = ["placed", "preparing", "ready", "delivered"];
@@ -72,14 +80,11 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 /* ══════════════════════════════════════════════
    CHART DATA BUILDERS
-   Groups real orders into time buckets.
-   Returns [{ label, Orders, Revenue }]
 ══════════════════════════════════════════════ */
 const buildChartData = (orders, range) => {
   const now = new Date();
 
   if (range === "daily") {
-    // Last 24 hours — bucket per hour (show every 3rd label for readability)
     const buckets = {};
     for (let h = 23; h >= 0; h--) {
       const d   = new Date(now);
@@ -94,7 +99,7 @@ const buildChartData = (orders, range) => {
       if (diff <= 24) {
         const key = `${d.getHours().toString().padStart(2, "0")}:00`;
         if (buckets[key]) {
-          buckets[key].Orders  += 1;
+          buckets[key].Orders += 1;
           if (o.orderStatus === "delivered") buckets[key].Revenue += o.totalAmount || 0;
         }
       }
@@ -116,7 +121,7 @@ const buildChartData = (orders, range) => {
       if (diff <= 7) {
         const key = `${d.getDate()} ${d.toLocaleString("en", { month: "short" })}`;
         if (buckets[key]) {
-          buckets[key].Orders  += 1;
+          buckets[key].Orders += 1;
           if (o.orderStatus === "delivered") buckets[key].Revenue += o.totalAmount || 0;
         }
       }
@@ -130,7 +135,7 @@ const buildChartData = (orders, range) => {
     orders.forEach((o) => {
       const d = new Date(o.createdAt);
       if (d.getFullYear() === now.getFullYear()) {
-        buckets[d.getMonth()].Orders  += 1;
+        buckets[d.getMonth()].Orders += 1;
         if (o.orderStatus === "delivered") buckets[d.getMonth()].Revenue += o.totalAmount || 0;
       }
     });
@@ -161,38 +166,83 @@ const yFmt = (v) => (v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : String(v));
    COMPONENT
 ════════════════════════════════════════ */
 const Analytics = () => {
-  const location        = useLocation();
-  const [searchParams]  = useSearchParams();
-  const cinemaIdFromUrl = searchParams.get("theaterId") || location.state?.theaterId || "";
-  const cinemaId = cinemaIdFromUrl ||
-    localStorage.getItem("currentTheaterId") ||
-    localStorage.getItem("theaterId") || "";
+  const location       = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const role = getRole();
+
+  // ─────────────────────────────────────────────────────────
+  //  cinemaId resolution
+  //
+  //  FIX: worker never has theaterId in URL params or navigation
+  //  state — the analytics page is opened from the worker dashboard
+  //  which doesn't pass theaterId. After Section 2.1 (Worker Login
+  //  fix), the server returns assignedTheaterId which is written to
+  //  localStorage by Login.jsx. We now read it here as the
+  //  worker-specific fallback so worker analytics actually loads.
+  //
+  //  Owner still prefers URL param → navigation state → localStorage
+  //  keys set by the owner dashboard.
+  // ─────────────────────────────────────────────────────────
+  const cinemaId = useMemo(() => {
+    // Shared: URL param and navigation state work for both roles
+    const fromUrl   = searchParams.get("theaterId") || "";
+    const fromState = location.state?.theaterId     || "";
+
+    if (fromUrl)   return fromUrl;
+    if (fromState) return fromState;
+
+    if (role === "worker") {
+      // Worker: assignedTheaterId is written by Login.jsx after Section 2.1
+      return localStorage.getItem("assignedTheaterId") || "";
+    }
+
+    // Owner: check owner-specific keys then legacy fallback
+    return (
+      localStorage.getItem("currentTheaterId")     ||
+      localStorage.getItem("activeOwnerTheaterId") ||
+      localStorage.getItem("theaterId")            || ""
+    );
+  }, [searchParams, location.state, role]);
 
   const [orders,      setOrders]      = useState([]);
   const [filter,      setFilter]      = useState("today");
   const [chartRange,  setChartRange]  = useState("weekly");
-  const [chartType,   setChartType]   = useState("area");   // "area" | "bar"
-  const [chartMetric, setChartMetric] = useState("both");   // "orders" | "revenue" | "both"
+  const [chartType,   setChartType]   = useState("area");
+  const [chartMetric, setChartMetric] = useState("both");
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState("");
 
-  /* ─── Fetch ─── */
+  // ─────────────────────────────────────────────────────────
+  //  FETCH
+  //
+  //  Owner  → GET /api/orders?cinemaId=:id  (requires cinemaId)
+  //  Worker → GET /api/worker/orders?status= for all statuses,
+  //           merged and deduped. Worker endpoint returns only
+  //           that worker's assigned theater orders, so cinemaId
+  //           is not needed in the query — the JWT identifies the
+  //           worker and the backend scopes results accordingly.
+  // ─────────────────────────────────────────────────────────
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     setError("");
     const token = getToken();
-    const role  = getRole();
+
     try {
       if (role === "owner") {
         if (!cinemaId) {
-          setError("Theater ID not found. Please open analytics from the theater dashboard.");
+          setError(
+            "Theater ID not found. Please open analytics from the theater dashboard."
+          );
           setLoading(false);
           return;
         }
+
         const res  = await fetch(`${API_BASE}/orders?cinemaId=${cinemaId}`, {
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
+
         if (data.success) {
           setOrders(data.orders || []);
           if (!(data.orders || []).length)
@@ -200,7 +250,9 @@ const Analytics = () => {
         } else {
           setError(data.message || "Failed to load orders.");
         }
+
       } else {
+        // Worker: fetch all statuses in parallel, merge, deduplicate
         const results = await Promise.allSettled(
           ALL_STATUSES.map((s) =>
             fetch(`${API_BASE}/worker/orders?status=${s}`, {
@@ -208,6 +260,7 @@ const Analytics = () => {
             }).then((r) => r.json())
           )
         );
+
         const seen = new Set(), merged = [];
         results.forEach((r) => {
           if (r.status === "fulfilled" && r.value?.success)
@@ -215,8 +268,20 @@ const Analytics = () => {
               if (!seen.has(o._id)) { seen.add(o._id); merged.push(o); }
             });
         });
-        setOrders(merged);
-        if (!merged.length) setError("No orders found for this period.");
+
+        // ── FIX: if cinemaId is available for worker, scope to assigned theater ──
+        // The worker endpoint should already scope by theater via JWT, but if the
+        // response ever includes cross-theater orders (e.g. a worker reassigned),
+        // filter client-side to the assigned theater as a safety net.
+        const scoped = cinemaId
+          ? merged.filter(
+              (o) => o.cinemaId === cinemaId || o.cinemaId?._id === cinemaId
+            )
+          : merged;
+
+        setOrders(scoped);
+        if (!scoped.length)
+          setError("No orders found for this period.");
       }
     } catch (err) {
       console.error(err);
@@ -224,7 +289,7 @@ const Analytics = () => {
     } finally {
       setLoading(false);
     }
-  }, [cinemaId]);
+  }, [cinemaId, role]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
@@ -248,10 +313,10 @@ const Analytics = () => {
   const ready        = filteredOrders.filter((o) => o.orderStatus === "ready").length;
 
   /* ─── Chart data ─── */
-  const chartData     = useMemo(() => buildChartData(orders, chartRange), [orders, chartRange]);
-  const chartOrders   = useMemo(() => chartData.reduce((s, d) => s + d.Orders,  0), [chartData]);
-  const chartRevenue  = useMemo(() => chartData.reduce((s, d) => s + d.Revenue, 0), [chartData]);
-  const isEmpty       = chartData.every((d) => d.Orders === 0 && d.Revenue === 0);
+  const chartData    = useMemo(() => buildChartData(orders, chartRange), [orders, chartRange]);
+  const chartOrders  = useMemo(() => chartData.reduce((s, d) => s + d.Orders,  0), [chartData]);
+  const chartRevenue = useMemo(() => chartData.reduce((s, d) => s + d.Revenue, 0), [chartData]);
+  const isEmpty      = chartData.every((d) => d.Orders === 0 && d.Revenue === 0);
 
   /* ─── Top items ─── */
   const topItems = useMemo(() => {
@@ -270,21 +335,21 @@ const Analytics = () => {
   const barWidth = (n) => `${Math.round((n / maxCount) * 100)}%`;
 
   const STAT_CARDS = [
-    { label: "Total Orders",        value: totalOrders,             accent: "violet" },
+    { label: "Total Orders",        value: totalOrders,              accent: "violet" },
     { label: "Revenue (Delivered)", value: formatCurrency(totalRevenue), accent: "green"  },
-    { label: "Placed",              value: placed,                  accent: "violet" },
-    { label: "Preparing",           value: preparing,               accent: "amber"  },
-    { label: "Ready",               value: ready,                   accent: "blue"   },
-    { label: "Delivered",           value: delivered,               accent: "green"  },
+    { label: "Placed",              value: placed,                   accent: "violet" },
+    { label: "Preparing",           value: preparing,                accent: "amber"  },
+    { label: "Ready",               value: ready,                    accent: "blue"   },
+    { label: "Delivered",           value: delivered,                accent: "green"  },
   ];
 
-  /* ─── Shared axis props ─── */
   const axisStyle = {
     tick: { fontSize: 11, fontFamily: "Plus Jakarta Sans", fill: "#ABA8CC", fontWeight: 600 },
     axisLine: false,
     tickLine: false,
   };
 
+  /* ─── Loading ─── */
   if (loading) return (
     <div className="analytics-container">
       <div className="analytics-topbar">
@@ -297,6 +362,7 @@ const Analytics = () => {
     </div>
   );
 
+  /* ─── Render ─── */
   return (
     <div className="analytics-container">
 
@@ -331,14 +397,10 @@ const Analytics = () => {
         ))}
       </div>
 
-      {/* ════════════════════════════════
-          CHART SECTION
-      ════════════════════════════════ */}
+      {/* CHART SECTION */}
       <div className="chart-section">
 
-        {/* Chart card header */}
         <div className="chart-header">
-
           <div className="chart-header-top">
             <div>
               <h3 className="chart-title">Orders & Revenue Chart</h3>
@@ -356,10 +418,7 @@ const Analytics = () => {
             </div>
           </div>
 
-          {/* Controls */}
           <div className="chart-controls">
-
-            {/* Range */}
             <div className="ctrl-group">
               <span className="ctrl-label">Period</span>
               <div className="chart-toggle-group">
@@ -375,7 +434,6 @@ const Analytics = () => {
               </div>
             </div>
 
-            {/* Metric */}
             <div className="ctrl-group">
               <span className="ctrl-label">Show</span>
               <div className="chart-toggle-group">
@@ -395,7 +453,6 @@ const Analytics = () => {
               </div>
             </div>
 
-            {/* Type */}
             <div className="ctrl-group">
               <span className="ctrl-label">Type</span>
               <div className="chart-toggle-group">
@@ -409,11 +466,9 @@ const Analytics = () => {
                 >▬ Bar</button>
               </div>
             </div>
-
           </div>
         </div>
 
-        {/* Chart body */}
         <div className="chart-body">
           {isEmpty ? (
             <div className="chart-empty">
@@ -476,7 +531,6 @@ const Analytics = () => {
           )}
         </div>
 
-        {/* Mini data table below chart */}
         {!isEmpty && (
           <div className="chart-data-table">
             <div className="cdt-header">
@@ -496,7 +550,6 @@ const Analytics = () => {
               ))}
           </div>
         )}
-
       </div>
 
       {/* STATUS BREAKDOWN */}
@@ -521,7 +574,7 @@ const Analytics = () => {
       {/* TOP ITEMS */}
       <div className="top-items">
         <h3 className="section-title">🔥 Top Selling Items</h3>
-        {getRole() === "owner" && topItems.length === 0 && orders.length > 0 && (
+        {role === "owner" && topItems.length === 0 && orders.length > 0 && (
           <p className="analytics-info" style={{ marginBottom: 8 }}>
             Item breakdown requires backend to populate <code>items</code> in the orders list response.
           </p>
