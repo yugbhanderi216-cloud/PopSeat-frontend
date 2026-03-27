@@ -238,7 +238,7 @@ const QRGenerator = () => {
             hallId: selectedHall,
             rowLabel: row.row,
             numberOfSeats: row.count,
-            baseUrl: `${window.location.origin}/customer/menu`,
+            baseUrl: `${window.location.origin}/customer/menu?cinemaId=${theaterData._id}&hall=${selectedHall}`,
           };
           const res = await fetch(`${API_BASE}/halls/row`, {
             method: "POST",
