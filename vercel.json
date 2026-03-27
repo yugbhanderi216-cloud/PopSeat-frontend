@@ -1,12 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/customer/menu",
-      "destination": "/"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/"
+      "source": "/((?!api).*)",
+      "destination": "/index.html"
     }
   ]
 }
