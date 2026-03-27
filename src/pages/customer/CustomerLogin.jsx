@@ -8,8 +8,9 @@ const CustomerLogin = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const params = new URLSearchParams(location.search);
+  const params    = new URLSearchParams(location.search);
   const theaterId = params.get("theaterId");
+  const redirect  = params.get("redirect"); // set when coming from a QR scan
 
   const [email, setEmail] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -160,12 +161,16 @@ const CustomerLogin = () => {
 
       if (data.success) {
 
-        // Store token and email for subsequent authenticated requests
         localStorage.setItem("customerToken", data.token);
         localStorage.setItem("customerRole", data.role);
         localStorage.setItem("customerEmail", email);
 
-        navigate(`/payment?theaterId=${theaterId}`);
+        // If came from QR scan, go back to the original menu URL
+        if (redirect) {
+          window.location.href = decodeURIComponent(redirect);
+        } else {
+          navigate(`/payment?theaterId=${theaterId}`);
+        }
 
       } else {
 

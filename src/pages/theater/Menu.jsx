@@ -8,10 +8,9 @@ import "./Menu.css";
 //   DELETE /api/menu/:id     ✅ confirmed
 //
 // IMAGE HANDLING:
-//   No dedicated upload endpoint in API docs.
-//   Images are compressed client-side to JPEG < 200KB,
-//   converted to base64, and sent in the POST/PUT body as the `image` field.
-//   Backend must accept base64 strings in the image field.
+//   Backend now uses multer for image uploads.
+//   Images are sent via FormData using the "image" field as a File object.
+//   Base64 compression has been removed from the frontend.
 //
 // ⚠️  500 ERROR ON GET /api/menu:
 //   This is a backend issue — the server is crashing when fetching menu.
@@ -43,36 +42,17 @@ const capitalizeCategory = (text) => {
 const capitalizeWords = (text) =>
   (text || "").replace(/\b\w/g, (c) => c.toUpperCase());
 
-// ── Image compression helper ──
-// Compresses uploaded file to JPEG, max 800px wide, quality 0.75
-// Returns base64 data URL string
-const compressImage = (file, maxWidth = 800, quality = 0.75) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Failed to read file."));
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onerror = () => reject(new Error("Invalid image file."));
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const scale  = Math.min(1, maxWidth / img.width);
-        canvas.width  = img.width  * scale;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-
 const MAX_FILE_SIZE_MB = 5;
 const ACCEPTED_TYPES   = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
-const EMPTY_FORM = { name: "", description: "", category: "", image: "" };
+const EMPTY_FORM = { name: "", description: "", category: "", image: "", imageFile: null };
 
 const Menu = () => {
+  const activeTheaterId = 
+    localStorage.getItem("activeOwnerTheaterId") || 
+    localStorage.getItem("assignedTheaterId") || 
+    "";
+
   const [items,        setItems]        = useState([]);
   const [showModal,    setShowModal]    = useState(false);
   const [editId,       setEditId]       = useState(null);
@@ -85,7 +65,6 @@ const Menu = () => {
   const [tempDip,      setTempDip]      = useState({ name: "", price: "" });
   const [loading,      setLoading]      = useState(true);
   const [saving,       setSaving]       = useState(false);
-  const [imgLoading,   setImgLoading]   = useState(false);
   const [error,        setError]        = useState("");
   const [imgError,     setImgError]     = useState("");
   const [confirmDel,   setConfirmDel]   = useState(null);
@@ -99,7 +78,11 @@ const Menu = () => {
     setLoading(true);
     setError("");
     try {
-      const res  = await fetch(`${API_BASE}/menu`, { headers: authHeaders() });
+      const url = activeTheaterId 
+        ? `${API_BASE}/menu?cinemaId=${activeTheaterId}`
+        : `${API_BASE}/menu`;
+        
+      const res  = await fetch(url, { headers: authHeaders() });
 
       // ⚠️ Handle 500 server error explicitly
       if (res.status === 500) {
@@ -142,12 +125,11 @@ const Menu = () => {
   useEffect(() => { loadMenu(); }, [loadMenu]);
 
   /* ═══════════════════════════════════
-     IMAGE UPLOAD — File System
+     IMAGE UPLOAD — Multer Ready
      Validates file type + size,
-     compresses to JPEG < ~200KB,
-     stores as base64 in form.image
+     stores File object in form.imageFile and creates preview URL
   ═══════════════════════════════════ */
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -160,27 +142,26 @@ const Menu = () => {
       return;
     }
 
-    // Validate size (before compression)
+    // Validate size
     if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
       setImgError(`File too large. Max ${MAX_FILE_SIZE_MB}MB allowed.`);
       e.target.value = "";
       return;
     }
 
-    setImgLoading(true);
-    try {
-      const compressed = await compressImage(file);
-      setForm((prev) => ({ ...prev, image: compressed }));
-    } catch (err) {
-      setImgError("Could not process image. Please try a different file.");
-    } finally {
-      setImgLoading(false);
-      e.target.value = ""; // reset so same file can be re-selected
-    }
+    if (form.imageFile) URL.revokeObjectURL(form.image);
+    
+    setForm((prev) => ({ 
+      ...prev, 
+      imageFile: file, 
+      image: URL.createObjectURL(file) 
+    }));
+    e.target.value = "";
   };
 
   const removeImage = () => {
-    setForm((prev) => ({ ...prev, image: "" }));
+    if (form.imageFile) URL.revokeObjectURL(form.image);
+    setForm((prev) => ({ ...prev, image: "", imageFile: null }));
     setImgError("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -215,20 +196,6 @@ const Menu = () => {
     return null;
   };
 
-  /* ── Build API payload ── */
-  const buildPayload = () => ({
-    name       : capitalizeWords(form.name),
-    // FIX: category stored lowercase in DB, displayed capitalized in UI
-    category   : form.category.trim().toLowerCase(),
-    description: capitalizeWords(form.description),
-    price      : sizes[0]?.price || 0,
-    size       : sizes[0]?.name  || "Regular",
-    image      : form.image || "",   // base64 JPEG string
-    available  : true,
-    topping    : toppings.map(({ name, price }) => ({ name, price })),
-    dips       : dips.map(({ name, price })     => ({ name, price })),
-  });
-
   /* ═══════════════════════════════════
      POST /api/menu ✅  |  PUT /api/menu/:id ✅
   ═══════════════════════════════════ */
@@ -238,12 +205,35 @@ const Menu = () => {
     if (err) { setError(err); return; }
 
     setSaving(true);
-    const payload = buildPayload();
+
+    const formData = new FormData();
+    formData.append("name", capitalizeWords(form.name));
+    formData.append("category", form.category.trim().toLowerCase());
+    formData.append("description", capitalizeWords(form.description));
+    formData.append("price", sizes[0]?.price || 0);
+    formData.append("size", sizes[0]?.name || "Regular");
+    formData.append("available", true);
+    
+    // Arrays converted to JSON strings for backend parsing
+    formData.append("topping", JSON.stringify(toppings.map(({ name, price }) => ({ name, price }))));
+    formData.append("dips", JSON.stringify(dips.map(({ name, price }) => ({ name, price }))));
+
+    if (form.imageFile) {
+      formData.append("image", form.imageFile);
+    }
+    if (activeTheaterId) {
+      formData.append("cinemaId", activeTheaterId);
+    }
 
     try {
       const url    = editId ? `${API_BASE}/menu/${editId}` : `${API_BASE}/menu`;
       const method = editId ? "PUT" : "POST";
-      const res    = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
+      
+      const headers = { 
+        Authorization : `Bearer ${localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""}`
+      }; // DO NOT include Content-Type: application/json for FormData
+
+      const res    = await fetch(url, { method, headers, body: formData });
       const data   = await res.json();
 
       if (!data.success) {
@@ -260,6 +250,7 @@ const Menu = () => {
         description      : saved.description || "",
         category         : capitalizeCategory(saved.category || "Others"),
         image            : saved.image || "",
+        cinemaId         : saved.cinemaId || activeTheaterId,
         sizes            : [{ name: saved.size || "Regular", price: saved.price }],
         availableToppings: ensureArray(saved.topping),
         availableDips    : ensureArray(saved.dips),
@@ -340,7 +331,7 @@ const Menu = () => {
 
   const handleEdit = (item) => {
     setEditId(item.id);
-    setForm({ name: item.name, description: item.description, category: item.category, image: item.image || "" });
+    setForm({ name: item.name, description: item.description, category: item.category, image: item.image || "", imageFile: null });
     setSizes(ensureArray(item.sizes));
     setToppings(ensureArray(item.availableToppings));
     setDips(ensureArray(item.availableDips));
@@ -514,21 +505,12 @@ const Menu = () => {
                 </div>
               ) : (
                 <div
-                  className={`img-dropzone ${imgLoading ? "img-dropzone--loading" : ""}`}
-                  onClick={() => !imgLoading && fileInputRef.current?.click()}
+                  className="img-dropzone"
+                  onClick={() => fileInputRef.current?.click()}
                 >
-                  {imgLoading ? (
-                    <>
-                      <div className="menu-spinner" />
-                      <p>Compressing image...</p>
-                    </>
-                  ) : (
-                    <>
-                      <span className="img-dropzone-icon">📷</span>
-                      <p className="img-dropzone-text">Click to upload image</p>
-                      <p className="img-dropzone-hint">JPG, PNG, WebP or GIF · Max {MAX_FILE_SIZE_MB}MB</p>
-                    </>
-                  )}
+                  <span className="img-dropzone-icon">📷</span>
+                  <p className="img-dropzone-text">Click to upload image</p>
+                  <p className="img-dropzone-hint">JPG, PNG, WebP or GIF · Max {MAX_FILE_SIZE_MB}MB</p>
                 </div>
               )}
 
@@ -544,7 +526,7 @@ const Menu = () => {
               {imgError && <p className="img-error">{imgError}</p>}
 
               {/* Change image button when preview shown */}
-              {form.image && !imgLoading && (
+              {form.image && (
                 <button className="img-change-btn" onClick={() => fileInputRef.current?.click()}>
                   📷 Change Image
                 </button>
@@ -624,7 +606,7 @@ const Menu = () => {
               <button className="modal-btn modal-btn--cancel" onClick={closeModal} disabled={saving}>
                 Cancel
               </button>
-              <button className="modal-btn modal-btn--save" onClick={handleSubmit} disabled={saving || imgLoading}>
+              <button className="modal-btn modal-btn--save" onClick={handleSubmit} disabled={saving}>
                 {saving ? (
                   <span className="modal-saving">
                     <span className="modal-spinner" />

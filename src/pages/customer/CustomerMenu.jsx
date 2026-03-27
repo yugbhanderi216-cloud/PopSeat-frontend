@@ -37,12 +37,24 @@ const CustomerMenu = () => {
   /* ================= SAVE INFO ================= */
 
   useEffect(() => {
+    const cinemaId = params.get("cinemaId");
+    const hallId   = params.get("hall");
+    const seatId   = params.get("seat");
 
-    if (screen) localStorage.setItem("screenNo", screen);
-    if (seat) localStorage.setItem("seatNo", seat);
+    if (screen)    localStorage.setItem("screenNo", screen);
+    if (seat)      localStorage.setItem("seatNo", seat);
     if (theaterId) localStorage.setItem("customerTheaterId", theaterId);
-    if (type) localStorage.setItem("seatType", type);
+    if (type)      localStorage.setItem("seatType", type);
+    if (cinemaId)  localStorage.setItem("customerTheaterId", cinemaId);
+    if (hallId)    localStorage.setItem("customerHallId", hallId);
+    if (seatId)    localStorage.setItem("customerSeatId", seatId);
 
+    // ── Auth guard: redirect to login if not authenticated ──
+    const token = localStorage.getItem("customerToken");
+    if (!token) {
+      const returnUrl = encodeURIComponent(window.location.href);
+      navigate(`/customer/login?redirect=${returnUrl}`, { replace: true });
+    }
   }, [screen, seat, theaterId, type]);
 
   /* ================= LOAD CATEGORIES — GET /api/category ================= */
@@ -95,8 +107,12 @@ const CustomerMenu = () => {
       setMenuLoading(true);
 
       try {
+        const activeCinemaId = params.get("cinemaId") || theaterId;
+        const url = activeCinemaId 
+          ? `${API_BASE}/api/menu?cinemaId=${activeCinemaId}` 
+          : `${API_BASE}/api/menu`;
 
-        const res = await fetch(`${API_BASE}/api/menu`);
+        const res = await fetch(url);
         const data = await res.json();
 
         if (data.success) {

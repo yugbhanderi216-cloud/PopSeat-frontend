@@ -237,8 +237,8 @@ const QRGenerator = () => {
           const payload = {
             hallId: selectedHall,
             rowLabel: row.row,
-            numberOfSeats: row.count,           // backend accepts numberOfSeats
-            baseUrl: `${window.location.origin}/menu`, // QR links to your frontend menu
+            numberOfSeats: row.count,
+            baseUrl: "https://pop-seat-frontend-q8b65rprn-yugbhanderi216-9743s-projects.vercel.app/menu",
           };
           const res = await fetch(`${API_BASE}/halls/row`, {
             method: "POST",
