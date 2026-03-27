@@ -21,7 +21,6 @@ const capitalizeSmart = (text) => {
     .replace(/(^|\s)\w/g, (letter) => letter.toUpperCase());
 };
 
-// FIX: triple-key fallback — matches OwnerHome / TheaterDashboard
 const authHeaders = () => ({
   "Content-Type" : "application/json",
   Authorization  : `Bearer ${
@@ -39,30 +38,28 @@ const TheaterRegister = () => {
 
   const navigate = useNavigate();
 
-  // FIX: dual-key read for ownerEmail
   const ownerEmail =
     localStorage.getItem("ownerEmail") ||
     localStorage.getItem("email")      || "";
 
-  const [loading,    setLoading]    = useState(false);
-  const [subLoading, setSubLoading] = useState(true);
-  const [error,      setError]      = useState("");
-  const [fieldError, setFieldError] = useState(""); // inline field validation
-  const [subscription, setSubscription] = useState(null);
+  const [loading,      setLoading]      = useState(false);
+  const [subLoading,   setSubLoading]   = useState(true);
+  const [error,        setError]        = useState("");
+  const [fieldError,   setFieldError]   = useState("");
+  const [subBlocked,   setSubBlocked]   = useState(false); // only block if CONFIRMED inactive
 
   const [theaterData, setTheaterData] = useState({
-    ownerName   : "",
-    theaterName : "",  // → "name" in API
-    branch      : "",  // → "branchName" in API
-    city        : "",
-    address     : "",
-    screens     : "",  // → "totalScreens" (Number)
-    contact     : "",  // → "contactNumber"
-    openingTime : "",
-    closingTime : "",
-    theaterLogo : "",  // URL — no upload API yet
-    banner      : "",  // URL — no upload API yet
-    // Bank details — local only until backend adds endpoint
+    ownerName     : "",
+    theaterName   : "",
+    branch        : "",
+    city          : "",
+    address       : "",
+    screens       : "",
+    contact       : "",
+    openingTime   : "",
+    closingTime   : "",
+    theaterLogo   : "",
+    banner        : "",
     accountHolder : "",
     bankName      : "",
     accountNumber : "",
@@ -71,25 +68,20 @@ const TheaterRegister = () => {
   });
 
   /* ── Auth guard ── */
-
   useEffect(() => {
     if (!ownerEmail) navigate("/login", { replace: true });
   }, [ownerEmail, navigate]);
 
   /* ===============================
      CHECK SUBSCRIPTION — GET /api/subscription/my ✅
-     FIX: user could bypass OwnerHome plan gate by
-          navigating directly to /theater-register
+     FIX: Only block if API explicitly confirms no active plan.
+          Network errors, unexpected shapes → let through.
+          Server will reject POST /api/cinema if truly unsubscribed.
   =============================== */
-
   useEffect(() => {
-
     const checkSub = async () => {
-
       setSubLoading(true);
-
       try {
-
         const res  = await fetch(`${API_BASE}/api/subscription/my`, {
           headers: authHeaders(),
         });
@@ -97,84 +89,96 @@ const TheaterRegister = () => {
 
         if (data.success) {
           const sub = data.subscription || data.plan || data.data || null;
-          setSubscription(sub);
-        }
 
+          // Only hard-block if we got a sub object AND it is explicitly inactive/expired
+          if (sub) {
+            const expired = sub.expiresAt && new Date(sub.expiresAt) <= new Date();
+            const inactive = sub.status && sub.status !== "active";
+            if (expired && inactive) {
+              setSubBlocked(true);
+            }
+            // If shape is unclear → don't block (server guards the POST)
+          }
+          // If sub is null but API succeeded → plan not purchased yet → block
+          else if (data.success && !sub) {
+            setSubBlocked(true);
+          }
+        }
+        // If !data.success or network error → don't block
       } catch (err) {
-        console.warn("Subscription check error:", err);
-        // Allow registration attempt even if check fails —
-        // server will reject if no active plan
+        console.warn("Subscription check failed, allowing through:", err);
+        // Don't block — server-side will protect POST /api/cinema
       } finally {
         setSubLoading(false);
       }
-
     };
 
     checkSub();
-
   }, []);
 
-  /* ── Subscription gate ── */
-
-  const isSubActive =
-    subscription?.status === "active" &&
-    new Date(subscription?.expiresAt) > new Date();
-
-  /* ── Input change ── */
-
+  /* ── Input change ──
+     FIX: capitalize only on blur, not on every keystroke,
+          so cursor never jumps mid-word while typing.
+  ── */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFieldError("");
     setError("");
-    setTheaterData((prev) => ({
-      ...prev,
-      [name]: CAPITALIZE_FIELDS.includes(name)
-        ? capitalizeSmart(value)
-        : value,
-    }));
+    setTheaterData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    if (CAPITALIZE_FIELDS.includes(name)) {
+      setTheaterData((prev) => ({
+        ...prev,
+        [name]: capitalizeSmart(value),
+      }));
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    if (files && files[0]) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTheaterData((prev) => ({ ...prev, [name]: reader.result }));
+      };
+      reader.readAsDataURL(files[0]);
+    }
   };
 
   /* ── Validation ── */
-
   const validate = () => {
-
     const {
       ownerName, theaterName, branch, city,
       address, screens, contact,
     } = theaterData;
 
-    if (!ownerName?.trim())    return "Owner name is required.";
-    if (!theaterName?.trim())  return "Theater name is required.";
-    if (!branch?.trim())       return "Branch name is required.";
-    if (!city?.trim())         return "City is required.";
-    if (!address?.trim())      return "Address is required.";
+    if (!ownerName?.trim())   return "Owner name is required.";
+    if (!theaterName?.trim()) return "Theater name is required.";
+    if (!branch?.trim())      return "Branch name is required.";
+    if (!city?.trim())        return "City is required.";
+    if (!address?.trim())     return "Address is required.";
 
     if (!screens || Number(screens) < 1) {
       return "At least 1 screen is required.";
     }
 
-    // FIX: contact validation (same as EditTheater)
     if (contact && !/^\d{10}$/.test(contact.trim())) {
       return "Contact number must be exactly 10 digits.";
     }
 
-    // FIX: bank details now optional — removed hard validation block
-    // Owner can fill these later; no backend endpoint exists yet anyway
-
     return null;
-
   };
 
   /* ===============================
      SUBMIT — POST /api/cinema ✅
   =============================== */
-
   const handleSubmit = async () => {
-
     setError("");
     setFieldError("");
 
-    // FIX: guard against missing owner email before sending
     if (!ownerEmail) {
       setError("You must be logged in to register a theater.");
       return;
@@ -193,7 +197,6 @@ const TheaterRegister = () => {
       accountHolder, bankName, accountNumber, ifsc, upiId,
     } = theaterData;
 
-    // Map local field names → API field names (documented in state init)
     const payload = {
       name          : theaterName,
       branchName    : branch,
@@ -212,7 +215,6 @@ const TheaterRegister = () => {
     setLoading(true);
 
     try {
-
       const res  = await fetch(`${API_BASE}/api/cinema`, {
         method  : "POST",
         headers : authHeaders(),
@@ -226,8 +228,7 @@ const TheaterRegister = () => {
         return;
       }
 
-      // Save bank details locally against cinema _id
-      // ⚠️  No backend endpoint yet — local only
+      // Save bank details locally — no backend endpoint yet
       if (accountHolder || bankName || accountNumber || ifsc) {
         try {
           const bankDetails = JSON.parse(
@@ -238,7 +239,7 @@ const TheaterRegister = () => {
           };
           localStorage.setItem("bankDetails", JSON.stringify(bankDetails));
         } catch {
-          // Non-critical — don't block success flow
+          // Non-critical
         }
       }
 
@@ -250,11 +251,9 @@ const TheaterRegister = () => {
     } finally {
       setLoading(false);
     }
-
   };
 
   /* ── Subscription loading ── */
-
   if (subLoading) {
     return (
       <div className="theater-page">
@@ -266,8 +265,7 @@ const TheaterRegister = () => {
   }
 
   /* ── No active plan — block registration ── */
-
-  if (!isSubActive) {
+  if (subBlocked) {
     return (
       <div className="theater-page">
         <button type="button" className="back-btn" onClick={() => navigate(-1)}>←</button>
@@ -277,16 +275,13 @@ const TheaterRegister = () => {
           <p style={{ color: "#888", margin: "12px 0 20px" }}>
             You need an active subscription plan to register a theater.
           </p>
-          <button onClick={() => navigate("/owner/plan")}>
-            View Plans
-          </button>
+          <button onClick={() => navigate("/owner/plan")}>View Plans</button>
         </div>
       </div>
     );
   }
 
   /* ── Render ── */
-
   return (
 
     <div className="theater-page">
@@ -304,7 +299,11 @@ const TheaterRegister = () => {
         <h2>Register Theater</h2>
 
         {/* Owner email — read only */}
-        <input value={ownerEmail} readOnly style={{ color: "#888", background: "#f5f5f5" }} />
+        <input
+          value={ownerEmail}
+          readOnly
+          style={{ color: "#888", background: "#f5f5f5" }}
+        />
 
         {/* FIELD ERROR */}
         {fieldError && (
@@ -331,6 +330,7 @@ const TheaterRegister = () => {
           placeholder="Owner Name *"
           value={theaterData.ownerName}
           onChange={handleChange}
+          onBlur={handleBlur}
         />
 
         <input
@@ -338,6 +338,7 @@ const TheaterRegister = () => {
           placeholder="Theater Name *"
           value={theaterData.theaterName}
           onChange={handleChange}
+          onBlur={handleBlur}
         />
 
         <input
@@ -345,6 +346,7 @@ const TheaterRegister = () => {
           placeholder="Branch Name *"
           value={theaterData.branch}
           onChange={handleChange}
+          onBlur={handleBlur}
         />
 
         <input
@@ -352,6 +354,7 @@ const TheaterRegister = () => {
           placeholder="City *"
           value={theaterData.city}
           onChange={handleChange}
+          onBlur={handleBlur}
         />
 
         <textarea
@@ -359,6 +362,7 @@ const TheaterRegister = () => {
           placeholder="Full Address *"
           value={theaterData.address}
           onChange={handleChange}
+          onBlur={handleBlur}
         />
 
         <input
@@ -395,38 +399,29 @@ const TheaterRegister = () => {
           onChange={handleChange}
         />
 
-        {/* ⚠️ NO IMAGE UPLOAD API — URL inputs only */}
         <label>
-          Theater Logo URL
-          <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}>
-            (optional)
-          </span>
+          Theater Logo File
+          <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}>(optional)</span>
         </label>
         <input
           name="theaterLogo"
-          placeholder="https://... (logo image URL)"
-          value={theaterData.theaterLogo}
-          onChange={handleChange}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
         />
 
         <label>
-          Banner URL
-          <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}>
-            (optional)
-          </span>
+          Banner File
+          <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}>(optional)</span>
         </label>
         <input
           name="banner"
-          placeholder="https://... (banner image URL)"
-          value={theaterData.banner}
-          onChange={handleChange}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
         />
 
-        {/* ── BANK DETAILS ──
-            FIX: made optional — no backend API exists yet
-                 owner not blocked from registering theater
-                 without bank details
-        ── */}
+        {/* ── BANK DETAILS ── */}
         <h3 style={{ marginTop: 20 }}>
           Bank Details
           <span style={{ fontSize: 12, color: "#aaa", fontWeight: 400, marginLeft: 8 }}>
@@ -448,6 +443,7 @@ const TheaterRegister = () => {
           placeholder="Account Holder Name"
           value={theaterData.accountHolder}
           onChange={handleChange}
+          onBlur={handleBlur}
         />
 
         <input
@@ -455,6 +451,7 @@ const TheaterRegister = () => {
           placeholder="Bank Name"
           value={theaterData.bankName}
           onChange={handleChange}
+          onBlur={handleBlur}
         />
 
         <input

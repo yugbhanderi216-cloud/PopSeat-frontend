@@ -3,12 +3,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import "./PaymentPage.css";
 
 // APIs USED:
-//   POST /api/order/create       ✅ confirmed — creates food order
 //   POST /api/payment/create     ✅ confirmed — creates Razorpay order server-side
-//   POST /api/payment/verify     ✅ confirmed — verifies UPI payment signature
+//   POST /api/order/create       ✅ confirmed — creates food order (after payment created)
+//   POST /api/payment/verify     ✅ mock mode — sends { orderId: payment._id }
 
-const API_BASE  = "https://popseat.onrender.com/api";
-const RAZORPAY_KEY = "rzp_test_STsZnqsQOPRrqZ"; // ✅ real key confirmed
+const API_BASE     = "https://popseat.onrender.com/api";
+const RAZORPAY_KEY = "rzp_test_STsZnqsQOPRrqZ";
 
 const PaymentPage = () => {
 
@@ -19,6 +19,7 @@ const PaymentPage = () => {
   const seatId    = params.get("seatId") || localStorage.getItem("customerSeatId");
   const token     = localStorage.getItem("customerToken") || "";
   const theaterId = localStorage.getItem("customerTheaterId") || "";
+  const hallId    = params.get("hallId") || localStorage.getItem("customerHallId") || localStorage.getItem("hallId") || "";
   const screen    = localStorage.getItem("screenNo") || "";
   const seat      = localStorage.getItem("seatNo")   || "";
 
@@ -47,13 +48,46 @@ const PaymentPage = () => {
   });
 
   /* ===============================
-     STEP 1: CREATE FOOD ORDER
-     POST /api/order/create ✅
-     Creates the order in DB, returns order._id
-     needed for POST /api/payment/create
+     STEP 1: CREATE RAZORPAY ORDER SERVER-SIDE
+     POST /api/payment/create ✅
+     Body: { amount, currency, orderId }
+     Response: { success, payment: { _id, razorpayOrderId, amount } }
+     Must run FIRST so payment._id is available
+     for createFoodOrder and verifyPayment.
   =============================== */
 
-  const createFoodOrder = async (razorpayPaymentId) => {
+  const createRazorpayOrder = async () => {
+
+    const res  = await fetch(`${API_BASE}/payment/create`, {
+      method  : "POST",
+      headers : authHeaders(),
+      body    : JSON.stringify({
+        amount   : total * 100, // paise
+        currency : "INR",
+        orderId  : seatId || "food-order",
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.message || "Could not create payment order.");
+
+    if (!data.payment?.razorpayOrderId) {
+      throw new Error("Backend did not return razorpayOrderId. Please contact support.");
+    }
+
+    return data.payment; // { _id, razorpayOrderId, amount }
+
+  };
+
+  /* ===============================
+     STEP 2: CREATE FOOD ORDER
+     POST /api/order/create ✅
+     Body includes razorpayOrderId = payment._id
+     so the order is linked to the payment record.
+  =============================== */
+
+  const createFoodOrder = async (paymentId) => {
 
     const items = cart.map((item) => ({
       menuId   : item.menuId || item._id,
@@ -62,13 +96,14 @@ const PaymentPage = () => {
       price    : Number(item.finalPrice || item.price || 0),
     }));
 
-    const res  = await fetch(`${API_BASE}/order/create`, {
+    const res  = await fetch(`${API_BASE}/order`, {
       method  : "POST",
       headers : authHeaders(),
       body    : JSON.stringify({
-        seatId,
+        seatNumber      : seat || seatId || "Unknown",
+        hallId          : hallId || "Unknown",
         totalAmount     : total,
-        razorpayOrderId : razorpayPaymentId,
+        razorpayOrderId : paymentId,
         items,
       }),
     });
@@ -77,77 +112,46 @@ const PaymentPage = () => {
 
     if (!data.success) throw new Error(data.message || "Order creation failed.");
 
-    return data; // data.order._id used below
+    return data; // data.order._id
 
   };
 
   /* ===============================
-     STEP 2: CREATE RAZORPAY ORDER SERVER-SIDE
-     POST /api/payment/create ✅
-     Confirmed body: { amount, currency, orderId }
-     Confirmed response: { success, payment: { orderId, amount } }
-     orderId here = internal DB order _id from createFoodOrder
-  =============================== */
-
-  const createRazorpayOrder = async (internalOrderId) => {
-
-    const res  = await fetch(`${API_BASE}/payment/create`, {
-      method  : "POST",
-      headers : authHeaders(),
-      body    : JSON.stringify({
-        amount   : total * 100,   // paise
-        currency : "INR",
-        orderId  : internalOrderId,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!data.success) throw new Error(data.message || "Could not create payment order.");
-
-    return data.payment; // { orderId, amount, currency, _id }
-
-  };
-
-  /* ===============================
-     STEP 3: VERIFY PAYMENT
+     STEP 3: VERIFY PAYMENT (MOCK)
      POST /api/payment/verify ✅
-     Confirmed body: { razorpay_order_id, razorpay_payment_id, razorpay_signature }
-     Confirmed response: { success, verified }
-     Called after Razorpay checkout completes
+     Mock mode: sends only { orderId: payment._id }
+     No signature verification required.
   =============================== */
 
-  const verifyPayment = async (razorpayResponse) => {
+  const verifyPayment = async (paymentId) => {
 
     const res  = await fetch(`${API_BASE}/payment/verify`, {
       method  : "POST",
       headers : authHeaders(),
       body    : JSON.stringify({
-        razorpay_order_id  : razorpayResponse.razorpay_order_id,
-        razorpay_payment_id: razorpayResponse.razorpay_payment_id,
-        razorpay_signature : razorpayResponse.razorpay_signature,
+        orderId: paymentId,
       }),
     });
 
     const data = await res.json();
 
-    // If verified false — payment signature invalid
-    if (!data.success || !data.verified) {
+    if (!res.ok || !data.success) {
       throw new Error(data.message || "Payment verification failed.");
     }
 
-    return true;
+    return data;
 
   };
 
   /* ===============================
-     RAZORPAY FLOW
-     Full secure flow:
-       1. Create food order → get internalOrderId
-       2. Create Razorpay order server-side → get razorpayOrderId
-       3. Open Razorpay checkout with order_id
-       4. On success → verify signature
-       5. Save order to localStorage → navigate to tracking
+     RAZORPAY FLOW (MOCK MODE)
+     Order:
+       1. POST /api/payment/create  → get payment._id + razorpayOrderId
+       2. POST /api/order/create    → link order to payment._id
+       3. Open Razorpay checkout
+       4. On success → ignore Razorpay response
+       5. POST /api/payment/verify  → { orderId: payment._id }
+       6. Save to localStorage → navigate to tracking
   =============================== */
 
   const startRazorpay = async () => {
@@ -160,32 +164,33 @@ const PaymentPage = () => {
 
     try {
 
-      // Step 1 — create food order first to get internalOrderId
-      const orderData     = await createFoodOrder("pending_razorpay");
+      // Step 1 — create Razorpay order first to get payment._id
+      const payment = await createRazorpayOrder();
+
+      // Step 2 — create food order linked to payment._id
+      const orderData       = await createFoodOrder(payment._id);
       const internalOrderId = orderData.order?._id;
 
-      // Step 2 — create Razorpay order server-side
-      const payment = await createRazorpayOrder(internalOrderId);
-
-      // Step 3 — open Razorpay checkout with confirmed order_id
+      // Step 3 — open Razorpay checkout
       const options = {
         key         : RAZORPAY_KEY,
         amount      : total * 100,
         currency    : "INR",
         name        : "PopSeat Cinema",
         description : "Food Order Payment",
-        order_id    : payment.razorpayOrderId || payment._id, // from server response
+        order_id    : payment.razorpayOrderId,
 
-        handler: async (response) => {
+        // Step 4 — ignore Razorpay response; use payment._id from closure
+        handler: async () => {
 
           try {
 
-            // Step 4 — verify payment signature
-            await verifyPayment(response);
+            // Step 5 — mock verify
+            await verifyPayment(payment._id);
 
-            // Step 5 — save and navigate
-            localStorage.setItem("currentOrderId", internalOrderId || "");
-            localStorage.setItem("currentPaymentId", response.razorpay_payment_id || "");
+            // Step 6 — save and navigate
+            localStorage.setItem("currentOrderId",   internalOrderId || "");
+            localStorage.setItem("currentPaymentId", payment._id     || "");
             localStorage.removeItem("cart");
 
             navigate(`/tracking?theaterId=${theaterId}&screen=${screen}&seat=${seat}`);
@@ -213,6 +218,15 @@ const PaymentPage = () => {
       };
 
       const rzp = new window.Razorpay(options);
+
+      rzp.on("payment.failed", (resp) => {
+        setError(
+          resp.error?.description ||
+          "Payment failed. Please try a different payment method."
+        );
+        setLoading(false);
+      });
+
       rzp.open();
 
     } catch (err) {
@@ -224,13 +238,10 @@ const PaymentPage = () => {
   };
 
   /* ===============================
-     DIRECT UPI FLOW
-     POST /api/payment/verify ✅ now connected
-     UPI intent → wait for return → verify signature
-     ⚠️  UPI intent doesn't return a signature back to the app
-         so verification will fail — this is a UPI limitation.
-         The verify endpoint needs razorpay_signature which
-         UPI intents don't provide. Keeping 4s fallback for now.
+     DIRECT UPI FLOW (unchanged)
+     ⚠️  UPI intent doesn't return a signature
+         back to the app — webhook on backend
+         is the proper solution for verification.
   =============================== */
 
   const startUPIIntent = async () => {
@@ -239,16 +250,12 @@ const PaymentPage = () => {
 
     try {
 
-      // Create food order first
-      const orderData      = await createFoodOrder("UPI_MANUAL_" + Date.now());
+      const orderData       = await createFoodOrder("UPI_MANUAL_" + Date.now());
       const internalOrderId = orderData.order?._id;
 
       const link = `upi://pay?pa=${upiId}&pn=PopSeat&am=${total}&cu=INR`;
       window.location.href = link;
 
-      // UPI intent doesn't return back to app with signature
-      // so we save order and hope for the best
-      // A webhook on backend is the proper solution
       setTimeout(() => {
         localStorage.setItem("currentOrderId", internalOrderId || "");
         localStorage.removeItem("cart");

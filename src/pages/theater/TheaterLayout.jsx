@@ -9,19 +9,19 @@ const TheaterLayout = () => {
 
   // FIX: same triple-key fallback as OwnerHome / TheaterDashboard
   const role = (
-    localStorage.getItem("ownerRole")  ||
+    localStorage.getItem("ownerRole") ||
     localStorage.getItem("workerRole") ||
-    localStorage.getItem("role")       || ""
+    localStorage.getItem("role") || ""
   ).toLowerCase();
 
   const email = (
-    localStorage.getItem("ownerEmail")  ||
+    localStorage.getItem("ownerEmail") ||
     localStorage.getItem("workerEmail") ||
-    localStorage.getItem("email")       || ""
+    localStorage.getItem("email") || ""
   );
 
   const isWorker = role === "worker";
-  const isOwner  = role === "owner";
+  const isOwner = role === "owner";
 
   // FIX: default sidebar closed on mobile, open on desktop
   const [sidebarOpen, setSidebarOpen] = useState(
@@ -69,17 +69,20 @@ const TheaterLayout = () => {
   ── */
 
   const ownerLinks = [
-    { to: "overview",   icon: "📊", label: "Overview"      },
-    { to: "analytics",  icon: "📈", label: "Analytics"     }, // owner only — shows revenue
-    { to: "menu",       icon: "🍿", label: "Food Menu"      }, // owner only — can edit items
-    { to: "orders",     icon: "🧾", label: "Orders"         },
-    { to: "qr",         icon: "📱", label: "QR Generator"   },
-    { to: "settings",   icon: "⚙️", label: "Settings"       },
+    { to: "overview", icon: "📊", label: "Overview" },
+    { to: "orders", icon: "🧾", label: "Orders" },
+    { to: "analytics", icon: "📈", label: "Analytics" },
+    { to: "menu", icon: "🍔", label: "Food Menu" },
+    { to: "qr", icon: "🔲", label: "QR Code Generator" },
+    { to: "settings", icon: "⚙️", label: "Settings" },
   ];
 
   const workerLinks = [
-    { to: "overview",   icon: "📊", label: "Overview"       },
-    { to: "orders",     icon: "🧾", label: "Orders"         }, // worker primary task
+    { to: "overview", icon: "📊", label: "Overview" },
+    { to: "orders", icon: "🧾", label: "Orders " },
+    { to: "analytics", icon: "📈", label: "Analytics" },
+    { to: "menu", icon: "🍔", label: "Food Menu" },
+    { to: "qr", icon: "🔲", label: "QR Code Generator" },
   ];
 
   const navLinks = isWorker ? workerLinks : ownerLinks;

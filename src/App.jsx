@@ -144,7 +144,7 @@ function App() {
       </Route>
 
       {/* Customer flow — public */}
-      <Route path="/customer"        element={<CustomerWelcome />} />
+      <Route path="/customer"  element={<CustomerWelcome />} />
       <Route path="/customer/login"  element={<CustomerLogin />} />
       <Route path="/customer/menu"   element={<CustomerMenu />} />
       <Route path="/customer/cart"   element={<CustomerCart />} />

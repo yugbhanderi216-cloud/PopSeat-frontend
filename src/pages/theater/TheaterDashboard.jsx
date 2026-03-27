@@ -309,23 +309,7 @@ const TheaterDashboard = () => {
         </div>
       </div>
 
-      {/* QUICK ACTIONS */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "16px 0" }}>
-        <button
-          onClick={() => navigate(`/qr-generator?theaterId=${theaterId}`, { state: { theaterId } })}
-          style={{ padding: "8px 16px", borderRadius: 8, border: "none",
-            background: "#6C63FF", color: "#fff", cursor: "pointer", fontSize: 13 }}
-        >
-          🎟 Generate QR Codes
-        </button>
-        <button
-          onClick={() => navigate(`/edit-theater?theaterId=${theaterId}`, { state: { theaterId } })}
-          style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #ddd",
-            background: "#fff", cursor: "pointer", fontSize: 13 }}
-        >
-          ✏️ Edit Theater
-        </button>
-      </div>
+      {/* QUICK ACTIONS -- removed per user request */}
 
       {/* WORKER NOTICE — assignedTheaterId still missing from login */}
       {role === "worker" && !localStorage.getItem("assignedTheaterId") && (

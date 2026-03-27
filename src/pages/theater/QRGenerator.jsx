@@ -5,14 +5,10 @@ import "./QRGenerator.css";
 
 // ─────────────────────────────────────────────────────────────
 // APIs USED:
-//   GET  /api/cinema/:theaterId  ✅ — load one specific theater
-//   GET  /api/hall               ✅ — load halls for theaterId
-//   POST /api/seat               ✅ — create seat, returns _id
-//   GET  /api/seat               ✅ — list existing seats (dedup)
-//
-// QR URL points to CustomerWelcome route:
-//   /customer/welcome?seatId=<_id>&screen=<screenNo>&seat=<seatNumber>
-//   CustomerWelcome calls GET /api/seat/:id to load theater info.
+//   GET  /api/cinema/:theaterId     ✅ — load one specific theater
+//   GET  /api/halls                 ✅ — load halls for theaterId
+//   POST /api/halls/row             ✅ — bulk create row with seats
+//   GET  /api/halls/:hallId/seats   ✅ — auto-load existing QR codes!
 // ─────────────────────────────────────────────────────────────
 
 const API_BASE = "https://popseat.onrender.com/api";
@@ -20,40 +16,45 @@ const APP_BASE = window.location.origin;
 
 const authHeaders = () => ({
   "Content-Type": "application/json",
-  Authorization: `Bearer ${
-    localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
-  }`,
+  Authorization: `Bearer ${localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
+    }`,
 });
 
 const QRGenerator = () => {
   const { state } = useLocation();
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
 
   const ownerEmail = localStorage.getItem("ownerEmail") || localStorage.getItem("email") || "";
-  const role       = (localStorage.getItem("ownerRole") || localStorage.getItem("role") || "").toLowerCase();
+  const role = (localStorage.getItem("ownerRole") || localStorage.getItem("role") || "").toLowerCase();
 
-  // Resolve theaterId once — prefer navigation state, fall back to localStorage
   const theaterId =
     state?.theaterId ||
     localStorage.getItem("activeOwnerTheaterId") ||
+    localStorage.getItem("assignedTheaterId") ||
     localStorage.getItem("customerTheaterId") ||
     "";
 
-  const [theaterData,    setTheaterData]    = useState(null);
-  const [halls,          setHalls]          = useState([]);
-  const [selectedHall,   setSelectedHall]   = useState("");
-  const [screenNo,       setScreenNo]       = useState("");
+  const [theaterData, setTheaterData] = useState(null);
+  const [halls, setHalls] = useState([]);
+  const [selectedHall, setSelectedHall] = useState("");
+  const [screenNo, setScreenNo] = useState("");
   const [generatedSeats, setGeneratedSeats] = useState([]);
 
-  const [rowName,   setRowName]   = useState("");
+  const [rowName, setRowName] = useState("");
   const [seatCount, setSeatCount] = useState("");
-  const [layout,    setLayout]    = useState([]);
+  const [layout, setLayout] = useState([]);
 
   const [theaterLoading, setTheaterLoading] = useState(true);
-  const [hallLoading,    setHallLoading]    = useState(false);
-  const [generating,     setGenerating]     = useState(false);
-  const [error,          setError]          = useState("");
-  const [progress,       setProgress]       = useState("");
+  const [hallLoading, setHallLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState("");
+  const [progress, setProgress] = useState("");
+
+  // Create Hall inline form
+  const [newHallName,   setNewHallName]   = useState("");
+  const [newHallNumber, setNewHallNumber] = useState("");
+  const [creatingHall,  setCreatingHall]  = useState(false);
+  const [hallError,     setHallError]     = useState("");
 
   // ── Auth guard ──
   useEffect(() => {
@@ -63,13 +64,7 @@ const QRGenerator = () => {
   }, [ownerEmail, role, navigate]);
 
   // ─────────────────────────────────────────────────────────
-  //  LOAD THEATER — GET /api/cinema/:theaterId
-  //
-  //  FIX: was calling GET /api/cinema (all cinemas) and then
-  //  filtering by email — unreliable if owner has multiple
-  //  theaters or if email fields differ across records.
-  //  theaterId is already available from navigation state and
-  //  localStorage, so we call the specific endpoint directly.
+  //  LOAD THEATER
   // ─────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchTheater = async () => {
@@ -83,7 +78,7 @@ const QRGenerator = () => {
       }
 
       try {
-        const res  = await fetch(`${API_BASE}/cinema/${theaterId}`, {
+        const res = await fetch(`${API_BASE}/cinema/${theaterId}`, {
           headers: authHeaders(),
         });
         const data = await res.json();
@@ -107,25 +102,25 @@ const QRGenerator = () => {
   }, [theaterId, ownerEmail]);
 
   // ─────────────────────────────────────────────────────────
-  //  LOAD HALLS — GET /api/hall?cinemaId=:theaterId
+  //  LOAD HALLS
   // ─────────────────────────────────────────────────────────
   const loadHalls = useCallback(async (cinemaId) => {
     setHallLoading(true);
     try {
-      const res  = await fetch(`${API_BASE}/hall?cinemaId=${cinemaId}`, {
+      const res = await fetch(`${API_BASE}/halls?cinemaId=${cinemaId}`, {
         headers: authHeaders(),
       });
       const data = await res.json();
 
       if (data.success) {
-        const cinemaHalls = (data.halls || []).filter(
-          (h) => h.cinemaId === cinemaId || h.cinemaId?._id === cinemaId
-        );
-        setHalls(cinemaHalls);
-        // Auto-select the only hall if there is just one
-        if (cinemaHalls.length === 1) {
-          setSelectedHall(cinemaHalls[0]._id);
-          setScreenNo(cinemaHalls[0].hallNumber || "1");
+        // API already filters by cinemaId via query param — no need to re-filter client-side
+        // (re-filtering breaks when cinemaId is a populated object instead of a plain string)
+        const allHalls = data.halls || [];
+        setHalls(allHalls);
+
+        if (allHalls.length === 1) {
+          setSelectedHall(allHalls[0]._id);
+          setScreenNo(allHalls[0].hallNumber || "1");
         }
       }
     } catch (err) {
@@ -140,6 +135,76 @@ const QRGenerator = () => {
   }, [theaterData, loadHalls]);
 
   // ─────────────────────────────────────────────────────────
+  //  CREATE HALL — POST /api/halls
+  // ─────────────────────────────────────────────────────────
+  const createHall = async () => {
+    setHallError("");
+    if (!newHallName.trim()) { setHallError("Hall name is required."); return; }
+    if (!theaterData?._id) { setHallError("Theater not loaded."); return; }
+
+    setCreatingHall(true);
+    try {
+      const res = await fetch(`${API_BASE}/halls`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          cinemaId: theaterData._id,
+          name:     newHallName.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNewHallName("");
+        setNewHallNumber("");
+        await loadHalls(theaterData._id); // refresh list
+      } else {
+        setHallError(data.message || "Failed to create hall.");
+      }
+    } catch (err) {
+      console.error("Create hall error:", err);
+      setHallError("Network error. Could not create hall.");
+    } finally {
+      setCreatingHall(false);
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────
+  //  LOAD EXISTING SEATS FOR COMBINED DISPLAY
+  // ─────────────────────────────────────────────────────────
+  const loadSeatsForHall = useCallback(async (hallId) => {
+    if (!hallId) {
+      setGeneratedSeats([]);
+      return;
+    }
+    setGenerating(true);
+    setProgress("Loading existing seats...");
+    try {
+      const res = await fetch(`${API_BASE}/halls/${hallId}/seats`, {
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (data.success && data.seats) {
+        const loaded = data.seats.map((seat) => ({
+          seatNumber: seat.seatNumber,
+          _id: seat.qrCode || seat.seatNumber,
+          qrValue: seat.qrData,
+          qrCode: seat.qrCode // Ready to display backend base64 image!
+        }));
+        setGeneratedSeats(loaded);
+      }
+    } catch (err) {
+      console.error("Failed to load existing seats:", err);
+    } finally {
+      setProgress("");
+      setGenerating(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSeatsForHall(selectedHall);
+  }, [selectedHall, loadSeatsForHall]);
+
+  // ─────────────────────────────────────────────────────────
   //  ROW BUILDER
   // ─────────────────────────────────────────────────────────
   const addRow = () => {
@@ -151,9 +216,15 @@ const QRGenerator = () => {
       setError("Seat count must be between 1 and 50.");
       return;
     }
+    const upperRow = rowName.trim().toUpperCase();
+    if (layout.some((r) => r.row === upperRow)) {
+      setError(`Row ${upperRow} already added.`);
+      return;
+    }
+
     setLayout([
       ...layout,
-      { row: rowName.trim().toUpperCase(), count: Number(seatCount) },
+      { row: upperRow, count: Number(seatCount) },
     ]);
     setRowName("");
     setSeatCount("");
@@ -163,7 +234,7 @@ const QRGenerator = () => {
   const removeRow = (i) => setLayout(layout.filter((_, idx) => idx !== i));
 
   // ─────────────────────────────────────────────────────────
-  //  GENERATE SEATS — POST /api/seat (one per seat)
+  //  GENERATE SEATS — POST /api/halls/row
   // ─────────────────────────────────────────────────────────
   const generateSeats = async () => {
     setError("");
@@ -177,71 +248,60 @@ const QRGenerator = () => {
       return;
     }
 
-    const seatNumbers = [];
-    layout.forEach((r) => {
-      for (let i = 1; i <= r.count; i++) {
-        seatNumbers.push(`${r.row}${i}`);
-      }
-    });
-
     setGenerating(true);
-    setGeneratedSeats([]);
 
-    const created = [];
-    let failed    = 0;
+    let failed = 0;
 
-    for (let i = 0; i < seatNumbers.length; i++) {
-      const seatNumber = seatNumbers[i];
-      setProgress(`Creating seat ${i + 1} / ${seatNumbers.length}…`);
+    for (let i = 0; i < layout.length; i++) {
+      const currentLayoutRow = layout[i];
+      setProgress(`Creating row ${currentLayoutRow.row} (${i + 1} / ${layout.length})…`);
 
       try {
-        const res  = await fetch(`${API_BASE}/seat`, {
-          method:  "POST",
+        const payload = {
+          hallId: selectedHall,
+          rowLabel: currentLayoutRow.row,
+          numberOfSeats: currentLayoutRow.count,
+          baseUrl: `${window.location.origin}/menu`,
+        };
+
+        const res = await fetch(`${API_BASE}/halls/row`, {
+          method: "POST",
           headers: authHeaders(),
-          body:    JSON.stringify({ hallId: selectedHall, seatNumber }),
+          body: JSON.stringify(payload),
         });
         const data = await res.json();
 
-        if (data.success && data.seat) {
-          const qrUrl = `${APP_BASE}/customer/welcome?seatId=${data.seat._id}&screen=${screenNo}&seat=${seatNumber}`;
-          created.push({
-            seatNumber,
-            _id:      data.seat._id,
-            qrValue:  qrUrl,
-          });
-        } else {
+        if (!data.success || !data.hall) {
+          console.error(`Row ${currentLayoutRow.row} failed:`, data.message);
           failed++;
         }
       } catch (err) {
-        console.error(`Failed to create seat ${seatNumber}:`, err);
+        console.error(`Failed to create row ${currentLayoutRow.row}:`, err);
         failed++;
       }
     }
 
-    setGeneratedSeats(created);
-    setProgress("");
-    setGenerating(false);
-
     if (failed > 0) {
-      setError(`${failed} seat(s) could not be created. The rest were saved.`);
+      setError(`${failed} row(s) could not be created. The rest were processed successfully.`);
     }
+
+    // Done generating! Now refresh the full list from the server to pull down the newly added + old seats cleanly!
+    loadSeatsForHall(selectedHall);
+    setLayout([]); // Clear input layout now that everything is synchronized
   };
 
   // ── Clear ──
   const clearLayout = () => {
     setLayout([]);
     setGeneratedSeats([]);
+    setSelectedHall("");
     setScreenNo("");
     setRowName("");
     setSeatCount("");
-    setSelectedHall(halls.length === 1 ? halls[0]._id : "");
     setError("");
     setProgress("");
   };
 
-  // ─────────────────────────────────────────────────────────
-  //  LOADING / ERROR STATES
-  // ─────────────────────────────────────────────────────────
   if (theaterLoading) {
     return (
       <div className="qr-page">
@@ -274,26 +334,20 @@ const QRGenerator = () => {
     );
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  RENDER
-  // ─────────────────────────────────────────────────────────
   return (
     <div className="qr-page">
       <h2>🎟 QR Generator</h2>
 
-      {/* Theater info banner */}
       <div style={{
         background: "#f9f9f9", border: "1px solid #eee", borderRadius: 8,
         padding: "10px 16px", marginBottom: 16, fontSize: 13, color: "#555",
       }}>
         🎬 <strong>{theaterData.name}</strong>
         {theaterData.branchName && ` — ${theaterData.branchName}`}
-        {theaterData.city       && ` · ${theaterData.city}`}
+        {theaterData.city && ` · ${theaterData.city}`}
       </div>
 
       <div className="qr-controls">
-
-        {/* Hall selector */}
         <div>
           <label style={{ fontSize: 13, color: "#555", display: "block", marginBottom: 4 }}>
             Select Hall / Screen *
@@ -301,9 +355,32 @@ const QRGenerator = () => {
           {hallLoading ? (
             <p style={{ fontSize: 13, color: "#888" }}>Loading halls…</p>
           ) : halls.length === 0 ? (
-            <p style={{ fontSize: 13, color: "#e55" }}>
-              No halls found. Please create a hall for this theater first.
-            </p>
+            <div style={{ marginTop: 8 }}>
+              <p style={{ fontSize: 13, color: "#e55", marginBottom: 8 }}>
+                No halls found for this theater. Create one below:
+              </p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <input
+                  placeholder="Hall name (e.g. Screen 1)"
+                  value={newHallName}
+                  onChange={(e) => setNewHallName(e.target.value)}
+                  style={{ flex: 1, minWidth: 150, padding: "6px 10px", borderRadius: 6, border: "1px solid #ccc" }}
+                />
+
+                <button
+                  onClick={createHall}
+                  disabled={creatingHall}
+                  style={{
+                    padding: "6px 16px", borderRadius: 6, border: "none",
+                    background: "#6C63FF", color: "#fff", cursor: "pointer",
+                    opacity: creatingHall ? 0.6 : 1,
+                  }}
+                >
+                  {creatingHall ? "Creating…" : "+ Create Hall"}
+                </button>
+              </div>
+              {hallError && <p style={{ color: "#e55", fontSize: 12, marginTop: 4 }}>{hallError}</p>}
+            </div>
           ) : (
             <select
               value={selectedHall}
@@ -323,7 +400,6 @@ const QRGenerator = () => {
           )}
         </div>
 
-        {/* Row builder */}
         <div className="row-builder">
           <input
             placeholder="Row letter (A, B, C)"
@@ -344,7 +420,6 @@ const QRGenerator = () => {
           </button>
         </div>
 
-        {/* Layout preview */}
         {layout.length > 0 && (
           <div className="layout-preview">
             {layout.map((r, i) => (
@@ -354,31 +429,27 @@ const QRGenerator = () => {
                 </p>
                 <button
                   onClick={() => removeRow(i)}
-                  style={{
-                    background: "none", border: "none",
-                    color: "#e55", cursor: "pointer", fontSize: 14,
-                  }}
+                  style={{ background: "none", border: "none", color: "#e55", cursor: "pointer", fontSize: 14 }}
                 >
                   ✕
                 </button>
               </div>
             ))}
             <p style={{ fontSize: 12, color: "#aaa", margin: "4px 0 0" }}>
-              Total: {layout.reduce((s, r) => s + r.count, 0)} seats
+              Total: {layout.reduce((s, r) => s + r.count, 0)} newly configured seats
             </p>
           </div>
         )}
 
-        {error    && <p style={{ color: "#e55", fontSize: 13, margin: "4px 0" }}>{error}</p>}
+        {error && <p style={{ color: "#e55", fontSize: 13, margin: "4px 0" }}>{error}</p>}
         {progress && <p style={{ color: "#888", fontSize: 13, margin: "4px 0" }}>{progress}</p>}
 
-        {/* Action buttons */}
         <div className="qr-action-buttons">
           <button
             className="generate-btn"
             onClick={generateSeats}
-            disabled={generating || halls.length === 0}
-            style={{ opacity: generating ? 0.6 : 1 }}
+            disabled={generating || halls.length === 0 || layout.length === 0}
+            style={{ opacity: (generating || layout.length === 0) ? 0.6 : 1 }}
           >
             {generating ? "Generating…" : "Generate & Save Seats"}
           </button>
@@ -388,24 +459,28 @@ const QRGenerator = () => {
         </div>
 
         {generatedSeats.length > 0 && (
-          <button className="print-btn" onClick={() => window.print()}>
-            🖨 Print QR Sheet ({generatedSeats.length} seats)
+          <button className="print-btn" onClick={() => window.print()} style={{ marginTop: 10 }}>
+            🖨 Print Required Sheet ({generatedSeats.length} Active QRs)
           </button>
         )}
       </div>
 
-      {/* QR grid */}
       {generatedSeats.length > 0 && (
         <div className="qr-grid print-area">
           {generatedSeats.map((seat) => (
             <div key={seat._id} className="qr-card">
-              <QRCodeCanvas value={seat.qrValue} size={120} />
+              {/* Prioritize backend's pre-rendered Base64 QR code if it exists, otherwise generate dynamically */}
+              {seat.qrCode ? (
+                <img src={seat.qrCode} alt={`QR code for seat ${seat.seatNumber}`} width={120} height={120} />
+              ) : (
+                <QRCodeCanvas value={seat.qrValue} size={120} />
+              )}
               <h4>Seat {seat.seatNumber}</h4>
               <p>Screen {screenNo}</p>
               <p style={{ fontSize: 11 }}>
                 {theaterData.branchName || theaterData.name}
               </p>
-              <p style={{ fontSize: 9, color: "#aaa", wordBreak: "break-all" }}>
+              <p style={{ fontSize: 9, color: "#aaa", wordBreak: "break-all", display: "none" }}>
                 ID: {seat._id}
               </p>
             </div>

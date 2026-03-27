@@ -5,9 +5,9 @@ import "./RenewPlan.css";
 // APIs USED:
 //   GET  /api/subscription/my    ✅ — load current plan + get real planId
 //   POST /api/payment/create     ✅ — create Razorpay order server-side
-//   POST /api/payment/verify     ✅ — verify Razorpay signature (MUST run before renew)
+//   POST /api/payment/verify     ✅ — mock verify using { orderId: payment._id }
 //   POST /api/owner/renew        ✅ — extend subscription after payment verified
-//     Body: { planId, razorpay_order_id, razorpay_payment_id }
+//     Body: { planId, paymentId }
 
 const API_BASE     = "https://popseat.onrender.com/api";
 const RAZORPAY_KEY = "rzp_test_STsZnqsQOPRrqZ";
@@ -26,9 +26,7 @@ const RENEWAL_OPTIONS = [
   { label: "1 Year",   months: 12, days: 365, price: 5500 },
 ];
 
-/* ── Load Razorpay script dynamically ──
-   FIX 4: If user refreshes on this page, window.Razorpay won't exist.
-   Loader ensures script is present before payment starts. */
+/* ── Load Razorpay script dynamically ── */
 const loadRazorpayScript = () =>
   new Promise((resolve) => {
     if (window.Razorpay) { resolve(true); return; }
@@ -46,7 +44,7 @@ const RenewPlan = () => {
   const [subscription,  setSubscription]  = useState(null);
   const [subLoading,    setSubLoading]    = useState(true);
   const [loading,       setLoading]       = useState(false);
-  const [loadingOption, setLoadingOption] = useState(null); // FIX 7: store label not months
+  const [loadingOption, setLoadingOption] = useState(null);
   const [error,         setError]         = useState("");
   const [success,       setSuccess]       = useState(false);
   const [renewedUntil,  setRenewedUntil]  = useState("");
@@ -60,8 +58,6 @@ const RenewPlan = () => {
 
   /* ═══════════════════════════════════════
      GET /api/subscription/my ✅
-     planId for /api/owner/renew MUST come
-     from this response (_id field).
   ═══════════════════════════════════════ */
   useEffect(() => {
     if (!token) return;
@@ -77,13 +73,10 @@ const RenewPlan = () => {
         if (data.success) {
           const sub = data.subscription || data.plan || data.data || null;
           setSubscription(sub);
-          // Save real planId as fallback for refresh safety
           if (sub?._id) localStorage.setItem("renewPlanId", sub._id);
         }
       } catch (err) {
         console.warn("Subscription fetch error:", err);
-        // FIX 3: Removed dead ownerPlans localStorage fallback.
-        // Nothing in the app writes ownerPlans — it always returned [].
         setSubscription(null);
       } finally {
         setSubLoading(false);
@@ -93,8 +86,7 @@ const RenewPlan = () => {
     fetchSubscription();
   }, [token]);
 
-  /* ── Calculate new expiry from current plan or today ──
-     FIX 5: Guard against null subscription before calculating */
+  /* ── Calculate new expiry from current plan or today ── */
   const calculateNewExpiry = (days) => {
     const today     = new Date();
     const curExpiry = subscription?.expiresAt ? new Date(subscription.expiresAt) : today;
@@ -111,17 +103,13 @@ const RenewPlan = () => {
 
   /* ═══════════════════════════════════════
      POST /api/payment/create ✅
-     Creates Razorpay order server-side.
-     FIX 2: Only use razorpayOrderId — never
-     fall back to payment._id which is a
-     MongoDB ID and will break Razorpay checkout.
   ═══════════════════════════════════════ */
   const createRazorpayOrder = async (option) => {
     const res  = await fetch(`${API_BASE}/payment/create`, {
       method : "POST",
       headers: authHeaders(),
       body   : JSON.stringify({
-        amount  : option.price * 100, // in paise
+        amount  : option.price * 100,
         currency: "INR",
         orderId : subscription?._id || localStorage.getItem("renewPlanId") || "renew",
       }),
@@ -130,7 +118,6 @@ const RenewPlan = () => {
 
     if (!data.success) throw new Error(data.message || "Could not create payment order.");
 
-    // FIX 2: Strictly require razorpayOrderId — no fallback to _id
     if (!data.payment?.razorpayOrderId) {
       throw new Error("Backend did not return razorpayOrderId. Please contact support.");
     }
@@ -140,25 +127,20 @@ const RenewPlan = () => {
 
   /* ═══════════════════════════════════════
      POST /api/payment/verify ✅
-     FIX 1: MUST verify signature before
-     calling /api/owner/renew. Previously
-     this was skipped entirely — allowing
-     anyone to fake a successful payment.
+     Mock mode: sends only { orderId: payment._id }
   ═══════════════════════════════════════ */
-  const verifyPayment = async (razorpayResponse) => {
+  const verifyPayment = async (paymentId) => {
     const res  = await fetch(`${API_BASE}/payment/verify`, {
       method : "POST",
       headers: authHeaders(),
       body   : JSON.stringify({
-        razorpay_order_id  : razorpayResponse.razorpay_order_id,
-        razorpay_payment_id: razorpayResponse.razorpay_payment_id,
-        razorpay_signature : razorpayResponse.razorpay_signature,
+        orderId: paymentId,
       }),
     });
     const data = await res.json();
 
-    if (!res.ok || !data.success || data.verified === false) {
-      throw new Error(data.message || "Payment verification failed. Please contact support.");
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || "Payment verification failed.");
     }
 
     return data;
@@ -166,29 +148,26 @@ const RenewPlan = () => {
 
   /* ═══════════════════════════════════════
      POST /api/owner/renew ✅
-     Called AFTER payment is verified.
-     planId must be subscription._id from
-     GET /api/subscription/my — NOT hardcoded.
+     Body: { planId, paymentId }
   ═══════════════════════════════════════ */
-  const renewSubscription = async (razorpayResponse) => {
+  const renewSubscription = async (paymentId) => {
     const realPlanId = subscription?._id || localStorage.getItem("renewPlanId");
 
     if (!realPlanId) {
-      throw new Error("Could not find your plan ID. Please go back and try again.");
+      throw new Error("Could not find your plan ID. Please try again.");
     }
 
     const res  = await fetch(`${API_BASE}/owner/renew`, {
       method : "POST",
       headers: authHeaders(),
       body   : JSON.stringify({
-        planId              : realPlanId,
-        razorpay_order_id   : razorpayResponse.razorpay_order_id,
-        razorpay_payment_id : razorpayResponse.razorpay_payment_id,
+        planId   : realPlanId,
+        paymentId: paymentId,
       }),
     });
     const data = await res.json();
 
-    if (!data.success) throw new Error(data.message || "Renewal failed on server.");
+    if (!res.ok || !data.success) throw new Error(data.message || "Renewal failed.");
 
     return data;
   };
@@ -196,20 +175,16 @@ const RenewPlan = () => {
   /* ═══════════════════════════════════════
      RAZORPAY SUCCESS HANDLER
      Order:
-       1. POST /api/payment/verify  ✅ (FIX 1)
-       2. POST /api/owner/renew     ✅
+       1. POST /api/payment/verify (mock)
+       2. POST /api/owner/renew
        3. Show success + redirect
   ═══════════════════════════════════════ */
-  const handleRazorpaySuccess = async (razorpayResponse, option) => {
+  const handleRazorpaySuccess = async (paymentId, option) => {
     const newExpiry = calculateNewExpiry(option.days);
     try {
-      // Step 1 — verify signature
-      await verifyPayment(razorpayResponse);
+      await verifyPayment(paymentId);
+      await renewSubscription(paymentId);
 
-      // Step 2 — renew on server
-      await renewSubscription(razorpayResponse);
-
-      // Step 3 — show success
       setRenewedUntil(
         newExpiry.toLocaleDateString("en-IN", {
           day: "numeric", month: "long", year: "numeric",
@@ -246,9 +221,9 @@ const RenewPlan = () => {
         currency   : "INR",
         name       : "PopSeat",
         description: `${option.label} Plan Renewal`,
-        order_id   : payment.razorpayOrderId, // FIX 2: never use _id
+        order_id   : payment.razorpayOrderId,
 
-        handler: (response) => handleRazorpaySuccess(response, option),
+        handler: () => handleRazorpaySuccess(payment._id, option),
 
         prefill: {
           email: localStorage.getItem("ownerEmail") || localStorage.getItem("email") || "",
@@ -292,7 +267,7 @@ const RenewPlan = () => {
     }
     setError("");
     setLoading(true);
-    setLoadingOption(option.label); // FIX 7: use label (unique) not months
+    setLoadingOption(option.label);
     startRazorpay(option);
   };
 
@@ -352,7 +327,7 @@ const RenewPlan = () => {
         <div className="renew-title-line" />
       </div>
 
-      {/* CURRENT PLAN BANNER — FIX 6: no inline styles */}
+      {/* CURRENT PLAN BANNER */}
       {!subLoading && subscription && (
         <div className="renew-current-plan">
           <span className="renew-current-label">Current plan expires:</span>
@@ -376,7 +351,7 @@ const RenewPlan = () => {
       <div className="plan-row">
         {RENEWAL_OPTIONS.map((option) => {
           const previewExpiry = subscription ? calculateNewExpiry(option.days) : null;
-          const isThisLoading = loading && loadingOption === option.label; // FIX 7
+          const isThisLoading = loading && loadingOption === option.label;
 
           return (
             <div

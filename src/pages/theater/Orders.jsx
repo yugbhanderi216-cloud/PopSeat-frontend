@@ -211,7 +211,7 @@ const Orders = () => {
     setUpdating((prev) => ({ ...prev, [id]: true }));
     const token = getToken();
     try {
-      const res  = await fetch(`${API_BASE}/worker/order-status/${id}`, {
+      const res  = await fetch(`${API_BASE}/order/${id}/status`, {
         method : "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -365,7 +365,7 @@ const Orders = () => {
             const nextStatus    = NEXT_STATUS[currentStatus];
             const nextLabel     = NEXT_LABEL[currentStatus];
             const isUpdating    = !!updating[order._id];
-            const seatNumber    = getSeatNumber(order.seatId);
+            const displaySeat   = order.seatNumber || getSeatNumber(order.seatId);
 
             return (
               <div key={order._id} className="order-card">
@@ -384,7 +384,7 @@ const Orders = () => {
                   <div className="order-meta-row">
                     <span className="order-meta-item">
                       <span className="order-meta-label">Seat</span>
-                      <span className="order-meta-value">{seatNumber}</span>
+                      <span className="order-meta-value">{displaySeat}</span>
                     </span>
                     <span className="order-meta-divider" />
                     <span className="order-meta-item">
