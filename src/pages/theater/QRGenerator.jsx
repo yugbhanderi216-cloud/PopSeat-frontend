@@ -238,7 +238,7 @@ const QRGenerator = () => {
             hallId: selectedHall,
             rowLabel: row.row,
             numberOfSeats: row.count,
-            baseUrl: "https://pop-seat-frontend-q8b65rprn-yugbhanderi216-9743s-projects.vercel.app/menu",
+            baseUrl: "https://pop-seat-frontend-q8b65rprn-yugbhanderi216-9743s-projects.vercel.app/customer/menu",
           };
           const res = await fetch(`${API_BASE}/halls/row`, {
             method: "POST",
