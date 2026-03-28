@@ -8,12 +8,6 @@ import {
 import "./AdminDashboard.css";
 import logo from "../PopSeat_Logo.png";
 
-// APIs USED:
-//   GET /api/cinema               ✅ — all theaters
-//   GET /api/orders?cinemaId=     ✅ — food order revenue per theater
-//   PUT /api/cinema/:id           ✅ — approve/disable theater
-//   GET /api/admin/profile        ✅ — admin profile
-
 const API_BASE = "https://popseat.onrender.com/api";
 
 const authHeaders = () => ({
@@ -84,7 +78,6 @@ const PLAN_COLOR = {
   Pro: "#a855f7", Enterprise: "#ec4899",
 };
 
-// Commission tab removed from TABS
 const TABS = [
   { key: "overview",      label: "Overview",      icon: "⬡" },
   { key: "subscriptions", label: "Subscriptions", icon: "◈" },
@@ -110,19 +103,51 @@ const CustomTooltip = ({ active, payload, label }) => {
 const AdminDashboard = () => {
   const navigate = useNavigate();
 
-  const [activeTab,     setActiveTab]     = useState("overview");
-  const [theaters,      setTheaters]      = useState([]);
-  const [adminProfile,  setAdminProfile]  = useState(null);
-  const [loading,       setLoading]       = useState(true);
-  const [actionLoading, setActionLoading] = useState({});
-  const [error,         setError]         = useState("");
-  const [revenueRange,  setRevenueRange]  = useState("monthly");
-  const [transactions,  setTransactions]  = useState(MOCK_TRANSACTIONS);
-  const [payouts,       setPayouts]       = useState(MOCK_PAYOUTS);
-  const [txSearch,      setTxSearch]      = useState("");
-  const [txFilter,      setTxFilter]      = useState("all");
-  const [theaterSearch, setTheaterSearch] = useState("");
-  const [theaterFilter, setTheaterFilter] = useState("all");
+  const [activeTab,       setActiveTab]       = useState("overview");
+  const [theaters,        setTheaters]        = useState([]);
+  const [adminProfile,    setAdminProfile]    = useState(null);
+  const [loading,         setLoading]         = useState(true);
+  const [actionLoading,   setActionLoading]   = useState({});
+  const [error,           setError]           = useState("");
+  const [revenueRange,    setRevenueRange]    = useState("monthly");
+  const [transactions,    setTransactions]    = useState(MOCK_TRANSACTIONS);
+  const [payouts,         setPayouts]         = useState(MOCK_PAYOUTS);
+  const [txSearch,        setTxSearch]        = useState("");
+  const [txFilter,        setTxFilter]        = useState("all");
+  const [theaterSearch,   setTheaterSearch]   = useState("");
+  const [theaterFilter,   setTheaterFilter]   = useState("all");
+
+  // ── Sidebar state ──
+  // sidebarCollapsed: desktop toggle (hides sidebar, gives full width)
+  // mobileSidebarOpen: mobile drawer open/close
+  const [sidebarCollapsed,  setSidebarCollapsed]  = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Detect mobile
+  const isMobile = () => window.innerWidth <= 768;
+
+  const toggleSidebar = () => {
+    if (isMobile()) {
+      setMobileSidebarOpen((v) => !v);
+    } else {
+      setSidebarCollapsed((v) => !v);
+    }
+  };
+
+  const closeMobileSidebar = () => setMobileSidebarOpen(false);
+
+  // Close mobile sidebar on tab change
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+    if (isMobile()) setMobileSidebarOpen(false);
+  };
+
+  // Build root class string
+  const rootClasses = [
+    "adm-root",
+    sidebarCollapsed  ? "sidebar-collapsed"   : "",
+    mobileSidebarOpen ? "mobile-sidebar-open" : "",
+  ].filter(Boolean).join(" ");
 
   /* ── Auth guard ── */
   useEffect(() => {
@@ -130,7 +155,7 @@ const AdminDashboard = () => {
     if (role !== "admin") navigate("/admin-login", { replace: true });
   }, [navigate]);
 
-  /* ── Load admin profile — GET /api/admin/profile ✅ ── */
+  /* ── Load admin profile ── */
   const loadProfile = useCallback(async () => {
     try {
       const res  = await fetch(`${API_BASE}/admin/profile`, { headers: authHeaders() });
@@ -139,25 +164,21 @@ const AdminDashboard = () => {
     } catch { /* silent */ }
   }, []);
 
-  /* ── Load theaters — GET /api/cinema ✅ ── */
+  /* ── Load theaters ── */
   const loadTheaters = useCallback(async () => {
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
       const res  = await fetch(`${API_BASE}/cinema`, { headers: authHeaders() });
       const data = await res.json();
-      if (data.success) {
-        setTheaters(data.cinemas || []);
-      } else {
-        setError(data.message || "Failed to load theaters.");
-      }
+      if (data.success) setTheaters(data.cinemas || []);
+      else setError(data.message || "Failed to load theaters.");
     } catch { setError("Network error."); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => { loadProfile(); loadTheaters(); }, [loadProfile, loadTheaters]);
 
-  /* ── Approve / Disable — PUT /api/cinema/:id ✅ ── */
+  /* ── Approve / Disable ── */
   const updateTheaterStatus = async (cinemaId, isActive) => {
     setActionLoading((p) => ({ ...p, [cinemaId]: true }));
     try {
@@ -185,23 +206,16 @@ const AdminDashboard = () => {
     navigate("/admin-login");
   };
 
-  /* ── Theater counts ── */
+  /* ── Stats ── */
   const activeTheaters  = theaters.filter((t) =>  t.isActive).length;
   const pendingTheaters = theaters.filter((t) => !t.isActive).length;
-
-  /* ── Subscription stats ── */
   const paidTx      = useMemo(() => transactions.filter((t) => t.status === "paid"),    [transactions]);
   const pendingTx   = useMemo(() => transactions.filter((t) => t.status === "pending"), [transactions]);
   const subRevenue  = useMemo(() => paidTx.reduce((s, t) => s + t.amount, 0),           [paidTx]);
-
   const completedPayouts = useMemo(
-    () => payouts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0),
-    [payouts]
-  );
+    () => payouts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0), [payouts]);
   const pendingPayoutsTotal = useMemo(
-    () => payouts.filter((p) => p.status === "pending").reduce((s, p) => s + p.amount, 0),
-    [payouts]
-  );
+    () => payouts.filter((p) => p.status === "pending").reduce((s, p) => s + p.amount, 0), [payouts]);
 
   /* ── Filtered transactions ── */
   const filteredTx = useMemo(() =>
@@ -244,11 +258,15 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="adm-root">
+    <div className={rootClasses}>
+
+      {/* ── Mobile overlay (tap to close) ── */}
+      <div className="adm-overlay" onClick={closeMobileSidebar} />
 
       {/* ══ SIDEBAR ══ */}
       <aside className="adm-sidebar">
-        <div className="adm-brand">
+        {/* Tap logo → toggle sidebar */}
+        <div className="adm-brand" onClick={toggleSidebar} title="Toggle sidebar">
           <img src={logo} alt="PopSeat" />
           <span>PopSeat</span>
         </div>
@@ -257,7 +275,7 @@ const AdminDashboard = () => {
           {TABS.map((tab) => (
             <button key={tab.key}
               className={`adm-nav-btn ${activeTab === tab.key ? "active" : ""}`}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => handleTabChange(tab.key)}
             >
               <span className="adm-nav-icon">{tab.icon}</span>
               {tab.label}
@@ -284,16 +302,22 @@ const AdminDashboard = () => {
       <main className="adm-main">
 
         <div className="adm-topbar">
-          <div>
-            <h1 className="adm-page-title">
-              {TABS.find((t) => t.key === activeTab)?.label}
-            </h1>
-            <p className="adm-page-sub">
-              {activeTab === "overview"      && "Platform revenue and theater overview"}
-              {activeTab === "subscriptions" && "Subscription revenue trends and plan analytics"}
-              {activeTab === "payments"      && "Subscription transactions and owner payouts"}
-              {activeTab === "theaters"      && "Manage and approve theater registrations"}
-            </p>
+          <div className="adm-topbar-left">
+            {/* Hamburger — shown on desktop when sidebar is collapsed */}
+            <button className="adm-menu-toggle" onClick={toggleSidebar} aria-label="Open sidebar">
+              ☰
+            </button>
+            <div>
+              <h1 className="adm-page-title">
+                {TABS.find((t) => t.key === activeTab)?.label}
+              </h1>
+              <p className="adm-page-sub">
+                {activeTab === "overview"      && "Platform revenue and theater overview"}
+                {activeTab === "subscriptions" && "Subscription revenue trends and plan analytics"}
+                {activeTab === "payments"      && "Subscription transactions and owner payouts"}
+                {activeTab === "theaters"      && "Manage and approve theater registrations"}
+              </p>
+            </div>
           </div>
           <button className="adm-refresh-btn" onClick={loadTheaters}>↻ Refresh</button>
         </div>
@@ -305,12 +329,9 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* ══════════════════════════════════════
-            TAB: OVERVIEW
-        ══════════════════════════════════════ */}
+        {/* ══ TAB: OVERVIEW ══ */}
         {activeTab === "overview" && (
           <div className="adm-fade-in">
-
             <div className="adm-kpi-grid">
               <StatCard icon="⬡" label="Subscription Revenue" value={fmt(subRevenue)}
                 accent="accent" sub={`${paidTx.length} paid plans`} />
@@ -325,7 +346,6 @@ const AdminDashboard = () => {
             </div>
 
             <div className="adm-overview-row">
-
               <div className="adm-card adm-chart-card">
                 <div className="adm-card-header">
                   <div className="adm-card-title">Subscription Revenue (Last 6 Months)</div>
@@ -353,10 +373,10 @@ const AdminDashboard = () => {
               <div className="adm-card adm-quick-stats">
                 <div className="adm-card-title" style={{ marginBottom: 14 }}>Revenue Breakdown</div>
                 {[
-                  { label: "Subscription Revenue",  value: fmt(subRevenue),                                              color: "#6366f1" },
-                  { label: "Pending Sub Payments",  value: fmt(pendingTx.reduce((s,t)=>s+t.amount,0)),                  color: "#d97706" },
-                  { label: "Pending Payouts",        value: fmt(pendingPayoutsTotal),                                    color: "#dc2626" },
-                  { label: "Completed Payouts",      value: fmt(completedPayouts),                                       color: "#16a34a" },
+                  { label: "Subscription Revenue",  value: fmt(subRevenue),                                 color: "#6366f1" },
+                  { label: "Pending Sub Payments",  value: fmt(pendingTx.reduce((s,t)=>s+t.amount,0)),     color: "#d97706" },
+                  { label: "Pending Payouts",        value: fmt(pendingPayoutsTotal),                       color: "#dc2626" },
+                  { label: "Completed Payouts",      value: fmt(completedPayouts),                          color: "#16a34a" },
                 ].map((item) => (
                   <div key={item.label} className="adm-health-row">
                     <span className="adm-health-label">{item.label}</span>
@@ -364,18 +384,13 @@ const AdminDashboard = () => {
                   </div>
                 ))}
               </div>
-
             </div>
-
           </div>
         )}
 
-        {/* ══════════════════════════════════════
-            TAB: SUBSCRIPTIONS
-        ══════════════════════════════════════ */}
+        {/* ══ TAB: SUBSCRIPTIONS ══ */}
         {activeTab === "subscriptions" && (
           <div className="adm-fade-in">
-
             <div className="adm-kpi-grid">
               <StatCard icon="◈" label="Total Sub Revenue" value={fmt(subRevenue)}  accent="accent" />
               <StatCard icon="✦" label="Active Plans"      value={activeTheaters}   accent="green"  />
@@ -444,16 +459,12 @@ const AdminDashboard = () => {
                 </ResponsiveContainer>
               </div>
             </div>
-
           </div>
         )}
 
-        {/* ══════════════════════════════════════
-            TAB: PAYMENTS
-        ══════════════════════════════════════ */}
+        {/* ══ TAB: PAYMENTS ══ */}
         {activeTab === "payments" && (
           <div className="adm-fade-in">
-
             <div className="adm-kpi-grid">
               <StatCard icon="◎" label="Total Collected"  value={fmt(subRevenue)}          accent="accent" sub="From subscriptions" />
               <StatCard icon="✦" label="Paid to Owners"   value={fmt(completedPayouts)}    accent="green"  sub="Released" />
@@ -461,7 +472,6 @@ const AdminDashboard = () => {
               <StatCard icon="⬡" label="Platform Balance" value={fmt(subRevenue - completedPayouts - pendingPayoutsTotal)} accent="blue" sub="Net retained" />
             </div>
 
-            {/* Subscription Transactions */}
             <div className="adm-card" style={{ marginBottom: 20 }}>
               <div className="adm-card-header">
                 <div className="adm-card-title">Subscription Transactions</div>
@@ -508,7 +518,6 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Owner Payouts */}
             <div className="adm-card">
               <div className="adm-card-header">
                 <div className="adm-card-title">Owner Payouts</div>
@@ -547,16 +556,12 @@ const AdminDashboard = () => {
                 </table>
               </div>
             </div>
-
           </div>
         )}
 
-        {/* ══════════════════════════════════════
-            TAB: THEATERS
-        ══════════════════════════════════════ */}
+        {/* ══ TAB: THEATERS ══ */}
         {activeTab === "theaters" && (
           <div className="adm-fade-in">
-
             <div className="adm-kpi-grid">
               <StatCard icon="◫" label="Total Theaters" value={theaters.length} accent="accent" />
               <StatCard icon="✦" label="Active"         value={activeTheaters}  accent="green"  />
@@ -639,11 +644,27 @@ const AdminDashboard = () => {
                 </div>
               )}
             </div>
-
           </div>
         )}
 
       </main>
+
+      {/* ══ MOBILE BOTTOM NAV ══ */}
+      <nav className="adm-bottom-nav">
+        <div className="adm-bottom-nav-inner">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              className={`adm-bottom-nav-btn ${activeTab === tab.key ? "active" : ""}`}
+              onClick={() => handleTabChange(tab.key)}
+            >
+              <span className="bnav-icon">{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </nav>
+
     </div>
   );
 };
