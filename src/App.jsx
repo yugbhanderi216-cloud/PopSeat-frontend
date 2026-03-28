@@ -4,6 +4,8 @@ import Login          from "./pages/auth/Login";
 import Register       from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 
+import LandingPage    from "./pages/LandingPage";
+
 import TheaterRegister from "./pages/theater/TheaterRegister";
 import TheaterLayout   from "./pages/theater/TheaterLayout";
 import TheaterDashboard from "./pages/theater/TheaterDashboard";
@@ -110,7 +112,7 @@ function App() {
     <Routes>
 
       {/* Default */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<LandingPage />} />
 
       {/* Auth — public */}
       <Route path="/login"          element={<Login />} />
