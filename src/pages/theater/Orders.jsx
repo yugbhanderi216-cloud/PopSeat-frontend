@@ -13,6 +13,7 @@ import "./Orders.css";
 const API_BASE = "https://popseat.onrender.com/api";
 
 const getToken = () =>
+  localStorage.getItem("ownerToken")  ||
   localStorage.getItem("workerToken") ||
   localStorage.getItem("token")       || "";
 
@@ -66,6 +67,17 @@ const Orders = () => {
   const intervalRef = useRef(null);
   const isMounted   = useRef(true);
 
+  const role  = (
+    localStorage.getItem("ownerRole")  ||
+    localStorage.getItem("workerRole") ||
+    localStorage.getItem("role")       || ""
+  ).toLowerCase();
+
+  const theaterId = role === "worker"
+    ? (localStorage.getItem("assignedTheaterId") || localStorage.getItem("customerTheaterId") || "")
+    : (localStorage.getItem("activeOwnerTheaterId") || localStorage.getItem("customerTheaterId") || "");
+
+
   useEffect(() => {
     isMounted.current = true;
     return () => { isMounted.current = false; };
@@ -113,6 +125,40 @@ const Orders = () => {
     }
 
     try {
+      // ── OWNERS ──
+      if (role === "owner") {
+        if (!theaterId) {
+          if (isMounted.current) setLoading(false);
+          return;
+        }
+
+        const res = await fetch(`${API_BASE}/orders?cinemaId=${theaterId}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization : `Bearer ${token}`,
+          },
+        });
+
+        if (res.status === 403) {
+          if (isMounted.current) {
+            stopPolling();
+            setAuthError(true);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const data = await res.json();
+        if (data.success && isMounted.current) {
+          const sorted = (data.orders || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          setOrders(sorted);
+          setError("");
+          setAuthError(false);
+        }
+        return;
+      }
+
+      // ── WORKERS ──
       // FIX 5: Fetch responses separately so we can check HTTP status
       // before calling .json() — Promise.allSettled with .then(r.json())
       // was swallowing 403s because json() still resolves on 403.
@@ -267,9 +313,11 @@ const Orders = () => {
             className="orders-auth-btn"
             onClick={() => {
               // Clear stale tokens and redirect to login
-              ["workerToken", "token", "workerRole", "role"].forEach(
-                (k) => localStorage.removeItem(k)
-              );
+              [
+                "ownerToken", "ownerEmail", "ownerRole",
+                "workerToken", "workerEmail", "workerRole",
+                "token", "email", "role"
+              ].forEach((k) => localStorage.removeItem(k));
               window.location.href = "/login";
             }}
           >

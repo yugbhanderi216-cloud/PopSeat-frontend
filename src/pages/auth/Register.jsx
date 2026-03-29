@@ -16,6 +16,7 @@ function Register() {
   const navigate = useNavigate();
 
   const [formData, setFormData]       = useState({ name: "", email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [strength, setStrength]       = useState(0);
   const [isEightChar, setIsEightChar] = useState(false);
   const [loading, setLoading]         = useState(false);
@@ -112,13 +113,25 @@ function Register() {
 
             <input
               className="register-input"
-              type="password"
+              type={showPassword ? "text" : "password"}
               name="password"
               value={formData.password}
               placeholder="Password"
               onChange={handleChange}
               required
             />
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "15px", width: "100%" }}>
+              <input 
+                type="checkbox" 
+                id="showPasswordReg" 
+                checked={showPassword} 
+                onChange={(e) => setShowPassword(e.target.checked)} 
+                style={{ width: "16px", height: "16px", cursor: "pointer", margin: 0 }}
+              />
+              <label htmlFor="showPasswordReg" style={{ cursor: "pointer", fontSize: "0.9rem", userSelect: "none", color: "inherit" }}>
+                Show password
+              </label>
+            </div>
 
             {/* Password rules */}
             <div className={`rule ${isEightChar ? "valid" : ""}`}>

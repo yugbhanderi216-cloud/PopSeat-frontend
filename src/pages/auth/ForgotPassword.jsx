@@ -235,23 +235,30 @@ const ForgotPassword = () => {
                   value={newPassword}
                   onChange={(e) => handlePasswordChange(e.target.value)}
                 />
-                <button type="button" className="toggle-eye" onClick={() => setShowPassword((p) => !p)}>
-                  {showPassword ? "🙈" : "👁️"}
-                </button>
               </div>
 
               <label className="forgot-label" style={{ marginTop: "12px" }}>Confirm Password</label>
               <div className="input-wrapper">
                 <input
-                  type={showConfirm ? "text" : "password"}
+                  type={showPassword ? "text" : "password"}
                   className="forgot-input"
                   placeholder="Confirm Password"
                   value={confirmPassword}
                   onChange={(e) => handleConfirmPasswordChange(e.target.value)}
                 />
-                <button type="button" className="toggle-eye" onClick={() => setShowConfirm((p) => !p)}>
-                  {showConfirm ? "🙈" : "👁️"}
-                </button>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "10px", marginBottom: "15px", width: "100%" }}>
+                <input 
+                  type="checkbox" 
+                  id="showPasswordForgot" 
+                  checked={showPassword} 
+                  onChange={(e) => setShowPassword(e.target.checked)} 
+                  style={{ width: "16px", height: "16px", cursor: "pointer", margin: 0 }}
+                />
+                <label htmlFor="showPasswordForgot" style={{ cursor: "pointer", fontSize: "0.9rem", userSelect: "none", color: "inherit" }}>
+                  Show password
+                </label>
               </div>
 
               <div className={`rule ${isEightChar ? "valid" : ""}`}>

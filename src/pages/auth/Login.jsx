@@ -14,6 +14,7 @@ const Login = () => {
 
   const [email,        setEmail]        = useState("");
   const [password,     setPassword]     = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState("owner");
   const [loading,      setLoading]      = useState(false);
   const [lockTime,     setLockTime]     = useState(0);
@@ -237,12 +238,24 @@ const Login = () => {
           />
           <input
             className="login-input"
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleLogin()}
           />
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "15px", alignSelf: "flex-start" }}>
+            <input 
+              type="checkbox" 
+              id="showPasswordLogin" 
+              checked={showPassword} 
+              onChange={(e) => setShowPassword(e.target.checked)} 
+              style={{ width: "16px", height: "16px", cursor: "pointer", margin: 0 }}
+            />
+            <label htmlFor="showPasswordLogin" style={{ cursor: "pointer", fontSize: "0.9rem", userSelect: "none" }}>
+              Show password
+            </label>
+          </div>
 
           {/* Lock timer */}
           {remaining > 0 && (
