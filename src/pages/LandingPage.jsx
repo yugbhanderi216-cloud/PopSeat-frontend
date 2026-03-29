@@ -435,6 +435,87 @@ const LandingPage = () => {
               </React.Fragment>
             ))}
           </div>
+
+          {/* ══════════ ANIMATED WORKFLOW ══════════ */}
+          <div className={`workflow-anim-container ${stepsIn ? 'animate-in' : ''}`}>
+            
+            <div className="workflow-board">
+              <div className="wf-bg-grid" />
+              
+              {/* NODE 1: CUSTOMER PHONE */}
+              <div className="wf-node wf-client">
+                <div className="wf-label">Customer 📱<br/><span>Seat D-4</span></div>
+                <div className="wf-device-mockup phone-mockup">
+                  <div className="phone-notch" />
+                  <div className="phone-screen">
+                    <div className="ph-header" />
+                    <div className="ph-hero">
+                      <div className="ph-hero-img" />
+                      <div className="ph-hero-text" />
+                    </div>
+                    <div className="ph-items">
+                      <div className="ph-item" />
+                      <div className="ph-item ph-item-anim" />
+                    </div>
+                    <div className="ph-cta ph-cta-anim">Place Order</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* PATH 1 */}
+              <div className="wf-path path-1">
+                <div className="wf-line" />
+                <div className="wf-packet p1" />
+                <div className="wf-packet p1" style={{ animationDelay: '1.2s' }} />
+                <div className="wf-packet p1" style={{ animationDelay: '2.4s' }} />
+              </div>
+
+              {/* NODE 2: CLOUD */}
+              <div className="wf-node wf-cloud">
+                <div className="wf-label">PopSeat Cloud ⚡</div>
+                <div className="cloud-ring">
+                   <div className="cloud-core">
+                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                       <path d="M13 10V3L4 14H11V21L20 10H13Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                     </svg>
+                   </div>
+                   <div className="cloud-pulse" />
+                   <div className="cloud-pulse" style={{ animationDelay: '1s' }} />
+                </div>
+              </div>
+
+              {/* PATH 2 */}
+              <div className="wf-path path-2">
+                <div className="wf-line" />
+                <div className="wf-packet p2" />
+                <div className="wf-packet p2" style={{ animationDelay: '1.2s' }} />
+                <div className="wf-packet p2" style={{ animationDelay: '2.4s' }} />
+              </div>
+
+              {/* NODE 3: WORKER DASHBOARD */}
+              <div className="wf-node wf-worker">
+                <div className="wf-label">Kitchen iPad 👨‍🍳<br/><span>Order Received</span></div>
+                <div className="wf-device-mockup tablet-mockup">
+                   <div className="tab-sidebar">
+                     <div className="tab-menu-item" />
+                     <div className="tab-menu-item" />
+                     <div className="tab-menu-item" />
+                   </div>
+                   <div className="tab-main">
+                     <div className="tab-header" />
+                     <div className="tab-grid">
+                       <div className="tab-card st-1" />
+                       <div className="tab-card st-2" />
+                       <div className="tab-card incoming-card" />
+                       <div className="tab-card st-3" />
+                     </div>
+                   </div>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+
         </div>
       </section>
 
