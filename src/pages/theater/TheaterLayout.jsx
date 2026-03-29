@@ -1,140 +1,211 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import "./TheaterLayout.css";
-import Navbar from "../component/Navbar";
+import logo from "../PopSeat_Logo.png";
+
+// ─────────────────────────────────────────────────────────────
+// Theater / Worker layout — mirrors AdminDashboard structure:
+//   • Sidebar is sticky (height:100vh, top:0) inside a flex row
+//   • Topbar is inside .tl-main — no external Navbar component
+//   • Logo click  → toggles sidebar (desktop collapse / mobile drawer)
+//   • Mobile      → sidebar becomes a fixed drawer + overlay
+//   • Responsive  → bottom-nav shown on ≤768px
+// ─────────────────────────────────────────────────────────────
 
 const TheaterLayout = () => {
 
   const navigate = useNavigate();
 
-  // FIX: same triple-key fallback as OwnerHome / TheaterDashboard
+  /* ── Read identity ── */
   const role = (
-    localStorage.getItem("ownerRole") ||
+    localStorage.getItem("ownerRole")  ||
     localStorage.getItem("workerRole") ||
-    localStorage.getItem("role") || ""
+    localStorage.getItem("role")       || ""
   ).toLowerCase();
 
   const email = (
-    localStorage.getItem("ownerEmail") ||
+    localStorage.getItem("ownerEmail")  ||
     localStorage.getItem("workerEmail") ||
-    localStorage.getItem("email") || ""
+    localStorage.getItem("email")       || ""
   );
 
   const isWorker = role === "worker";
-  const isOwner = role === "owner";
+  const isOwner  = role === "owner";
 
-  // FIX: default sidebar closed on mobile, open on desktop
-  const [sidebarOpen, setSidebarOpen] = useState(
-    () => window.innerWidth >= 768
-  );
-
-  /* ── Auth guard ──
-     FIX: no guard existed — anyone could navigate to /theater/*
-          without being logged in
-  ── */
-
+  /* ── Auth guard ── */
   useEffect(() => {
     if (!email || (!isOwner && !isWorker)) {
       navigate("/login", { replace: true });
     }
   }, [email, isOwner, isWorker, navigate]);
 
-  /* ── Logout ──
-     FIX: was localStorage.clear() — wiped customer session
-          now only removes owner/worker keys surgically
-  ── */
+  /* ── Sidebar state (mirrors AdminDashboard) ── */
+  const isMobile = () => window.innerWidth <= 768;
 
-  const handleLogout = () => {
+  const [sidebarCollapsed,  setSidebarCollapsed]  = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-    const keysToRemove = [
-      // Owner keys
-      "ownerToken", "ownerEmail", "ownerRole", "ownerPlans",
-      "selectedPlan", "activeOwnerTheaterId",
-      // Worker keys
-      "workerToken", "workerEmail", "workerRole", "assignedTheaterId",
-      // Generic fallback keys (only if used by this session)
-      "token", "email", "role",
-    ];
-
-    keysToRemove.forEach((k) => localStorage.removeItem(k));
-
-    navigate("/login");
-
+  const toggleSidebar = () => {
+    if (isMobile()) {
+      setMobileSidebarOpen((v) => !v);
+    } else {
+      setSidebarCollapsed((v) => !v);
+    }
   };
 
-  /* ── Nav items ──
-     FIX: Analytics and Menu were visible to workers
-          Workers should only see Overview, Orders — not
-          revenue data or menu management
-  ── */
+  const closeMobileSidebar = () => setMobileSidebarOpen(false);
 
+  /* Close mobile drawer when a nav link is clicked */
+  const handleNavClick = () => {
+    if (isMobile()) setMobileSidebarOpen(false);
+  };
+
+  /* ── Logout ── */
+  const handleLogout = () => {
+    [
+      "ownerToken", "ownerEmail", "ownerRole",
+      "ownerPlans", "selectedPlan", "activeOwnerTheaterId",
+      "workerToken", "workerEmail", "workerRole", "assignedTheaterId",
+      "token", "email", "role",
+    ].forEach((k) => localStorage.removeItem(k));
+    navigate("/login");
+  };
+
+  /* ── Nav items (same rules as before) ── */
   const ownerLinks = [
-    { to: "overview", icon: "📊", label: "Overview" },
-    { to: "orders", icon: "🧾", label: "Orders" },
-    { to: "analytics", icon: "📈", label: "Analytics" },
-    { to: "menu", icon: "🍔", label: "Food Menu" },
-    { to: "qr", icon: "🔲", label: "QR Code Generator" },
-    { to: "settings", icon: "⚙️", label: "Settings" },
+    { to: "overview",  icon: "📊", label: "Overview"           },
+    { to: "orders",    icon: "🧾", label: "Orders"             },
+    { to: "analytics", icon: "📈", label: "Analytics"          },
+    { to: "menu",      icon: "🍔", label: "Food Menu"          },
+    { to: "qr",        icon: "🔲", label: "QR Generator"       },
+    { to: "settings",  icon: "⚙️", label: "Settings"           },
   ];
 
   const workerLinks = [
-    { to: "overview", icon: "📊", label: "Overview" },
-    { to: "orders", icon: "🧾", label: "Orders " },
+    { to: "overview",  icon: "📊", label: "Overview"  },
+    { to: "orders",    icon: "🧾", label: "Orders"    },
     { to: "analytics", icon: "📈", label: "Analytics" },
-    { to: "menu", icon: "🍔", label: "Food Menu" },
-    { to: "qr", icon: "🔲", label: "QR Code Generator" },
+    { to: "menu",      icon: "🍔", label: "Food Menu" },
+    { to: "qr",        icon: "🔲", label: "QR Code"   },
   ];
 
   const navLinks = isWorker ? workerLinks : ownerLinks;
 
+  /* ── Root class string ── */
+  const rootClass = [
+    "tl-root",
+    sidebarCollapsed  ? "sidebar-collapsed"   : "",
+    mobileSidebarOpen ? "mobile-sidebar-open" : "",
+  ].filter(Boolean).join(" ");
+
+  const getInitial = () => email ? email.charAt(0).toUpperCase() : "U";
+
   return (
-    <>
-      <Navbar toggleSidebar={() => setSidebarOpen((prev) => !prev)} />
+    <div className={rootClass}>
 
-      <div className={`layout ${sidebarOpen ? "open" : "closed"}`}>
+      {/* Mobile dim overlay — tap to close sidebar */}
+      <div className="tl-overlay" onClick={closeMobileSidebar} />
 
-        {/* ── Sidebar ── */}
-        <aside className="sidebar">
+      {/* ══ SIDEBAR ══ */}
+      <aside className="tl-sidebar">
 
-          <div className="sidebar-header">
-            <h2>🎬 Theater</h2>
-            <span>Management Panel</span>
-          </div>
+        {/* Logo row — click to toggle sidebar */}
+        <div className="tl-brand" onClick={toggleSidebar} title="Toggle sidebar">
+          <img src={logo} alt="PopSeat" />
+          <span>PopSeat</span>
+        </div>
 
-          <nav className="sidebar-links">
-            {navLinks.map(({ to, icon, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                // Close sidebar on mobile after navigation
-                onClick={() => {
-                  if (window.innerWidth < 768) setSidebarOpen(false);
-                }}
-              >
-                {icon} <span>{label}</span>
-              </NavLink>
-            ))}
-          </nav>
+        <div className="tl-sidebar-label">
+          {isWorker ? "WORKER PANEL" : "THEATER PANEL"}
+        </div>
 
-          {/* Role badge + logout */}
-          <div className="sidebar-footer">
-            <div className="role-badge">
-              {isWorker ? "👷 Worker" : "👑 Owner"}
+        {/* Nav links */}
+        <nav className="tl-nav">
+          {navLinks.map(({ to, icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) => `tl-nav-btn${isActive ? " active" : ""}`}
+              onClick={handleNavClick}
+            >
+              <span className="tl-nav-icon">{icon}</span>
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Sidebar footer */}
+        <div className="tl-sidebar-footer">
+          <div className="tl-user-info">
+            <div className="tl-avatar">{getInitial()}</div>
+            <div className="tl-user-text">
+              <div className="tl-user-role">
+                {isWorker ? "Worker" : "Owner"}
+              </div>
+              <div className="tl-user-email">{email}</div>
             </div>
-            <button className="sidebar-logout" onClick={handleLogout}>
-              Logout
-            </button>
           </div>
+          <button className="tl-logout-btn" onClick={handleLogout}>
+            Sign out
+          </button>
+        </div>
 
-        </aside>
+      </aside>
 
-        {/* ── Main Content ── */}
-        <main className="main-content">
+      {/* ══ MAIN ══ */}
+      <main className="tl-main">
+
+        {/* Fixed topbar */}
+        <div className="tl-topbar">
+          <div className="tl-topbar-left">
+            {/* Hamburger + brand - hidden when sidebar open, shown when sidebar collapsed */}
+            <button
+              className="tl-menu-toggle"
+              onClick={toggleSidebar}
+              aria-label="Open sidebar"
+            >
+              ☰
+            </button>
+            <div className="tl-brand-inline">
+              <img src={logo} alt="PopSeat" />
+              <span>PopSeat</span>
+            </div>
+          </div>
+          <div className="tl-topbar-right">
+            <span className="tl-role-chip">
+              {isWorker ? "👷 Worker" : "👑 Owner"}
+            </span>
+            <div className="tl-avatar-sm">{getInitial()}</div>
+          </div>
+        </div>
+
+        {/* Page content */}
+        <div className="tl-content">
           <Outlet />
-        </main>
+        </div>
 
-      </div>
-    </>
+      </main>
+
+      {/* ══ MOBILE BOTTOM NAV ══ */}
+      <nav className="tl-bottom-nav">
+        <div className="tl-bottom-nav-inner">
+          {navLinks.map(({ to, icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `tl-bnav-btn${isActive ? " active" : ""}`
+              }
+              onClick={handleNavClick}
+            >
+              <span className="tl-bnav-icon">{icon}</span>
+              {label}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+
+    </div>
   );
 
 };

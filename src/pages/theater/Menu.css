@@ -79,7 +79,12 @@
   background: var(--violet-soft, rgba(108,99,255,0.08));
   border-color: var(--violet, #6C63FF);
   color: var(--violet, #6C63FF);
-  transform: rotate(90deg);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108,99,255,0.15);
+}
+
+.menu-refresh-btn:active {
+  transform: translateY(0);
 }
 
 .add-btn {

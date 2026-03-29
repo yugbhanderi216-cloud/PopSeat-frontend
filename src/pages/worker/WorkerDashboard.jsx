@@ -209,48 +209,25 @@ const WorkerDashboard = () => {
 
   };
 
-  /* ── Logout ──
-     FIX: was localStorage.clear() — surgical removal only
-  ── */
-
-  const handleLogout = () => {
-    [
-      "workerToken", "workerEmail", "workerRole",
-      "token", "email", "role",
-      "assignedTheaterId",
-    ].forEach((k) => localStorage.removeItem(k));
-    navigate("/login");
-  };
-
   /* ── Render ── */
 
   return (
 
     <div className="worker-page">
 
-      {/* HEADER */}
-      <div className="worker-header">
-        <div className="worker-header-left">
-          <h1>👷 Live Orders</h1>
-          <span className="live-badge">● Live</span>
-        </div>
-        <button className="logout-btn" onClick={handleLogout}>
-          Logout
-        </button>
+      {/* PAGE TITLE BAR */}
+      <div className="worker-title-bar">
+        <h1>👷 Live Orders</h1>
+        <span className="live-badge">● Live</span>
       </div>
 
       {/* ERROR BANNER */}
       {error && (
-        <div style={{
-          background: "#fff3f3", border: "1px solid #fbb",
-          borderRadius: 8, padding: "8px 14px",
-          margin: "0 0 12px", color: "#c00", fontSize: 13,
-          display: "flex", justifyContent: "space-between",
-        }}>
+        <div className="error-banner">
           <span>{error}</span>
           <button
             onClick={() => setError("")}
-            style={{ background: "none", border: "none", cursor: "pointer" }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "inherit" }}
           >
             ✕
           </button>
