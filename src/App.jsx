@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
 
 import Login          from "./pages/auth/Login";
 import Register       from "./pages/auth/Register";
@@ -108,6 +109,27 @@ const WorkerRedirect = () => {
 };
 
 function App() {
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.startsWith("#/customer/")) {
+      let cleanPath = hash.replace("#", "");
+      
+      // Fix malformed query strings with multiple '?'
+      const parts = cleanPath.split("?");
+      if (parts.length > 2) {
+        const path = parts[0];
+        const query = parts.slice(1).join("&");
+        cleanPath = `${path}?${query}`;
+      }
+
+      // If it originally targeted menu but user wants welcome, swap it
+      cleanPath = cleanPath.replace("/customer/menu", "/customer/welcome");
+
+      // Redirect to the parsed path
+      window.location.replace(cleanPath);
+    }
+  }, []);
+
   return (
     <Routes>
 

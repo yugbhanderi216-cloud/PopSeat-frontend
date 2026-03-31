@@ -11,10 +11,12 @@ const CustomerWelcome = () => {
 
   const params = new URLSearchParams(location.search);
 
-  const seatId = params.get("seatId");
-  const screen = params.get("screen");
-  const seat   = params.get("seat");
-  const type   = params.get("type");
+  const seatId   = params.get("seatId");
+  const cinemaId = params.get("cinemaId");
+  const hall     = params.get("hall");
+  const screen   = params.get("screen");
+  const seat     = params.get("seat");
+  const type     = params.get("type");
 
   const [theater, setTheater] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,10 +32,13 @@ const CustomerWelcome = () => {
     if (seat)   localStorage.setItem("seatNo", seat);
     if (type)   localStorage.setItem("seatType", type);
 
+    if (cinemaId) localStorage.setItem("customerTheaterId", cinemaId);
+    if (hall)     localStorage.setItem("customerHallId", hall);
+
     // FIX: was saving as "seatId" but CustomerCart reads "customerSeatId"
     if (seatId) localStorage.setItem("customerSeatId", seatId);
 
-  }, [screen, seat, seatId, type]);
+  }, [screen, seat, seatId, cinemaId, hall, type]);
 
   /* ===============================
      LOAD THEATER — GET /api/seat/:id
@@ -41,47 +46,57 @@ const CustomerWelcome = () => {
 
   useEffect(() => {
 
-    if (!seatId) {
-      setError("Invalid QR code. No seat ID found.");
+    if (!seatId && !cinemaId) {
+      setError("Invalid QR code. No valid seat or cinema data found.");
       setLoading(false);
       return;
     }
 
-    const fetchSeatData = async () => {
+    const fetchData = async () => {
 
       setLoading(true);
       setError("");
 
       try {
+        if (seatId) {
+          const res  = await fetch(`${API_BASE}/seat/${seatId}`);
+          const data = await res.json();
 
-        const res  = await fetch(`${API_BASE}/seat/${seatId}`);
-        const data = await res.json();
-
-        if (data.success && data.seat?.hallId?.cinemaId) {
-
-          const cinema = data.seat.hallId.cinemaId;
-
-          setTheater({
-            theaterName : cinema.name,
-            banner      : cinema.banner,
-            logo        : cinema.theaterLogo,
-            branch      : cinema.branchName,
-            city        : cinema.city,
-          });
-
-          // FIX: save theaterId (cinema._id) so CustomerMenu + CustomerCart
-          // can use it for navigation and order payload
-          if (cinema._id) {
-            localStorage.setItem("customerTheaterId", cinema._id);
+          if (data.success && data.seat?.hallId?.cinemaId) {
+            const cinema = data.seat.hallId.cinemaId;
+            setTheater({
+              theaterName : cinema.name,
+              banner      : cinema.banner,
+              logo        : cinema.theaterLogo,
+              branch      : cinema.branchName,
+              city        : cinema.city,
+            });
+            if (cinema._id) {
+              localStorage.setItem("customerTheaterId", cinema._id);
+            }
+          } else if (data.success && !data.seat?.hallId) {
+            setError("This seat is not linked to a theater yet. Please contact staff.");
+          } else {
+            setError("Seat not found. Please scan a valid QR code.");
           }
-
-        } else if (data.success && !data.seat?.hallId) {
-
-          // Seat exists but not assigned to a hall/cinema yet
-          setError("This seat is not linked to a theater yet. Please contact staff.");
-
-        } else {
-          setError("Seat not found. Please scan a valid QR code.");
+        } else if (cinemaId) {
+          // Fallback: Fetch cinema info directly if only cinemaId is provided (legacy QR codes)
+          const res = await fetch(`${API_BASE}/cinema/${cinemaId}`);
+          const data = await res.json();
+          
+          if (res.ok && data.success && data.cinema) {
+            const cinema = data.cinema;
+            setTheater({
+              theaterName : cinema.name,
+              banner      : cinema.banner,
+              logo        : cinema.theaterLogo,
+              branch      : cinema.branchName,
+              city        : cinema.city,
+            });
+            localStorage.setItem("customerTheaterId", cinema._id);
+          } else {
+            setError("Theater not found. Please scan a valid QR code.");
+          }
         }
 
       } catch (err) {
@@ -93,9 +108,9 @@ const CustomerWelcome = () => {
 
     };
 
-    fetchSeatData();
+    fetchData();
 
-  }, [seatId]);
+  }, [seatId, cinemaId]);
 
   /* ===============================
      ORDER BUTTON
@@ -103,10 +118,11 @@ const CustomerWelcome = () => {
 
   const handleOrderNow = () => {
 
-    const theaterId = localStorage.getItem("customerTheaterId") || "";
+    const finalTheaterId = localStorage.getItem("customerTheaterId") || cinemaId || "";
+    const finalScreen = screen || hall || "";
 
     navigate(
-      `/customer/menu?theaterId=${theaterId}&seatId=${seatId}&screen=${screen}&seat=${seat}&type=${type}`
+      `/customer/menu?theaterId=${finalTheaterId}&cinemaId=${finalTheaterId}&seatId=${seatId || ""}&screen=${finalScreen}&seat=${seat || ""}&type=${type || ""}`
     );
 
   };
@@ -193,7 +209,7 @@ const CustomerWelcome = () => {
         <div className="welcome-info-box">
 
           <div className="info-item">
-            🎞 Screen: <b>{screen}</b>
+            🎞 Screen: <b>{screen || hall}</b>
           </div>
 
           <div className="info-item">
