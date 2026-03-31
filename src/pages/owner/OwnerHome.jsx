@@ -4,11 +4,11 @@ import "./OwnerHome.css";
 import logo from "../PopSeat_Logo.png";
 
 // APIs USED:
-//   GET    /api/owner/cinemas              ✅ confirmed
-//   GET    /api/owner/workers/:cinemaId    ✅ confirmed
-//   DELETE /api/owner/delete-worker/:id   ✅ confirmed
-//   POST   /api/owner/create-worker       ✅ confirmed
-//   GET    /api/subscription/my           ✅ confirmed
+//   GET    /api/owner/cinemas             ✅ confirmed (falls back to /api/cinema if 404)
+//   GET    /api/owner/workers/:cinemaId   ✅ confirmed
+//   DELETE /api/owner/delete-worker/:id  ✅ confirmed
+//   POST   /api/owner/create-worker      ✅ confirmed
+//   GET    /api/subscription/my          ✅ confirmed
 //   DELETE /api/cinema/:id               ✅ confirmed
 
 const API_BASE = "https://popseat.onrender.com";
@@ -24,16 +24,10 @@ const formatTime = (time) => {
 
 const authHeaders = () => ({
   "Content-Type": "application/json",
-  Authorization: `Bearer ${
-    localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
-  }`,
+  Authorization: `Bearer ${localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
+    }`,
 });
 
-// ─────────────────────────────────────────────────────
-// FIX 1: ConfirmModal moved OUTSIDE OwnerHome.
-// Defining it inside caused it to remount on every render,
-// breaking animations and losing internal state.
-// ─────────────────────────────────────────────────────
 const ConfirmModal = ({ confirmDelete, onCancel, onConfirm }) => {
   if (!confirmDelete) return null;
   const { type, label } = confirmDelete;
@@ -47,15 +41,8 @@ const ConfirmModal = ({ confirmDelete, onCancel, onConfirm }) => {
         maxWidth: 320, textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
       }}>
         <p style={{ marginBottom: 8, fontSize: 15 }}>
-         {type === "theater" ? `Delete theater "${label}"?` : `Delete worker "${label}"?`}
+          {type === "theater" ? `Delete theater "${label}"?` : `Delete worker "${label}"?`}
         </p>
-        {/* FIX 5: Warn user that theater delete is UI-only (no API yet) */}
-        {/* {type === "theater" && (
-          <p style={{ fontSize: 12, color: "#e65100", marginBottom: 16 }}>
-            ⚠️ This only removes the theater from your current view.
-            The theater record will still exist in the database until a delete API is available.
-          </p>
-        )} */}
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
           <button
             onClick={onCancel}
@@ -67,7 +54,7 @@ const ConfirmModal = ({ confirmDelete, onCancel, onConfirm }) => {
             onClick={onConfirm}
             style={{ padding: "8px 20px", borderRadius: 8, border: "none", cursor: "pointer", background: "#e55", color: "#fff" }}
           >
-            {type === "theater" ? "Remove from view" : "Delete"}
+            {type === "theater" ? "Delete" : "Delete"}
           </button>
         </div>
       </div>
@@ -76,30 +63,28 @@ const ConfirmModal = ({ confirmDelete, onCancel, onConfirm }) => {
 };
 
 const OwnerHome = () => {
-  const navigate   = useNavigate();
+  const navigate = useNavigate();
   const ownerToken = localStorage.getItem("ownerToken") || localStorage.getItem("token") || "";
-  const role       = (localStorage.getItem("ownerRole") || localStorage.getItem("role") || "").toLowerCase();
+  const role = (localStorage.getItem("ownerRole") || localStorage.getItem("role") || "").toLowerCase();
 
-  const [theaters,      setTheaters]      = useState([]);
-  const [workersMap,    setWorkersMap]    = useState({});
-  const [workerInputs,  setWorkerInputs]  = useState({});
+  const [theaters, setTheaters] = useState([]);
+  const [workersMap, setWorkersMap] = useState({});
+  const [workerInputs, setWorkerInputs] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [loading,       setLoading]       = useState(true);
+  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState({});
   const [deleteLoading, setDeleteLoading] = useState({});
-  const [error,         setError]         = useState("");
-  const [subscription,  setSubscription]  = useState(null);
-  const [subLoading,    setSubLoading]    = useState(true);
-  const [subError,      setSubError]      = useState("");
+  const [error, setError] = useState("");
+  const [subscription, setSubscription] = useState(null);
+  const [subLoading, setSubLoading] = useState(true);
+  const [subError, setSubError] = useState("");
 
-  // FIX 8: ref to track mounted state for async fetch cleanup
   const isMounted = useRef(true);
   useEffect(() => {
     isMounted.current = true;
     return () => { isMounted.current = false; };
   }, []);
 
-  // FIX 6: auto-clear non-critical errors after 5 seconds
   useEffect(() => {
     if (!error) return;
     const t = setTimeout(() => {
@@ -115,16 +100,12 @@ const OwnerHome = () => {
     }
   }, [ownerToken, role, navigate]);
 
-  /* ═══════════════════════════════
-     GET /api/subscription/my ✅
-  ═══════════════════════════════ */
+  /* ── GET /api/subscription/my ── */
   const loadSubscription = useCallback(async () => {
     setSubLoading(true);
     setSubError("");
     try {
-      const res  = await fetch(`${API_BASE}/api/subscription/my`, {
-        headers: authHeaders(),
-      });
+      const res = await fetch(`${API_BASE}/api/subscription/my`, { headers: authHeaders() });
       const data = await res.json();
       if (!isMounted.current) return;
       if (data.success) {
@@ -137,27 +118,36 @@ const OwnerHome = () => {
       console.error("Subscription fetch error:", err);
       if (!isMounted.current) return;
       setSubError("Could not load subscription status.");
-      // FIX 4: Removed dead ownerPlans localStorage fallback —
-      // nothing in the app ever writes "ownerPlans" so the cache
-      // was always empty. Removed to avoid misleading silent failures.
       setSubscription(null);
     } finally {
       if (isMounted.current) setSubLoading(false);
     }
   }, []);
 
-  /* ═══════════════════════════════
-     GET /api/owner/cinemas ✅
-  ═══════════════════════════════ */
+  /* ── GET /api/owner/cinemas (falls back to /api/cinema if not deployed) ── */
   const loadCinemas = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const res  = await fetch(`${API_BASE}/api/owner/cinemas`, {
-        headers: authHeaders(),
-      });
+      // Try the owner-specific endpoint first
+      let res = await fetch(`${API_BASE}/api/owner/cinemas`, { headers: authHeaders() });
+
+      // If 404, the route isn't deployed yet — fall back to /api/cinema
+      // which filters by ownerId server-side when role === "owner"
+      if (res.status === 404) {
+        res = await fetch(`${API_BASE}/api/cinema`, { headers: authHeaders() });
+      }
+
+      // Guard: HTML response means server error, not JSON
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        setError(`Server error (${res.status}). Please try again later.`);
+        return;
+      }
+
       const data = await res.json();
       if (!isMounted.current) return;
+
       if (!res.ok || !data.success) {
         setError(data.message || "Failed to load theaters.");
         return;
@@ -171,31 +161,23 @@ const OwnerHome = () => {
     }
   }, []);
 
-  /* ═══════════════════════════════
-     GET /api/owner/workers/:cinemaId ✅
-     FIX 8: Uses AbortController to cancel
-     in-flight requests when component unmounts.
-  ═══════════════════════════════ */
+  /* ── GET /api/owner/workers/:cinemaId ── */
   const loadWorkers = useCallback(async (cinemaId, signal) => {
     try {
-      const res  = await fetch(
+      const res = await fetch(
         `${API_BASE}/api/owner/workers/${cinemaId}`,
         { headers: authHeaders(), signal }
       );
       const data = await res.json();
       if (data.success && isMounted.current) {
-        setWorkersMap((prev) => ({
-          ...prev,
-          [cinemaId]: data.workers || [],
-        }));
+        setWorkersMap((prev) => ({ ...prev, [cinemaId]: data.workers || [] }));
       }
     } catch (err) {
-      if (err.name === "AbortError") return; // expected on unmount
+      if (err.name === "AbortError") return;
       console.warn("Load workers error:", err);
     }
   }, []);
 
-  // FIX 8: Cancel all worker fetches on unmount
   useEffect(() => {
     if (theaters.length === 0) return;
     const controller = new AbortController();
@@ -220,16 +202,19 @@ const OwnerHome = () => {
       [cinemaId]: { ...(prev[cinemaId] || {}), [field]: value },
     }));
 
-  /* ── Subscription helpers ── */
-
-  // FIX 2: Safe null check for expiresAt.
-  // Before: new Date(undefined) returns Invalid Date which is never > new Date(),
-  // so a valid "active" subscription with no expiry was wrongly treated as expired.
   const isSubscriptionActive =
     subscription?.status === "active" &&
     (!subscription?.expiresAt || new Date(subscription.expiresAt) > new Date());
 
-  const theatersAllowed    = subscription?.theatersAllowed || 0;
+  // Backend uses: subscription.planId.theaterLimit OR subscription.theaterLimit
+  // Cover all possible field names the subscription API might return
+  const theatersAllowed =
+    subscription?.planId?.theaterLimit ||
+    subscription?.theaterLimit ||
+    subscription?.theatersAllowed ||
+    subscription?.theaterAllowed ||
+    0;
+
   const canAddMoreTheaters = isSubscriptionActive && theaters.length < theatersAllowed;
 
   const formatExpiry = (iso) => {
@@ -239,9 +224,7 @@ const OwnerHome = () => {
     });
   };
 
-  /* ═══════════════════════════════
-     POST /api/owner/create-worker ✅
-  ═══════════════════════════════ */
+  /* ── POST /api/owner/create-worker ── */
   const handleAddWorker = async (cinemaId) => {
     const { name, email, password } = workerInputs[cinemaId] || {};
     if (!name?.trim() || !email?.trim() || !password?.trim()) {
@@ -251,14 +234,14 @@ const OwnerHome = () => {
     setAction(`add-${cinemaId}`, true);
     setError("");
     try {
-      const res  = await fetch(`${API_BASE}/api/owner/create-worker`, {
-        method : "POST",
+      const res = await fetch(`${API_BASE}/api/owner/create-worker`, {
+        method: "POST",
         headers: authHeaders(),
-        body   : JSON.stringify({
-          name    : name.trim(),
-          email   : email.trim().toLowerCase(),
+        // API body: only name, email, password — backend assigns cinemaId from owner token
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
           password: password.trim(),
-          cinemaId,
         }),
       });
       const data = await res.json();
@@ -266,16 +249,12 @@ const OwnerHome = () => {
         setError(data.message || "Failed to create worker.");
         return;
       }
-      // FIX 3: Validate data.worker exists before pushing.
-      // API docs confirm { success, worker: { ... } } response shape.
-      // If somehow worker is missing, fall back to re-fetching from server.
       if (data.worker) {
         setWorkersMap((prev) => ({
           ...prev,
           [cinemaId]: [...(prev[cinemaId] || []), data.worker],
         }));
       } else {
-        // Fallback: reload workers from server to stay in sync
         await loadWorkers(cinemaId);
       }
       setWorkerInputs((prev) => ({
@@ -290,14 +269,12 @@ const OwnerHome = () => {
     }
   };
 
-  /* ═══════════════════════════════
-     DELETE /api/owner/delete-worker/:id ✅
-  ═══════════════════════════════ */
+  /* ── DELETE /api/owner/delete-worker/:id ── */
   const handleDeleteWorker = async (cinemaId, workerId) => {
     setDeleteLoading((prev) => ({ ...prev, [workerId]: true }));
     setConfirmDelete(null);
     try {
-      const res  = await fetch(
+      const res = await fetch(
         `${API_BASE}/api/owner/delete-worker/${workerId}`,
         { method: "DELETE", headers: authHeaders() }
       );
@@ -320,33 +297,29 @@ const OwnerHome = () => {
     }
   };
 
-  /* ═══════════════════════════════
-     DELETE THEATER
-     ❌ No API exists yet in docs.
-     FIX 5: Only removes from local UI view.
-     Backend needs: DELETE /api/cinema/:id
-  ═══════════════════════════════ */
- const handleDeleteTheater = async (cinemaId) => {
-  setConfirmDelete(null);
-  setDeleteLoading((prev) => ({ ...prev, [cinemaId]: true }));
-  try {
-    const res  = await fetch(`${API_BASE}/api/cinema/${cinemaId}`, {
-      method : "DELETE",
-      headers: authHeaders(),
-    });
-    const data = await res.json();
-    if (data.success) {
-      setTheaters((prev) => prev.filter((t) => t._id !== cinemaId));
-    } else {
-      setError(data.message || "Failed to delete theater.");
+  /* ── DELETE /api/cinema/:id ── */
+  const handleDeleteTheater = async (cinemaId) => {
+    setConfirmDelete(null);
+    setDeleteLoading((prev) => ({ ...prev, [cinemaId]: true }));
+    try {
+      const res = await fetch(`${API_BASE}/api/cinema/${cinemaId}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTheaters((prev) => prev.filter((t) => t._id !== cinemaId));
+      } else {
+        setError(data.message || "Failed to delete theater.");
+      }
+    } catch (err) {
+      console.error("Delete theater error:", err);
+      setError("Network error. Could not delete theater.");
+    } finally {
+      setDeleteLoading((prev) => ({ ...prev, [cinemaId]: false }));
     }
-  } catch (err) {
-    console.error("Delete theater error:", err);
-    setError("Network error. Could not delete theater.");
-  } finally {
-    setDeleteLoading((prev) => ({ ...prev, [cinemaId]: false }));
-  }
-};
+  };
+
   /* ── Open dashboard ── */
   const openDashboard = (theater) => {
     if (!theater.isActive) {
@@ -382,7 +355,6 @@ const OwnerHome = () => {
     navigate("/login");
   };
 
-  /* ── Loading screen ── */
   if (loading) {
     return (
       <div className="owner-loading">
@@ -397,7 +369,6 @@ const OwnerHome = () => {
   return (
     <div className="owner-container">
 
-      {/* FIX 1: ConfirmModal is now a proper external component */}
       <ConfirmModal
         confirmDelete={confirmDelete}
         onCancel={() => setConfirmDelete(null)}
@@ -423,8 +394,8 @@ const OwnerHome = () => {
               !isSubscriptionActive
                 ? "Subscribe to add theaters"
                 : !canAddMoreTheaters
-                ? `Plan limit: ${theatersAllowed} theater(s)`
-                : "Add a new theater"
+                  ? `Plan limit: ${theatersAllowed} theater(s)`
+                  : "Add a new theater"
             }
           >
             + Add Theater
@@ -471,7 +442,7 @@ const OwnerHome = () => {
         </div>
       )}
 
-      {/* ERROR BANNER — FIX 6: auto-clears after 5s via useEffect above */}
+      {/* ERROR BANNER */}
       {error && (
         <div style={{
           background: "#fff3f3", border: "1px solid #fbb", borderRadius: 8,
@@ -504,7 +475,7 @@ const OwnerHome = () => {
         <div className="theater-grid">
           {theaters.map((t) => {
             const workers = workersMap[t._id] || [];
-            const wInput  = workerInputs[t._id] || {};
+            const wInput = workerInputs[t._id] || {};
 
             return (
               <div key={t._id} className="theater-card">
@@ -551,11 +522,12 @@ const OwnerHome = () => {
                   </button>
                   <button
                     className="btn-delete-theater"
+                    disabled={!!deleteLoading[t._id]}
                     onClick={() =>
                       setConfirmDelete({ type: "theater", id: t._id, label: t.name })
                     }
                   >
-                    Delete
+                    {deleteLoading[t._id] ? "Deleting..." : "Delete"}
                   </button>
                 </div>
 
@@ -581,8 +553,6 @@ const OwnerHome = () => {
                       value={wInput.email || ""}
                       onChange={(e) => updateWorkerInput(t._id, "email", e.target.value)}
                     />
-                    {/* FIX 7: autoComplete="new-password" prevents browser autofill
-                        from overwriting owner credentials into worker password field */}
                     <input
                       className="worker-input"
                       placeholder="Worker Password"

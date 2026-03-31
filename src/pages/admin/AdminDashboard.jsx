@@ -81,6 +81,7 @@ const PLAN_COLOR = {
 const TABS = [
   { key: "overview",      label: "Overview",      icon: "⬡" },
   { key: "subscriptions", label: "Subscriptions", icon: "◈" },
+  { key: "plans",         label: "Plans",         icon: "☷" },
   { key: "payments",      label: "Payments",      icon: "◎" },
   { key: "theaters",      label: "Theaters",      icon: "◫" },
 ];
@@ -116,6 +117,11 @@ const AdminDashboard = () => {
   const [txFilter,        setTxFilter]        = useState("all");
   const [theaterSearch,   setTheaterSearch]   = useState("");
   const [theaterFilter,   setTheaterFilter]   = useState("all");
+
+  const [plans,           setPlans]           = useState([]);
+  const [loadingPlans,    setLoadingPlans]    = useState(false);
+  const [planModalOpen,   setPlanModalOpen]   = useState(false);
+  const [planForm,        setPlanForm]        = useState({ _id: null, name: "", price: "", theaterLimit: "", duration: 30, features: "" });
 
   // ── Sidebar state ──
   // sidebarCollapsed: desktop toggle (hides sidebar, gives full width)
@@ -176,7 +182,75 @@ const AdminDashboard = () => {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { loadProfile(); loadTheaters(); }, [loadProfile, loadTheaters]);
+  /* ── Load plans ── */
+  const loadPlans = useCallback(async () => {
+    setLoadingPlans(true);
+    try {
+      const res = await fetch(`${API_BASE}/owner/plans`);
+      const data = await res.json();
+      if (data.success) setPlans(data.plans || []);
+    } catch { /* silent */ }
+    finally { setLoadingPlans(false); }
+  }, []);
+
+  useEffect(() => { loadProfile(); loadTheaters(); loadPlans(); }, [loadProfile, loadTheaters, loadPlans]);
+
+  /* ── Plan Actions ── */
+  const openPlanModal = (plan = null) => {
+    if (plan) {
+      setPlanForm({ ...plan, features: plan.features?.join("\n") || "" });
+    } else {
+      setPlanForm({ _id: null, name: "", price: "", theaterLimit: "", duration: 30, features: "" });
+    }
+    setPlanModalOpen(true);
+  };
+
+  const savePlan = async () => {
+    const planId = planForm._id || planForm.id;
+    const isEdit = !!planId;
+    const url = isEdit ? `${API_BASE}/admin/plans/${planId}` : `${API_BASE}/admin/plans`;
+    const method = isEdit ? "PUT" : "POST";
+    
+    const body = {
+      name: planForm.name?.trim(),
+      price: Number(planForm.price) || 0,
+      theaterLimit: Number(planForm.theaterLimit) || 0,
+      duration: Number(planForm.duration) || 30,
+      features: (typeof planForm.features === "string" ? planForm.features : "").split("\n").map(f => f.trim()).filter(Boolean)
+    };
+
+    if (!body.name) {
+      setError("Plan Name is required.");
+      return;
+    }
+
+    try {
+      const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(body) });
+      
+      let data = {};
+      try { data = await res.json(); } catch (e) { /* ignore JSON error if server crashes */ }
+
+      if (res.ok && data.success !== false) {
+        setPlanModalOpen(false);
+        loadPlans();
+        setError(""); // clear any past errors
+      } else {
+        setError(data.message || `Error saving plan. (Code: ${res.status})`);
+      }
+    } catch { 
+      setError("Network error while communicating with the server."); 
+    }
+  };
+
+  const deletePlan = async (id) => {
+    if (!window.confirm("Are you sure you want to delete/deactivate this plan?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/plans/${id}`, { method: "DELETE", headers: authHeaders() });
+      const data = await res.json();
+      if (data.success) loadPlans();
+      else setError(data.message || "Failed to delete plan.");
+    } catch { setError("Network error."); }
+  };
 
   /* ── Approve / Disable ── */
   const updateTheaterStatus = async (cinemaId, isActive) => {
@@ -314,6 +388,7 @@ const AdminDashboard = () => {
               <p className="adm-page-sub">
                 {activeTab === "overview"      && "Platform revenue and theater overview"}
                 {activeTab === "subscriptions" && "Subscription revenue trends and plan analytics"}
+                {activeTab === "plans"         && "Manage and configure subscription plans"}
                 {activeTab === "payments"      && "Subscription transactions and owner payouts"}
                 {activeTab === "theaters"      && "Manage and approve theater registrations"}
               </p>
@@ -459,6 +534,96 @@ const AdminDashboard = () => {
                 </ResponsiveContainer>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ══ TAB: PLANS ══ */}
+        {activeTab === "plans" && (
+          <div className="adm-fade-in">
+            <div className="adm-kpi-grid">
+              <StatCard icon="☷" label="Total Plans" value={plans.length} accent="blue" />
+            </div>
+
+            <div className="adm-card">
+              <div className="adm-card-header">
+                <div className="adm-card-title">Manage Subscription Plans</div>
+                <button className="adm-act-btn approve" onClick={() => openPlanModal()}>+ Create Plan</button>
+              </div>
+              <div className="adm-table-wrap">
+                <table className="adm-table">
+                  <thead><tr>
+                    <th>Plan Name</th><th>Price</th><th>Limit</th><th>Duration</th><th>Features</th><th>Actions</th>
+                  </tr></thead>
+                  <tbody>
+                    {loadingPlans ? (
+                      <tr><td colSpan="6" style={{textAlign:"center", padding: "20px"}}>Loading plans...</td></tr>
+                    ) : plans.length === 0 ? (
+                      <tr><td colSpan="6" style={{textAlign:"center", padding: "20px"}}>No plans found.</td></tr>
+                    ) : plans.map((p) => (
+                      <tr key={p._id}>
+                        <td className="adm-fw">{p.name}</td>
+                        <td className="adm-amount">{fmt(p.price)}</td>
+                        <td>{p.theaterLimit} theater(s)</td>
+                        <td>{p.duration} days</td>
+                        <td className="adm-muted" style={{fontSize:"13px"}}>{p.features?.length || 0} features</td>
+                        <td>
+                          <button className="adm-act-btn blue" style={{marginRight: 8}} onClick={() => openPlanModal(p)}>Edit</button>
+                          <button className="adm-act-btn disable" onClick={() => deletePlan(p._id)}>Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            {planModalOpen && (
+              <div className="adm-modal-overlay">
+                <div className="adm-modal">
+                  <h3>{planForm._id ? "Edit Plan" : "Create Plan"}</h3>
+                  <div className="adm-modal-form">
+                    <label>Plan Name</label>
+                    <input 
+                      value={planForm.name} 
+                      onChange={e => setPlanForm({...planForm, name: e.target.value})} 
+                    />
+                    
+                    <label>Price (₹)</label>
+                    <input 
+                      type="number" 
+                      value={planForm.price} 
+                      onChange={e => setPlanForm({...planForm, price: e.target.value})} 
+                    />
+                    
+                    <label>Theater Limit</label>
+                    <input 
+                      type="number" 
+                      value={planForm.theaterLimit} 
+                      onChange={e => setPlanForm({...planForm, theaterLimit: e.target.value})} 
+                    />
+                    
+                    <label>Duration (days)</label>
+                    <input 
+                      type="number" 
+                      value={planForm.duration} 
+                      onChange={e => setPlanForm({...planForm, duration: e.target.value})} 
+                    />
+                    
+                    <label>Features (One per line)</label>
+                    <textarea 
+                      rows="4" 
+                      placeholder="e.g. Up to 4 cinema locations&#10;Unlimited worker accounts"
+                      value={planForm.features} 
+                      onChange={e => setPlanForm({...planForm, features: e.target.value})}
+                    ></textarea>
+                  </div>
+                  <div className="adm-modal-actions mt-3" style={{ marginTop: '15px' }}>
+                    <button className="adm-act-btn disable" onClick={() => setPlanModalOpen(false)}>Cancel</button>
+                    <button className="adm-act-btn approve" style={{marginLeft: 8}} onClick={savePlan}>Save Plan</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

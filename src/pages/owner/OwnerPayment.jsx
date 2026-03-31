@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import "./OwnerPayment.css";
 
 // APIs USED:
-//   POST /api/payment/create         — creates mock payment record, returns { payment: { _id, razorpayOrderId } }
-//   POST /api/payment/verify         — marks payment complete, body: { orderId: payment._id }
-//   POST /api/subscription/activate  — activates the subscription plan, body: { plan }
-//   GET  /api/subscription/my        — confirms plan is active after activation
+//   GET  /api/subscription/upgrade-cost  — calculates prorated cost if upgrading
+//   POST /api/payment/create-order       — creates payment record, returns { payment: { _id, razorpayOrderId } } or similar
+//   POST /api/subscription/buy           — activates new subscription
+//   POST /api/subscription/upgrade       — activates upgraded subscription
+//   GET  /api/subscription/my            — confirms plan is active after activation
 
-const API_BASE     = "https://popseat.onrender.com/api";
+const API_BASE = "https://popseat.onrender.com/api";
 const RAZORPAY_KEY = "rzp_test_STsZnqsQOPRrqZ";
 
 const getOwnerToken = () =>
@@ -22,9 +23,9 @@ const authHeaders = () => ({
 const loadRazorpayScript = () =>
   new Promise((resolve) => {
     if (window.Razorpay) { resolve(true); return; }
-    const script   = document.createElement("script");
-    script.src     = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload  = () => resolve(true);
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
@@ -37,22 +38,49 @@ const OwnerPayment = () => {
     catch { return null; }
   });
 
-  const [loading,    setLoading]    = useState(false);
-  const [error,      setError]      = useState("");
-  const [success,    setSuccess]    = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
   const [activePlan, setActivePlan] = useState(null);
+
+  const [fetchingCost, setFetchingCost] = useState(plan?.isUpgrade || false);
+  const [upgradeData, setUpgradeData] = useState(null);
 
   useEffect(() => { loadRazorpayScript(); }, []);
 
-  // ── Step 1: Create payment record on backend ──
-  // Backend must return: { success: true, payment: { _id, razorpayOrderId } }
+  useEffect(() => {
+    if (plan?.isUpgrade) {
+      const fetchUpgradeCost = async () => {
+        try {
+          const res = await fetch(`${API_BASE}/subscription/upgrade-cost?newPlanId=${plan.id}`, { headers: authHeaders() });
+          const data = await res.json();
+          if (data.success) {
+            setUpgradeData(data);
+          } else {
+            setError(data.message || "Could not calculate upgrade cost.");
+          }
+        } catch (err) {
+          setError("Network error fetching upgrade cost.");
+        } finally {
+          setFetchingCost(false);
+        }
+      };
+      fetchUpgradeCost();
+    } else {
+      setFetchingCost(false);
+    }
+  }, [plan]);
+
+  const finalAmount = plan?.isUpgrade && upgradeData ? upgradeData.upgradeCost : (plan?.price || 0);
+
+  // ── Step 1: Create payment order ──
   const createPaymentOrder = async () => {
-    const res = await fetch(`${API_BASE}/payment/create`, {
+    const res = await fetch(`${API_BASE}/payment/create-order`, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
-        amount  : plan.price * 100, // paise
-        currency: "INR",
+        amount: finalAmount * 100, // paise
+        // currency: "INR", // if needed
       }),
     });
 
@@ -62,42 +90,35 @@ const OwnerPayment = () => {
       throw new Error(data.message || "Could not create payment order.");
     }
 
-    if (!data.payment?._id || !data.payment?.razorpayOrderId) {
-      throw new Error("Invalid response from server. Please contact support.");
+    // Adapt to potential payload variations
+    const paymentRecord = data.payment || data.order || data;
+    if (!paymentRecord?._id && !paymentRecord?.razorpayOrderId && !paymentRecord?.id) {
+       console.warn("Unexpected order payload", data);
     }
 
-    return data.payment; // { _id, razorpayOrderId }
+    return paymentRecord;
   };
 
-  // ── Step 2: Verify payment using DB payment _id (mock mode) ──
-  // No Razorpay signature — backend just marks payment as completed
-  const verifyPayment = async (paymentId) => {
-    const res = await fetch(`${API_BASE}/payment/verify`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify({
-        orderId: paymentId, // your DB payment._id
-      }),
-    });
+  // ── Step 2/3: Complete Purchase (buy or upgrade) ──
+  const completePurchase = async (paymentId, orderId) => {
+    const url = plan?.isUpgrade ? `${API_BASE}/subscription/upgrade` : `${API_BASE}/subscription/buy`;
+    
+    const payload = {
+      razorpayPaymentId: paymentId,
+      razorpayOrderId: orderId,
+      amountPaid: finalAmount,
+    };
 
-    const data = await res.json();
-
-    if (!res.ok || !data.success) {
-      throw new Error(data.message || "Payment verification failed.");
+    if (plan?.isUpgrade) {
+      payload.newPlanId = plan.id;
+    } else {
+      payload.planId = plan.id;
     }
 
-    return data;
-  };
-
-  // ── Step 3: Activate the subscription plan ──
-  // Must be called after verify and before fetching subscription status
-  const activateSubscription = async () => {
-    const res = await fetch(`${API_BASE}/subscription/activate`, {
+    const res = await fetch(url, {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({
-        plan: plan.name || "basic",
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json();
@@ -111,7 +132,7 @@ const OwnerPayment = () => {
 
   // ── Step 4: Confirm subscription is active ──
   const fetchActiveSubscription = async () => {
-    const res  = await fetch(`${API_BASE}/subscription/my`, {
+    const res = await fetch(`${API_BASE}/subscription/my`, {
       headers: authHeaders(),
     });
     const data = await res.json();
@@ -132,11 +153,9 @@ const OwnerPayment = () => {
   };
 
   // ── Razorpay success handler ──
-  // Flow: verify → activate → fetch → show success
-  const handleRazorpaySuccess = async (paymentId) => {
+  const handleRazorpaySuccess = async (paymentId, orderId) => {
     try {
-      await verifyPayment(paymentId);
-      await activateSubscription();
+      await completePurchase(paymentId, orderId);
       const sub = await fetchActiveSubscription();
       localStorage.removeItem("selectedPlan");
       setActivePlan(sub);
@@ -162,18 +181,20 @@ const OwnerPayment = () => {
     }
 
     try {
-      const payment = await createPaymentOrder(); // { _id, razorpayOrderId }
+      const payment = await createPaymentOrder();
 
       const options = {
-        key        : RAZORPAY_KEY,
-        amount     : plan.price * 100,
-        currency   : "INR",
-        name       : "PopSeat",
-        description: `${plan.theaters} Theater Plan — 30 Days`,
-        order_id   : payment.razorpayOrderId,
+        key: RAZORPAY_KEY,
+        amount: finalAmount * 100,
+        currency: "INR",
+        name: "PopSeat",
+        description: plan.isUpgrade ? `Upgrade to ${plan.name}` : `${plan.theaters} Theater Plan — 30 Days`,
+        order_id: payment.razorpayOrderId || payment.id,
 
-        // Pass DB _id directly — ignore Razorpay response object entirely
-        handler: () => handleRazorpaySuccess(payment._id),
+        handler: (response) => handleRazorpaySuccess(
+          response.razorpay_payment_id, 
+          payment.razorpayOrderId || payment.id || response.razorpay_order_id
+        ),
 
         prefill: {
           email: localStorage.getItem("ownerEmail") || localStorage.getItem("email") || "",
@@ -262,12 +283,18 @@ const OwnerPayment = () => {
       <div className="payment-card">
 
         <p className="payment-label">Confirm Your Plan</p>
-        <h3 className="payment-plan-name">{plan.theaters} Theater Plan</h3>
+        <h3 className="payment-plan-name">{plan.name || plan.id} Theater Plan</h3>
 
         <div className="payment-price-block">
           <span className="payment-currency">₹</span>
-          <span className="payment-amount">{plan.price.toLocaleString("en-IN")}</span>
+          <span className="payment-amount">{finalAmount.toLocaleString("en-IN")}</span>
         </div>
+
+        {plan.isUpgrade && (
+          <p className="plan-upgrade-note" style={{ color: "#16a34a", fontSize: "14px", marginTop: "-8px", marginBottom: "12px", textAlign: "center", fontWeight: "500" }}>
+            ✦ Prorated Upgrade Cost
+          </p>
+        )}
 
         <p className="plan-note">✦ Valid for 30 days from activation</p>
 
@@ -282,14 +309,14 @@ const OwnerPayment = () => {
 
         {error && <div className="payment-error">{error}</div>}
 
-        <button className="payment-btn" onClick={handlePayment} disabled={loading}>
-          {loading ? (
+        <button className="payment-btn" onClick={handlePayment} disabled={loading || fetchingCost}>
+          {loading || fetchingCost ? (
             <span className="payment-btn-loading">
               <span className="payment-spinner" />
-              Opening Payment...
+              {fetchingCost ? "Calculating Cost..." : "Opening Payment..."}
             </span>
           ) : (
-            `Pay ₹${plan.price.toLocaleString("en-IN")}`
+            `Pay ₹${finalAmount.toLocaleString("en-IN")}`
           )}
         </button>
 

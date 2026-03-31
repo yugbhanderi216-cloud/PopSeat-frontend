@@ -349,6 +349,8 @@
 .adm-act-btn.approve:hover { opacity: .85; }
 .adm-act-btn.disable { background: var(--red-lt); color: var(--red); border: 1px solid #fca5a5; }
 .adm-act-btn.disable:hover { background: #fee2e2; }
+.adm-act-btn.blue { background: var(--blue-lt); color: var(--blue); border: 1px solid #bfdbfe; }
+.adm-act-btn.blue:hover { background: #dbeafe; }
 .adm-act-btn:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ── RELEASE BUTTON ── */
@@ -374,6 +376,49 @@
 
 /* ── EMPTY ── */
 .adm-empty { text-align: center; padding: 50px 20px; color: var(--muted); }
+
+/* ── MODAL & FORMS ── */
+.adm-modal-overlay {
+  position: fixed; inset: 0; 
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  z-index: 300; display: flex; align-items: center; justify-content: center;
+  padding: 20px; animation: fadeOverlay .18s ease;
+}
+.adm-modal {
+  background: var(--surface); border-radius: var(--radius-lg);
+  width: 100%; max-width: 440px; padding: 24px;
+  box-shadow: var(--sh-lg); border: 1px solid var(--border);
+  animation: fadeInUp .2s ease;
+}
+.adm-modal h3 {
+  font-size: 18px; font-weight: 700; color: var(--text);
+  margin-bottom: 20px; letter-spacing: -.3px;
+}
+.adm-modal-form {
+  display: flex; flex-direction: column; gap: 14px;
+}
+.adm-modal-form label {
+  font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: -6px;
+}
+.adm-modal-form input, .adm-modal-form textarea {
+  padding: 10px 14px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--surface);
+  color: var(--text); font-size: 14px; font-family: inherit;
+  outline: none; box-shadow: var(--sh); transition: border-color .15s;
+}
+.adm-modal-form input:focus, .adm-modal-form textarea:focus {
+  border-color: var(--accent);
+}
+.adm-modal-form input:disabled {
+  background: var(--bg); color: var(--muted); cursor: not-allowed;
+}
+.adm-modal-form textarea {
+  resize: vertical; min-height: 80px;
+}
+.adm-modal-actions {
+  display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;
+}
 
 /* ══════════════════════════════════════════════════
    MOBILE BOTTOM NAV
