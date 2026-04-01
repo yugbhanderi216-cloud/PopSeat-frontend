@@ -237,16 +237,18 @@ const OwnerHome = () => {
       const res = await fetch(`${API_BASE}/api/owner/create-worker`, {
         method: "POST",
         headers: authHeaders(),
-        // API body: only name, email, password — backend assigns cinemaId from owner token
+        // cinemaId links this worker to the specific theater
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim().toLowerCase(),
           password: password.trim(),
+          cinemaId,
         }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setError(data.message || "Failed to create worker.");
+        // Show exact backend error (e.g. "Email already exists")
+        setError(data.message || `Failed to create worker (HTTP ${res.status}).`);
         return;
       }
       if (data.worker) {
