@@ -56,6 +56,19 @@ const EditTheater = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const role = (
+    localStorage.getItem("ownerRole") ||
+    localStorage.getItem("role") ||
+    ""
+  ).toLowerCase();
+
+  /* ── Role guard ── */
+  useEffect(() => {
+    if (role && role !== "owner") {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [role, navigate]);
+
   /* ═══════════════════════════════════════
      GET /api/cinema/:id
      Loads theater info + bankDetails from server

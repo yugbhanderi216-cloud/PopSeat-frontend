@@ -80,7 +80,7 @@ const QRGenerator = () => {
   }, [ownerEmail, role, navigate]);
 
   // ─────────────────────────────────────────────────────────
-  //  LOAD THEATER  — GET /api/cinema/:theaterId
+  //  LOAD THEATER — GET /api/cinema/:theaterId
   // ─────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchTheater = async () => {
@@ -98,6 +98,8 @@ const QRGenerator = () => {
         const data = await res.json();
         if (res.ok && data.success && data.cinema) {
           setTheaterData(data.cinema);
+          // Auto-initialize halls based on screen count if no halls exist
+          // or at least fetch existing ones.
         } else if (res.status === 404) {
           setError("Theater not found. Please go back and select a valid theater.");
         } else {
@@ -114,27 +116,40 @@ const QRGenerator = () => {
   }, [theaterId, ownerEmail]);
 
   // ─────────────────────────────────────────────────────────
-  //  LOAD HALLS  — GET /api/hall?cinemaId=
-  //  Updated hall shape: { _id, name, screenNumber, hallNumber, rows, totalSeats }
-  //  screenNumber is now a number field (was only hallNumber before)
+  //  LOAD SCREENS/HALLS — GET /api/owner/theaters/:theaterId/screens
+  //  (Fallback to /api/hall?cinemaId= if SaaS nested route fails)
   // ─────────────────────────────────────────────────────────
-  const loadHalls = useCallback(async (cinemaId) => {
+  const loadHalls = useCallback(async (cid) => {
     setHallLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/hall?cinemaId=${cinemaId}`, {
+      // Try SaaS endpoint first
+      let res = await fetch(`${API_BASE}/owner/theaters/${cid}/screens`, {
         headers: authHeaders(),
       });
-      const data = await res.json();
+      let data = await res.json();
+
+      // Fallback to legacy if needed
+      if (!res.ok || !data.success) {
+        res = await fetch(`${API_BASE}/hall?cinemaId=${cid}`, {
+          headers: authHeaders(),
+        });
+        data = await res.json();
+      }
+
       if (data.success) {
-        const allHalls = data.halls || [];
+        // Map data consistently
+        const allHalls = (data.screens || data.halls || []).map(h => ({
+          _id: h._id,
+          name: h.name || h.screenName || `Screen ${h.screenNumber || h.hallNumber || 1}`,
+          screenNumber: h.screenNumber || h.hallNumber || 1,
+          totalSeats: h.totalSeats || 0
+        }));
+        
         setHalls(allHalls);
-        // Auto-select if only one hall
+        
         if (allHalls.length === 1) {
           setSelectedHall(allHalls[0]._id);
-          // Use screenNumber (new field) first, fallback to hallNumber
-          setScreenNo(
-            String(allHalls[0].screenNumber || allHalls[0].hallNumber || "1")
-          );
+          setScreenNo(String(allHalls[0].screenNumber));
         }
       }
     } catch (err) {
@@ -282,6 +297,10 @@ const QRGenerator = () => {
   //  The backend should be configured to encode:
   //    https://pop-seat-frontend.vercel.app/#/customer/welcome?seatId=<id>&screen=<n>&seat=<seatNumber>&type=Standard
   // ─────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────
+  //  GENERATE & BULK SAVE SEATS
+  //  API: /api/owner/theaters/:theaterId/screens/:screenId/layout
+  // ─────────────────────────────────────────────────────────
   const generateSeats = async () => {
     setError("");
     if (!selectedHall) {
@@ -293,62 +312,37 @@ const QRGenerator = () => {
       return;
     }
 
-    // Auth check — surface missing token immediately
     const token = getToken();
     if (!token) {
-      setError("❌ Not authenticated. Please log out and log in again.");
+      setError("❌ Not authenticated. Please log in again.");
       return;
     }
 
     setGenerating(true);
-    let failed = 0;
-    let created = 0;
-    let firstError = "";
-    const total = layout.reduce((s, r) => s + r.count, 0);
+    setProgress("Saving layout to backend...");
 
     try {
-      for (const row of layout) {
-        for (let n = 1; n <= row.count; n++) {
-          const seatNumber = `${row.row}${n}`;
-          setProgress(`Creating seat ${seatNumber} (${created + 1}/${total})…`);
-          try {
-            const res = await fetch(`${API_BASE}/seat`, {
-              method: "POST",
-              headers: authHeaders(),
-              body: JSON.stringify({
-                hallId: selectedHall,
-                seatNumber,
-              }),
-            });
-            const data = await res.json();
-            if (!res.ok || !data.success) {
-              const msg = data.message || `HTTP ${res.status}`;
-              console.error(`Seat ${seatNumber} failed:`, msg);
-              if (!firstError) firstError = msg;
-              failed++;
-            } else {
-              created++;
-            }
-          } catch (err) {
-            console.error(`Seat ${seatNumber} network error:`, err);
-            if (!firstError) firstError = "Network error — check connection.";
-            failed++;
-          }
-        }
-      }
+      // Endpoint from api.txt: /api/owner/theaters/:theaterId/screens/:screenId/layout
+      const res = await fetch(`${API_BASE}/owner/theaters/${theaterId}/screens/${selectedHall}/layout`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ layout }),
+      });
 
-      if (failed > 0 && created === 0) {
-        // All failed — show the actual backend error message
-        setError(`❌ All seats failed. Backend said: "${firstError}"`);
-      } else if (failed > 0) {
-        setError(`⚠️ ${failed} seat(s) failed ("${firstError}"). ${created} saved successfully.`);
-      }
+      const data = await res.json();
 
-      if (created > 0) {
-        // Reload seats so QR codes from backend render correctly
+      if (data.success) {
+        // Success — now fetch generated seats to show QRs
         await loadSeatsForHall(selectedHall);
         setLayout([]);
+        setError("");
+      } else {
+        // Fallback or handle error
+        setError(`❌ Failed to save: ${data.message || "Unknown error"}`);
       }
+    } catch (err) {
+      console.error("Bulk save error:", err);
+      setError("Network error — could not save layout.");
     } finally {
       setGenerating(false);
       setProgress("");

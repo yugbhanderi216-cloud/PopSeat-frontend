@@ -7,23 +7,6 @@ import {
 } from "recharts";
 import "./Analytics.css";
 
-// APIs USED:
-//   GET /api/orders?cinemaId=:id     ✅ — owner analytics
-//   GET /api/worker/orders?status=   ✅ — worker analytics
-//
-// cinemaId resolution (in priority order):
-//   1. URL param  ?theaterId=
-//   2. navigation state.theaterId
-//   3. localStorage "currentTheaterId"      (owner)
-//   4. localStorage "activeOwnerTheaterId"  (owner)
-//   5. localStorage "assignedTheaterId"     (worker — set by login after Section 2.1)
-//   6. localStorage "theaterId"             (legacy fallback)
-//
-// ⚠️  KNOWN LIMITATION:
-//   GET /api/orders?cinemaId= does NOT include items[] in list response.
-//   Only GET /api/order/:id includes items. Top Selling Items will be empty
-//   for owner role until backend populates items in the list endpoint.
-
 const API_BASE     = "https://popseat.onrender.com/api";
 const ALL_STATUSES = ["placed", "preparing", "ready", "delivered"];
 
@@ -55,14 +38,6 @@ const CHART_RANGES = [
   { key: "yearly",  label: "Yearly"  },
 ];
 
-const STATUS_CONFIG = {
-  placed   : { label: "Placed",    color: "#6C63FF" },
-  preparing: { label: "Preparing", color: "#F59E0B" },
-  ready    : { label: "Ready",     color: "#0891b2" },
-  delivered: { label: "Delivered", color: "#22C55E" },
-};
-
-/* ── Custom Recharts Tooltip ── */
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
@@ -78,9 +53,6 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-/* ══════════════════════════════════════════════
-   CHART DATA BUILDERS
-══════════════════════════════════════════════ */
 const buildChartData = (orders, range) => {
   const now = new Date();
 
@@ -162,30 +134,12 @@ const buildChartData = (orders, range) => {
 
 const yFmt = (v) => (v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : String(v));
 
-/* ════════════════════════════════════════
-   COMPONENT
-════════════════════════════════════════ */
 const Analytics = () => {
   const location       = useLocation();
   const [searchParams] = useSearchParams();
-
   const role = getRole();
 
-  // ─────────────────────────────────────────────────────────
-  //  cinemaId resolution
-  //
-  //  FIX: worker never has theaterId in URL params or navigation
-  //  state — the analytics page is opened from the worker dashboard
-  //  which doesn't pass theaterId. After Section 2.1 (Worker Login
-  //  fix), the server returns assignedTheaterId which is written to
-  //  localStorage by Login.jsx. We now read it here as the
-  //  worker-specific fallback so worker analytics actually loads.
-  //
-  //  Owner still prefers URL param → navigation state → localStorage
-  //  keys set by the owner dashboard.
-  // ─────────────────────────────────────────────────────────
   const cinemaId = useMemo(() => {
-    // Shared: URL param and navigation state work for both roles
     const fromUrl   = searchParams.get("theaterId") || "";
     const fromState = location.state?.theaterId     || "";
 
@@ -193,11 +147,9 @@ const Analytics = () => {
     if (fromState) return fromState;
 
     if (role === "worker") {
-      // Worker: assignedTheaterId is written by Login.jsx after Section 2.1
       return localStorage.getItem("assignedTheaterId") || "";
     }
 
-    // Owner: check owner-specific keys then legacy fallback
     return (
       localStorage.getItem("currentTheaterId")     ||
       localStorage.getItem("activeOwnerTheaterId") ||
@@ -213,16 +165,6 @@ const Analytics = () => {
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState("");
 
-  // ─────────────────────────────────────────────────────────
-  //  FETCH
-  //
-  //  Owner  → GET /api/orders?cinemaId=:id  (requires cinemaId)
-  //  Worker → GET /api/worker/orders?status= for all statuses,
-  //           merged and deduped. Worker endpoint returns only
-  //           that worker's assigned theater orders, so cinemaId
-  //           is not needed in the query — the JWT identifies the
-  //           worker and the backend scopes results accordingly.
-  // ─────────────────────────────────────────────────────────
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -231,9 +173,7 @@ const Analytics = () => {
     try {
       if (role === "owner") {
         if (!cinemaId) {
-          setError(
-            "Theater ID not found. Please open analytics from the theater dashboard."
-          );
+          setError("Theater ID not found. Please open analytics from the theater dashboard.");
           setLoading(false);
           return;
         }
@@ -252,7 +192,6 @@ const Analytics = () => {
         }
 
       } else {
-        // Worker: fetch all statuses in parallel, merge, deduplicate
         const results = await Promise.allSettled(
           ALL_STATUSES.map((s) =>
             fetch(`${API_BASE}/worker/orders?status=${s}`, {
@@ -269,23 +208,16 @@ const Analytics = () => {
             });
         });
 
-        // ── FIX: if cinemaId is available for worker, scope to assigned theater ──
-        // The worker endpoint should already scope by theater via JWT, but if the
-        // response ever includes cross-theater orders (e.g. a worker reassigned),
-        // filter client-side to the assigned theater as a safety net.
         const scoped = cinemaId
-          ? merged.filter(
-              (o) => o.cinemaId === cinemaId || o.cinemaId?._id === cinemaId
-            )
+          ? merged.filter((o) => o.cinemaId === cinemaId || o.cinemaId?._id === cinemaId)
           : merged;
 
         setOrders(scoped);
-        if (!scoped.length)
-          setError("No orders found for this period.");
+        if (!scoped.length) setError("No orders found for this period.");
       }
     } catch (err) {
       console.error(err);
-      setError("Failed to load analytics. Please check your connection.");
+      setError("Failed to load analytics.");
     } finally {
       setLoading(false);
     }
@@ -293,7 +225,6 @@ const Analytics = () => {
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-  /* ─── Stat filter ─── */
   const now = new Date();
   const filteredOrders = useMemo(() => orders.filter((o) => {
     const d = new Date(o.createdAt);
@@ -304,7 +235,6 @@ const Analytics = () => {
     return true;
   }), [orders, filter]);
 
-  /* ─── Stats ─── */
   const totalOrders  = filteredOrders.length;
   const delivered    = filteredOrders.filter((o) => o.orderStatus === "delivered").length;
   const totalRevenue = filteredOrders.filter((o) => o.orderStatus === "delivered").reduce((s, o) => s + (o.totalAmount || 0), 0);
@@ -312,13 +242,11 @@ const Analytics = () => {
   const preparing    = filteredOrders.filter((o) => o.orderStatus === "preparing").length;
   const ready        = filteredOrders.filter((o) => o.orderStatus === "ready").length;
 
-  /* ─── Chart data ─── */
   const chartData    = useMemo(() => buildChartData(orders, chartRange), [orders, chartRange]);
   const chartOrders  = useMemo(() => chartData.reduce((s, d) => s + d.Orders,  0), [chartData]);
   const chartRevenue = useMemo(() => chartData.reduce((s, d) => s + d.Revenue, 0), [chartData]);
   const isEmpty      = chartData.every((d) => d.Orders === 0 && d.Revenue === 0);
 
-  /* ─── Top items ─── */
   const topItems = useMemo(() => {
     const map = {};
     filteredOrders.forEach((o) => {
@@ -329,10 +257,6 @@ const Analytics = () => {
     });
     return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5);
   }, [filteredOrders]);
-
-  /* ─── Status bar widths ─── */
-  const maxCount = Math.max(placed, preparing, ready, delivered, 1);
-  const barWidth = (n) => `${Math.round((n / maxCount) * 100)}%`;
 
   const STAT_CARDS = [
     { label: "Total Orders",        value: totalOrders,              accent: "violet" },
@@ -349,7 +273,6 @@ const Analytics = () => {
     tickLine: false,
   };
 
-  /* ─── Loading ─── */
   if (loading) return (
     <div className="analytics-container">
       <div className="analytics-topbar">
@@ -362,19 +285,15 @@ const Analytics = () => {
     </div>
   );
 
-  /* ─── Render ─── */
   return (
     <div className="analytics-container">
-
-      {/* TOPBAR */}
       <div className="analytics-topbar">
-        <h2 className="analytics-title">📊 Theater Analytics</h2>
+        <h2 className="analytics-title">📈 Theater Analytics</h2>
         <button className="analytics-refresh-btn" onClick={fetchOrders}>↻ Refresh</button>
       </div>
 
       {error && <p className="analytics-info">{error}</p>}
 
-      {/* STAT PERIOD FILTER */}
       <div className="filter-buttons">
         {STAT_FILTERS.map(({ key, label }) => (
           <button
@@ -387,7 +306,6 @@ const Analytics = () => {
         ))}
       </div>
 
-      {/* STAT CARDS */}
       <div className="analytics-grid">
         {STAT_CARDS.map(({ label, value, accent }) => (
           <div key={label} className={`analytics-card accent-${accent}`}>
@@ -397,13 +315,11 @@ const Analytics = () => {
         ))}
       </div>
 
-      {/* CHART SECTION */}
       <div className="chart-section">
-
         <div className="chart-header">
           <div className="chart-header-top">
             <div>
-              <h3 className="chart-title">Orders & Revenue Chart</h3>
+              <h3 className="chart-title">Trends & Volume</h3>
               <div className="chart-summary">
                 <span className="csum-item csum-orders">
                   <span className="csum-dot" style={{ background: "#6C63FF" }} />
@@ -435,7 +351,7 @@ const Analytics = () => {
             </div>
 
             <div className="ctrl-group">
-              <span className="ctrl-label">Show</span>
+              <span className="ctrl-label">Metric</span>
               <div className="chart-toggle-group">
                 {[
                   { key: "both",    label: "Both"    },
@@ -452,148 +368,70 @@ const Analytics = () => {
                 ))}
               </div>
             </div>
-
-            <div className="ctrl-group">
-              <span className="ctrl-label">Type</span>
-              <div className="chart-toggle-group">
-                <button
-                  className={`chart-toggle-btn ${chartType === "area" ? "active" : ""}`}
-                  onClick={() => setChartType("area")}
-                >〰 Area</button>
-                <button
-                  className={`chart-toggle-btn ${chartType === "bar" ? "active" : ""}`}
-                  onClick={() => setChartType("bar")}
-                >▬ Bar</button>
-              </div>
-            </div>
           </div>
         </div>
 
         <div className="chart-body">
           {isEmpty ? (
             <div className="chart-empty">
-              <span className="chart-empty-icon">📊</span>
-              <p>No data for this range — orders will appear here once placed.</p>
+              <span className="chart-empty-icon">📈</span>
+              <p>No data for this range.</p>
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              {chartType === "area" ? (
-                <AreaChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="gOrders" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#6C63FF" stopOpacity={0.20} />
-                      <stop offset="95%" stopColor="#6C63FF" stopOpacity={0}    />
-                    </linearGradient>
-                    <linearGradient id="gRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#22C55E" stopOpacity={0.18} />
-                      <stop offset="95%" stopColor="#22C55E" stopOpacity={0}    />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(108,99,255,0.07)" />
-                  <XAxis dataKey="label" {...axisStyle} />
-                  <YAxis yAxisId="o" {...axisStyle} width={28} />
-                  {(chartMetric === "both" || chartMetric === "revenue") && (
-                    <YAxis yAxisId="r" orientation="right" tickFormatter={yFmt} {...axisStyle} width={44} />
-                  )}
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend wrapperStyle={{ fontFamily: "Plus Jakarta Sans", fontSize: 12, fontWeight: 600, paddingTop: 10 }} />
-                  {(chartMetric === "both" || chartMetric === "orders") && (
-                    <Area yAxisId="o" type="monotone" dataKey="Orders"
-                      stroke="#6C63FF" strokeWidth={2.5} fill="url(#gOrders)"
-                      dot={false} activeDot={{ r: 5, fill: "#6C63FF", stroke: "#fff", strokeWidth: 2 }} />
-                  )}
-                  {(chartMetric === "both" || chartMetric === "revenue") && (
-                    <Area yAxisId="r" type="monotone" dataKey="Revenue"
-                      stroke="#22C55E" strokeWidth={2.5} fill="url(#gRevenue)"
-                      dot={false} activeDot={{ r: 5, fill: "#22C55E", stroke: "#fff", strokeWidth: 2 }} />
-                  )}
-                </AreaChart>
-              ) : (
-                <BarChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}
-                  barSize={chartRange === "daily" ? 7 : chartRange === "yearly" ? 28 : 16}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(108,99,255,0.07)" />
-                  <XAxis dataKey="label" {...axisStyle} />
-                  <YAxis yAxisId="o" {...axisStyle} width={28} />
-                  {(chartMetric === "both" || chartMetric === "revenue") && (
-                    <YAxis yAxisId="r" orientation="right" tickFormatter={yFmt} {...axisStyle} width={44} />
-                  )}
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend wrapperStyle={{ fontFamily: "Plus Jakarta Sans", fontSize: 12, fontWeight: 600, paddingTop: 10 }} />
-                  {(chartMetric === "both" || chartMetric === "orders") && (
-                    <Bar yAxisId="o" dataKey="Orders"  fill="#6C63FF" radius={[4,4,0,0]} fillOpacity={0.85} />
-                  )}
-                  {(chartMetric === "both" || chartMetric === "revenue") && (
-                    <Bar yAxisId="r" dataKey="Revenue" fill="#22C55E" radius={[4,4,0,0]} fillOpacity={0.85} />
-                  )}
-                </BarChart>
-              )}
+            <ResponsiveContainer width="100%" height={320}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gOrders" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#6C63FF" stopOpacity={0.20} />
+                    <stop offset="95%" stopColor="#6C63FF" stopOpacity={0}    />
+                  </linearGradient>
+                  <linearGradient id="gRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#22C55E" stopOpacity={0.18} />
+                    <stop offset="95%" stopColor="#22C55E" stopOpacity={0}    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(108,99,255,0.07)" />
+                <XAxis dataKey="label" {...axisStyle} />
+                <YAxis yAxisId="o" {...axisStyle} width={28} />
+                {(chartMetric === "both" || chartMetric === "revenue") && (
+                  <YAxis yAxisId="r" orientation="right" tickFormatter={yFmt} {...axisStyle} width={44} />
+                )}
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ fontFamily: "Plus Jakarta Sans", fontSize: 12, fontWeight: 600, paddingTop: 10 }} />
+                {(chartMetric === "both" || chartMetric === "orders") && (
+                  <Area yAxisId="o" type="monotone" dataKey="Orders"
+                    stroke="#6C63FF" strokeWidth={3} fill="url(#gOrders)"
+                    dot={false} activeDot={{ r: 6, fill: "#6C63FF", stroke: "#fff", strokeWidth: 2 }} />
+                )}
+                {(chartMetric === "both" || chartMetric === "revenue") && (
+                  <Area yAxisId="r" type="monotone" dataKey="Revenue"
+                    stroke="#22C55E" strokeWidth={3} fill="url(#gRevenue)"
+                    dot={false} activeDot={{ r: 6, fill: "#22C55E", stroke: "#fff", strokeWidth: 2 }} />
+                )}
+              </AreaChart>
             </ResponsiveContainer>
           )}
         </div>
-
-        {!isEmpty && (
-          <div className="chart-data-table">
-            <div className="cdt-header">
-              <span>Period</span>
-              <span>Orders</span>
-              <span>Revenue</span>
-            </div>
-            {chartData
-              .filter((d) => d.Orders > 0 || d.Revenue > 0)
-              .slice(0, 8)
-              .map((d) => (
-                <div key={d.fullLabel || d.label} className="cdt-row">
-                  <span className="cdt-period">{d.fullLabel || d.label}</span>
-                  <span className="cdt-orders">{d.Orders}</span>
-                  <span className="cdt-revenue">{formatCurrency(d.Revenue)}</span>
-                </div>
-              ))}
-          </div>
-        )}
       </div>
 
-      {/* STATUS BREAKDOWN */}
-      <div className="status-section">
-        <h3 className="section-title">Order Status Breakdown</h3>
-        {Object.entries(STATUS_CONFIG).map(([key, { label, color }]) => {
-          const count = filteredOrders.filter((o) => o.orderStatus === key).length;
-          return (
-            <div key={key} className="status-bar-row">
-              <div className="status-bar-meta">
-                <span className="status-bar-label">{label}</span>
-                <span className="status-bar-count">{count}</span>
-              </div>
-              <div className="status-bar-track">
-                <div className="status-bar-fill" style={{ width: barWidth(count), background: color }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* TOP ITEMS */}
       <div className="top-items">
         <h3 className="section-title">🔥 Top Selling Items</h3>
-        {role === "owner" && topItems.length === 0 && orders.length > 0 && (
-          <p className="analytics-info" style={{ marginBottom: 8 }}>
-            Item breakdown requires backend to populate <code>items</code> in the orders list response.
-          </p>
-        )}
         {topItems.length === 0 ? (
           <p className="analytics-empty">No item data for this period.</p>
         ) : (
-          topItems.map(([name, qty], i) => (
-            <div key={name} className="top-item">
-              <span className="top-item-name">
-                <span className="top-item-rank">#{i + 1}</span>
-                {name}
-              </span>
-              <span className="top-item-qty">{qty} sold</span>
-            </div>
-          ))
+          <div className="top-items-list">
+            {topItems.map(([name, qty], i) => (
+              <div key={name} className="top-item">
+                <span className="top-item-name">
+                  <span className="top-item-rank">#{i + 1}</span>
+                  {name}
+                </span>
+                <span className="top-item-qty">{qty} sold</span>
+              </div>
+            ))}
+          </div>
         )}
       </div>
-
     </div>
   );
 };
