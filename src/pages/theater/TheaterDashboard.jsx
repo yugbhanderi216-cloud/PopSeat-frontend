@@ -266,9 +266,28 @@ const TheaterDashboard = () => {
         }}
       >
         <div className="banner-overlay">
-          {theater.theaterLogo && (
-            <img src={getImageUrl(theater.theaterLogo)} alt="Theater Logo" className="dashboard-logo" />
-          )}
+          {theater.theaterLogo ? (
+            <img
+              src={getImageUrl(theater.theaterLogo)}
+              alt="Theater Logo"
+              className="dashboard-logo"
+              onError={(e) => {
+                e.target.style.display = "none";
+                e.target.nextSibling && (e.target.nextSibling.style.display = "flex");
+              }}
+            />
+          ) : null}
+          <div
+            className="dashboard-logo"
+            style={{
+              display: theater.theaterLogo ? "none" : "flex",
+              alignItems: "center", justifyContent: "center",
+              fontSize: 36, background: "rgba(255,255,255,0.15)",
+              borderRadius: "50%", width: 80, height: 80,
+            }}
+          >
+            🎬
+          </div>
           <h1>{theater.name}</h1>
           <p>
             {theater.branchName && `${theater.branchName} • `}
