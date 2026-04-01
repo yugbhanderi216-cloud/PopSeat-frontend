@@ -12,15 +12,7 @@ import "./QRGenerator.css";
 //   GET  /api/seat?hallId=            — load existing seats for hall
 //
 // QR URL FORMAT (scanned by customer):
-//   https://popseat-frontend.vercel.app/#/customer/welcome
-//     ?seatId=<seat._id>
-//     &hallId=<hallId>
-//     &screen=<screenNumber>
-//     &seat=<seatNumber>  (e.g. A1)
-// ─────────────────────────────────────────────────────────────
-
-const API_BASE = "https://popseat.onrender.com/api";
-const CUSTOMER_BASE = "https://popseat-frontend.vercel.app/#/customer/welcome";
+const CUSTOMER_BASE = "https://pop-seat-frontend.vercel.app/customer/welcome";
 
 const getToken = () =>
   localStorage.getItem("token") ||

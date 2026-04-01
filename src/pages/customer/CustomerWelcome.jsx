@@ -11,8 +11,11 @@ const CustomerWelcome = () => {
 
   // ✅ FIX 1: Read params from location.hash, not location.search
   // HashRouter puts query params inside the hash: /#/route?key=val
-  const queryString = location.hash.split("?")[1] || "";
-  const params = new URLSearchParams(queryString);
+  // Robust parameter reading: Handles both modern BrowserRouter (?params) 
+  // and legacy/fallback HashRouter (#/path?params) formats.
+  const params = new URLSearchParams(
+    location.search || location.hash.split("?")[1] || ""
+  );
 
   const seatId = params.get("seatId");
   const cinemaId = params.get("cinemaId");
