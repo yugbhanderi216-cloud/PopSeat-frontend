@@ -12,6 +12,13 @@ const API_BASE = "https://popseat.onrender.com/api";
 const getAuthToken = () =>
   localStorage.getItem("ownerToken") || localStorage.getItem("token") || "";
 
+const getImageUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http") || url.startsWith("data:") || url.startsWith("blob:")) return url;
+  const base = API_BASE.replace("/api", "");
+  return `${base}/${url.replace(/^\//, '')}`;
+};
+
 // JSON headers — used for bank details POST and JSON PUT (no files)
 const jsonAuthHeaders = () => ({
   "Content-Type": "application/json",
@@ -433,7 +440,7 @@ const EditTheater = () => {
               <input className="edit-input" name="theaterLogo" type="file" accept="image/*" onChange={handleFileChange} />
               {theaterData.theaterLogo && (
                 <img
-                  src={theaterData.theaterLogo}
+                  src={getImageUrl(theaterData.theaterLogo)}
                   alt="Logo preview"
                   style={{ marginTop: 8, height: 60, borderRadius: 8, objectFit: "cover" }}
                   onError={(e) => { e.target.style.display = "none"; }}
@@ -447,7 +454,7 @@ const EditTheater = () => {
               <input className="edit-input" name="banner" type="file" accept="image/*" onChange={handleFileChange} />
               {theaterData.banner && (
                 <img
-                  src={theaterData.banner}
+                  src={getImageUrl(theaterData.banner)}
                   alt="Banner preview"
                   style={{ marginTop: 8, height: 60, width: "100%", borderRadius: 8, objectFit: "cover" }}
                   onError={(e) => { e.target.style.display = "none"; }}

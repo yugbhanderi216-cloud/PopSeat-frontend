@@ -23,6 +23,12 @@ const formatTime = (time) => {
 const formatCurrency = (amount) =>
   `₹ ${Number(amount).toLocaleString("en-IN")}`;
 
+const getImageUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http") || url.startsWith("data:")) return url;
+  return `${API_BASE}/${url.replace(/^\//, '')}`;
+};
+
 const authHeaders = () => ({
   "Content-Type" : "application/json",
   Authorization  : `Bearer ${
@@ -255,13 +261,13 @@ const TheaterDashboard = () => {
         className="dashboard-banner"
         style={{
           backgroundImage: theater.banner
-            ? `url(${theater.banner})`
+            ? `url(${getImageUrl(theater.banner)})`
             : "linear-gradient(135deg,#6C63FF,#4338CA,#312E81)",
         }}
       >
         <div className="banner-overlay">
           {theater.theaterLogo && (
-            <img src={theater.theaterLogo} alt="Theater Logo" className="dashboard-logo" />
+            <img src={getImageUrl(theater.theaterLogo)} alt="Theater Logo" className="dashboard-logo" />
           )}
           <h1>{theater.name}</h1>
           <p>
