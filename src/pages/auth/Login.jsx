@@ -93,23 +93,36 @@ const Login = () => {
 
       if (role === "worker") {
         if (data.assignedTheaterId) {
+          // Backend returned it directly (ideal case)
           localStorage.setItem("assignedTheaterId", data.assignedTheaterId);
         } else {
+          // Fallback: look up from owner's cached worker→cinema map
           let foundCinemaId = null;
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (!key?.startsWith("workers_cache_")) continue;
-            try {
-              const cache = JSON.parse(localStorage.getItem(key) || "{}");
-              for (const [cinemaId, workers] of Object.entries(cache)) {
-                if (Array.isArray(workers)) {
-                  const match = workers.find((w) => w.email?.toLowerCase() === userKey);
-                  if (match) { foundCinemaId = cinemaId; break; }
-                }
-              }
-            } catch { /* skip */ }
-            if (foundCinemaId) break;
+
+          // New simple cache set by OwnerHome when worker is created
+          const workerMap = JSON.parse(localStorage.getItem("worker_cinema_map") || "{}");
+          if (workerMap[userKey]) {
+            foundCinemaId = workerMap[userKey];
           }
+
+          // Legacy fallback: workers_cache_* keys (old format)
+          if (!foundCinemaId) {
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (!key?.startsWith("workers_cache_")) continue;
+              try {
+                const cache = JSON.parse(localStorage.getItem(key) || "{}");
+                for (const [cinemaId, workers] of Object.entries(cache)) {
+                  if (Array.isArray(workers)) {
+                    const match = workers.find((w) => w.email?.toLowerCase() === userKey);
+                    if (match) { foundCinemaId = cinemaId; break; }
+                  }
+                }
+              } catch { /* skip */ }
+              if (foundCinemaId) break;
+            }
+          }
+
           if (foundCinemaId) localStorage.setItem("assignedTheaterId", foundCinemaId);
         }
       }

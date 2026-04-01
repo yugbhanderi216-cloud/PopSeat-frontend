@@ -259,6 +259,15 @@ const OwnerHome = () => {
       } else {
         await loadWorkers(cinemaId);
       }
+
+      // Cache worker email → cinemaId so Login.jsx can auto-assign
+      // the theaterId when the worker logs in (backend doesn't return this)
+      const workerEmail = email.trim().toLowerCase();
+      const cacheKey = "worker_cinema_map";
+      const existingCache = JSON.parse(localStorage.getItem(cacheKey) || "{}");
+      existingCache[workerEmail] = cinemaId;
+      localStorage.setItem(cacheKey, JSON.stringify(existingCache));
+
       setWorkerInputs((prev) => ({
         ...prev,
         [cinemaId]: { name: "", email: "", password: "" },
