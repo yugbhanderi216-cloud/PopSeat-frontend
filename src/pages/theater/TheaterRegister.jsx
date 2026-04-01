@@ -128,7 +128,8 @@ const TheaterRegister = () => {
           setSubBlocked(true);
         }
       } catch (err) {
-        console.warn("Subscription check network error, allowing through:", err);
+        console.error("Subscription check failed:", err);
+        setSubBlocked(true);
         // Network error → let through; server will guard POST /api/cinema
       } finally {
         setSubLoading(false);
@@ -240,14 +241,17 @@ const TheaterRegister = () => {
       // but a real URL string passes it. If a file is selected, Multer overwrites the value.
       const DEFAULT_LOGO = "https://popseat.onrender.com/defaults/logo.png";
       const DEFAULT_BANNER = "https://popseat.onrender.com/defaults/banner.jpg";
+      if (theaterLogo instanceof File) {
+        formData.append("theaterLogo", theaterLogo);
+      } else {
+        formData.append("theaterLogo", DEFAULT_LOGO);
+      }
 
-      formData.append("theaterLogo", DEFAULT_LOGO);
-      formData.append("banner", DEFAULT_BANNER);
-
-      // Append actual files — Multer will process these and backend overwrites the body values
-      if (theaterLogo instanceof File) formData.append("theaterLogo", theaterLogo);
-      if (banner instanceof File) formData.append("banner", banner);
-
+      if (banner instanceof File) {
+        formData.append("banner", banner);
+      } else {
+        formData.append("banner", DEFAULT_BANNER);
+      }
       const cinemaRes = await fetch(`${API_BASE}/api/cinema`, {
         method: "POST",
         headers: formAuthHeaders(), // ← NO Content-Type; browser sets multipart boundary
@@ -275,6 +279,13 @@ const TheaterRegister = () => {
       }
 
       const cinemaId = cinemaData.cinema?._id;
+
+      // ✅ Backend now auto-creates halls and returns them in response
+      // cinemaData.halls = [{ _id, name, screenNumber, hallNumber, ... }]
+      // No need to create halls manually — they are already created.
+      if (cinemaData.halls?.length > 0) {
+        console.log(`✅ ${cinemaData.halls.length} halls auto-created by backend.`);
+      }
 
       /* ── STEP 2: Save bank details — POST /api/cinema/:id/bank-details ── */
       if (cinemaId && hasBankDetails()) {

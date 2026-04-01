@@ -112,7 +112,8 @@ const QRGenerator = () => {
 
   // ─────────────────────────────────────────────────────────
   //  LOAD HALLS  — GET /api/hall?cinemaId=
-  //  NOTE: Your API docs show the endpoint is /api/hall (singular)
+  //  Updated hall shape: { _id, name, screenNumber, hallNumber, rows, totalSeats }
+  //  screenNumber is now a number field (was only hallNumber before)
   // ─────────────────────────────────────────────────────────
   const loadHalls = useCallback(async (cinemaId) => {
     setHallLoading(true);
@@ -127,8 +128,9 @@ const QRGenerator = () => {
         // Auto-select if only one hall
         if (allHalls.length === 1) {
           setSelectedHall(allHalls[0]._id);
+          // Use screenNumber (new field) first, fallback to hallNumber
           setScreenNo(
-            allHalls[0].screenNumber || allHalls[0].hallNumber || "1"
+            String(allHalls[0].screenNumber || allHalls[0].hallNumber || "1")
           );
         }
       }
@@ -194,26 +196,26 @@ const QRGenerator = () => {
       setGeneratedSeats([]);
       return;
     }
+
     setProgress("Loading existing seats...");
+
     try {
-      const res = await fetch(`${API_BASE}/seat`, {
+      // ✅ If your backend supports filtering → use this
+      const res = await fetch(`${API_BASE}/seat?hallId=${hallId}`, {
         headers: authHeaders(),
       });
+
       const data = await res.json();
+
       if (data.success && data.seats) {
-        // Filter seats belonging to this hall
-        const filtered = data.seats
-          .filter((s) => {
-            const sHallId = s.hallId?._id || s.hallId;
-            return sHallId === hallId;
-          })
-          .map((seat) => ({
-            seatNumber: seat.seatNumber,
-            _id: seat._id,
-            qrCode: seat.qrCode,   // base64 PNG from backend
-            qrData: seat.qrData,   // URL string fallback
-          }));
-        setGeneratedSeats(filtered);
+        const seats = data.seats.map((seat) => ({
+          seatNumber: seat.seatNumber,
+          _id: seat._id,
+          qrCode: seat.qrCode,
+          qrData: seat.qrData,
+        }));
+
+        setGeneratedSeats(seats);
       } else {
         setGeneratedSeats([]);
       }
@@ -230,30 +232,39 @@ const QRGenerator = () => {
   }, [selectedHall, loadSeatsForHall]);
 
   // ─────────────────────────────────────────────────────────
-  //  ROW BUILDER (local state only)
+  // ROW BUILDER
   // ─────────────────────────────────────────────────────────
   const addRowToLayout = () => {
+    setError("");
+
     if (!rowName.trim() || !seatCount) {
       setError("Enter both a row name and seat count.");
       return;
     }
-    if (Number(seatCount) < 1 || Number(seatCount) > 50) {
+
+    const count = Number(seatCount);
+
+    if (isNaN(count) || count < 1 || count > 50) {
       setError("Seat count must be between 1 and 50.");
       return;
     }
+
     const upperRow = rowName.trim().toUpperCase();
+
     if (layout.some((r) => r.row === upperRow)) {
       setError(`Row ${upperRow} already added.`);
       return;
     }
-    setLayout([...layout, { row: upperRow, count: Number(seatCount) }]);
+
+    setLayout((prev) => [...prev, { row: upperRow, count }]);
+
     setRowName("");
     setSeatCount("");
-    setError("");
   };
 
-  const removeRow = (i) => setLayout(layout.filter((_, idx) => idx !== i));
-
+  const removeRow = (i) => {
+    setLayout((prev) => prev.filter((_, idx) => idx !== i));
+  };
   // ─────────────────────────────────────────────────────────
   //  GENERATE & SAVE SEATS  — POST /api/seat per seat
   //
@@ -435,13 +446,17 @@ const QRGenerator = () => {
               onChange={(e) => {
                 setSelectedHall(e.target.value);
                 const hall = halls.find((h) => h._id === e.target.value);
-                setScreenNo(hall?.screenNumber || hall?.hallNumber || "");
+                // Use screenNumber (new field) first, fallback to hallNumber
+                setScreenNo(
+                  String(hall?.screenNumber || hall?.hallNumber || "")
+                );
               }}
             >
               <option value="">— Select Hall —</option>
               {halls.map((h) => (
                 <option key={h._id} value={h._id}>
-                  {h.name} — {h.totalSeats} seats
+                  {h.name} — Screen {h.screenNumber || h.hallNumber}
+                  {h.totalSeats > 0 ? ` · ${h.totalSeats} seats` : " · 0 seats"}
                 </option>
               ))}
             </select>
