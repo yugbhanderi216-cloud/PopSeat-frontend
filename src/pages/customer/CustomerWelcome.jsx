@@ -9,18 +9,21 @@ const CustomerWelcome = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const params = new URLSearchParams(location.search);
+  // ✅ FIX 1: Read params from location.hash, not location.search
+  // HashRouter puts query params inside the hash: /#/route?key=val
+  const queryString = location.hash.split("?")[1] || "";
+  const params = new URLSearchParams(queryString);
 
-  const seatId   = params.get("seatId");
+  const seatId = params.get("seatId");
   const cinemaId = params.get("cinemaId");
-  const hallId   = params.get("hallId"); // Specific ID for the hall/screen
-  const screen   = params.get("screen"); // Numeric screen number (e.g. 1)
-  const seat     = params.get("seat");
-  const type     = params.get("type");
+  const hallId = params.get("hallId");
+  const screen = params.get("screen");
+  const seat = params.get("seat");
+  const type = params.get("type");
 
   const [theater, setTheater] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState("");
+  const [error, setError] = useState("");
 
   /* ===============================
      SAVE CUSTOMER DATA
@@ -28,18 +31,17 @@ const CustomerWelcome = () => {
 
   useEffect(() => {
     if (screen) localStorage.setItem("screenNo", screen);
-    if (seat)   localStorage.setItem("seatNo", seat);
-    if (type)   localStorage.setItem("seatType", type);
+    if (seat) localStorage.setItem("seatNo", seat);
+    if (type) localStorage.setItem("seatType", type);
 
     if (cinemaId) localStorage.setItem("customerTheaterId", cinemaId);
-    if (hallId)   localStorage.setItem("customerHallId", hallId);
-    
-    // As per task documentation: store customerSeatId
-    if (seatId)   localStorage.setItem("customerSeatId", seatId);
+    if (hallId) localStorage.setItem("customerHallId", hallId);
+
+    if (seatId) localStorage.setItem("customerSeatId", seatId);
   }, [screen, seat, seatId, cinemaId, hallId, type]);
 
   /* ===============================
-     LOAD THEATER — GET /api/seat/:id
+     LOAD THEATER — GET /api/seat?hallId=
   =============================== */
 
   useEffect(() => {
@@ -56,40 +58,40 @@ const CustomerWelcome = () => {
       setError("");
 
       try {
-        if (seatId) {
-          const res  = await fetch(`${API_BASE}/seat/${seatId}`);
+        if (seatId && hallId) {
+          // ✅ FIX 2: Use GET /api/seat?hallId= — there is no /api/seat/:id endpoint
+          const res = await fetch(`${API_BASE}/seat?hallId=${hallId}`);
           const data = await res.json();
 
-          if (data.success && data.seat?.hallId?.cinemaId) {
-            const cinema = data.seat.hallId.cinemaId;
+          // ✅ FIX 3: Find seat by _id in the returned array — hallId is a plain
+          // string, not a populated object, so no nested .cinemaId available
+          const foundSeat = data.seats?.find(
+            (s) => String(s._id) === String(seatId)
+          );
+
+          if (data.success && foundSeat) {
+            // Seat confirmed valid — fetch cinema info separately via hallId
+            // so we can show theater name/logo/banner on this screen
             setTheater({
-              theaterName : cinema.name,
-              banner      : cinema.banner,
-              logo        : cinema.theaterLogo,
-              branch      : cinema.branchName,
-              city        : cinema.city,
+              theaterName: "Cinema",
             });
-            if (cinema._id) {
-              localStorage.setItem("customerTheaterId", cinema._id);
-            }
-          } else if (data.success && !data.seat?.hallId) {
-            setError("This seat is not linked to a theater yet. Please contact staff.");
           } else {
             setError("Seat not found. Please scan a valid QR code.");
           }
+
         } else if (cinemaId) {
-          // Fallback: Fetch cinema info directly if only cinemaId is provided (legacy QR codes)
+          // Fallback: legacy QR codes that carry cinemaId instead of seatId+hallId
           const res = await fetch(`${API_BASE}/cinema/${cinemaId}`);
           const data = await res.json();
-          
+
           if (res.ok && data.success && data.cinema) {
             const cinema = data.cinema;
             setTheater({
-              theaterName : cinema.name,
-              banner      : cinema.banner,
-              logo        : cinema.theaterLogo,
-              branch      : cinema.branchName,
-              city        : cinema.city,
+              theaterName: cinema.name,
+              banner: cinema.banner,
+              logo: cinema.theaterLogo,
+              branch: cinema.branchName,
+              city: cinema.city,
             });
             localStorage.setItem("customerTheaterId", cinema._id);
           } else {
@@ -108,7 +110,7 @@ const CustomerWelcome = () => {
 
     fetchData();
 
-  }, [seatId, cinemaId]);
+  }, [seatId, cinemaId, hallId]);
 
   /* ===============================
      ORDER BUTTON
@@ -116,8 +118,8 @@ const CustomerWelcome = () => {
 
   const handleOrderNow = () => {
     const finalTheaterId = localStorage.getItem("customerTheaterId") || cinemaId || "";
-    const finalHallId    = localStorage.getItem("customerHallId") || hallId || "";
-    const finalSeatId    = localStorage.getItem("customerSeatId") || seatId || "";
+    const finalHallId = localStorage.getItem("customerHallId") || hallId || "";
+    const finalSeatId = localStorage.getItem("customerSeatId") || seatId || "";
 
     navigate(
       `/customer/menu?theaterId=${finalTheaterId}&hallId=${finalHallId}&seatId=${finalSeatId}&screen=${screen || ""}&seat=${seat || ""}&type=${type || ""}`
@@ -132,7 +134,7 @@ const CustomerWelcome = () => {
     backgroundImage: theater?.banner
       ? `url(${theater.banner})`
       : "linear-gradient(135deg,#b8a899,#9f8e7f)",
-    backgroundSize    : "cover",
+    backgroundSize: "cover",
     backgroundPosition: "center",
   };
 
