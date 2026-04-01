@@ -8,7 +8,7 @@ import "./QRGenerator.css";
 //   GET  /api/cinema/:theaterId       — load theater
 //   GET  /api/hall?cinemaId=          — load halls for cinema
 //   POST /api/hall                    — create hall if not exists
-//   POST /api/seat                    — create individual seat (old system)
+//   POST /api/seat                    — create individual seat
 //   GET  /api/seat?hallId=            — load existing seats for hall
 //
 // QR URL FORMAT (scanned by customer):
@@ -242,10 +242,10 @@ const QRGenerator = () => {
     setLayout((prev) => prev.filter((_, idx) => idx !== i));
 
   // ─────────────────────────────────────────────────────────
-  //  GENERATE & SAVE SEATS — OLD SYSTEM
+  //  GENERATE & SAVE SEATS
   //  For every seat in layout: POST /api/seat { hallId, seatNumber }
   //  Uses Promise.all for parallel calls.
-  //  Skips duplicates (409 / existing) gracefully.
+  //  Skips duplicates (!res.ok) gracefully.
   // ─────────────────────────────────────────────────────────
   const generateSeats = async () => {
     setError("");
@@ -267,20 +267,13 @@ const QRGenerator = () => {
       }
     }
 
-    // Check for conflicts with already-saved seats
-    const existingNumbers = new Set(generatedSeats.map((s) => s.seatNumber));
-    const newSeats = seatList.filter((sn) => !existingNumbers.has(sn));
-
-    if (newSeats.length === 0) {
-      setError("All seats in this layout already exist for this screen.");
-      return;
-    }
-
     setGenerating(true);
-    setProgressCount({ done: 0, total: newSeats.length });
-    setProgress(`Saving ${newSeats.length} seats…`);
+    setProgressCount({ done: 0, total: seatList.length });
+    setProgress(`Saving ${seatList.length} seats…`);
 
-    // POST each seat individually, in parallel
+    // ── saveSeat ──────────────────────────────────────────
+    // POST /api/seat → { success: true, seat: { _id, seatNumber, hallId } }
+    // Returns null for duplicates (!res.ok) or unexpected shapes.
     const saveSeat = async (seatNumber) => {
       try {
         const res = await fetch(`${API_BASE}/seat`, {
@@ -288,28 +281,26 @@ const QRGenerator = () => {
           headers: authHeaders(),
           body: JSON.stringify({ hallId, seatNumber }),
         });
-        const data = await res.json();
 
         setProgressCount((prev) => ({ ...prev, done: prev.done + 1 }));
 
-        if (res.status === 409 || res.status === 400) {
-          // Duplicate — skip gracefully
-          return null;
+        if (!res.ok) {
+          return null; // skip duplicate or any error
         }
+
+        const data = await res.json();
+
         if (data.success && data.seat) {
           return { _id: data.seat._id, seatNumber: data.seat.seatNumber, hallId };
         }
-        // Some backends return the seat at top level
-        if (data._id) {
-          return { _id: data._id, seatNumber: data.seatNumber, hallId };
-        }
+
         return null;
       } catch {
         return null;
       }
     };
 
-    const results = await Promise.all(newSeats.map(saveSeat));
+    const results = await Promise.all(seatList.map(saveSeat));
     const saved = results.filter(Boolean);
 
     // Merge with existing seats
@@ -327,7 +318,7 @@ const QRGenerator = () => {
     setProgressCount({ done: 0, total: 0 });
 
     if (saved.length === 0) {
-      setError("No new seats were created. They may already exist.");
+      setError("No new seats were saved. All seats may already exist for this screen.");
     }
   };
 
