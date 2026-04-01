@@ -66,46 +66,20 @@ const OwnerOnly = ({ element }) => {
 const WorkerRedirect = () => {
   const assignedTheaterId = localStorage.getItem("assignedTheaterId");
 
-  if (!assignedTheaterId) {
+  // If backend returned theaterId at login, use it for full dashboard
+  if (assignedTheaterId) {
     return (
-      <div style={{
-        display:"flex", flexDirection:"column", alignItems:"center",
-        justifyContent:"center", minHeight:"100vh",
-        fontFamily:"'Plus Jakarta Sans',sans-serif",
-        background:"#F2F0FF", color:"#1A1740",
-        gap:14, padding:20, textAlign:"center",
-      }}>
-        <div style={{ fontSize:56 }}>👷</div>
-        <h2 style={{ fontFamily:"Outfit,sans-serif", fontSize:22, fontWeight:800, margin:0 }}>
-          No Theater Assigned
-        </h2>
-        <p style={{ color:"#6B6891", fontSize:14, maxWidth:340, margin:0, lineHeight:1.6 }}>
-          Your account has no theater linked yet.<br />
-          Ask your owner to assign you to a theater, then log in again.
-        </p>
-        <button
-          onClick={() => { localStorage.clear(); window.location.href = "/login"; }}
-          style={{
-            marginTop:8, padding:"10px 28px",
-            background:"#6C63FF", color:"white",
-            border:"none", borderRadius:8,
-            fontFamily:"'Plus Jakarta Sans',sans-serif",
-            fontWeight:700, fontSize:13, cursor:"pointer",
-          }}
-        >
-          Logout
-        </button>
-      </div>
+      <Navigate
+        to="/theater/overview"
+        state={{ theaterId: assignedTheaterId }}
+        replace
+      />
     );
   }
 
-  return (
-    <Navigate
-      to="/theater/overview"
-      state={{ theaterId: assignedTheaterId }}
-      replace
-    />
-  );
+  // Backend handles worker→theater association via JWT token
+  // Navigate directly to orders — the backend filters by the worker's JWT
+  return <Navigate to="/theater/orders" replace />;
 };
 
 function App() {
