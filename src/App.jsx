@@ -168,14 +168,15 @@ function App() {
       </Route>
 
       {/* Customer flow — public */}
-      <Route path="/customer"  element={<CustomerWelcome />} />
-      <Route path="/customer/login"  element={<CustomerLogin />} />
-      <Route path="/customer/menu"   element={<CustomerMenu />} />
-      <Route path="/customer/cart"   element={<CustomerCart />} />
-      <Route path="/customer/item"   element={<CustomerItemDetails />} />
-      <Route path="/payment"         element={<PaymentPage />} />
-      <Route path="/tracking"        element={<OrderTracking />} />
-      <Route path="/order-success"   element={<OrderSuccess />} />
+      <Route path="/customer"         element={<CustomerWelcome />} />
+      <Route path="/customer/welcome" element={<CustomerWelcome />} />
+      <Route path="/customer/login"   element={<CustomerLogin />} />
+      <Route path="/customer/menu"    element={<CustomerMenu />} />
+      <Route path="/customer/cart"    element={<CustomerCart />} />
+      <Route path="/customer/item"    element={<CustomerItemDetails />} />
+      <Route path="/payment"          element={<PaymentPage />} />
+      <Route path="/tracking"         element={<OrderTracking />} />
+      <Route path="/order-success"    element={<OrderSuccess />} />
 
       {/* Admin */}
       <Route path="/admin-login"      element={<AdminLogin />} />

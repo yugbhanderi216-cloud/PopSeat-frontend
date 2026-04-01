@@ -24,12 +24,15 @@ import "./QRGenerator.css";
 
 const API_BASE = "https://popseat.onrender.com/api";
 
+// Login.jsx stores token as "token" — check all known keys for safety
+const getToken = () =>
+  localStorage.getItem("token") ||
+  localStorage.getItem("ownerToken") ||
+  localStorage.getItem("workerToken") || "";
+
 const authHeaders = () => ({
   "Content-Type": "application/json",
-  Authorization: `Bearer ${localStorage.getItem("ownerToken") ||
-    localStorage.getItem("token") ||
-    ""
-    }`,
+  Authorization: `Bearer ${getToken()}`,
 });
 
 const QRGenerator = () => {
@@ -290,9 +293,17 @@ const QRGenerator = () => {
       return;
     }
 
+    // Auth check — surface missing token immediately
+    const token = getToken();
+    if (!token) {
+      setError("❌ Not authenticated. Please log out and log in again.");
+      return;
+    }
+
     setGenerating(true);
     let failed = 0;
     let created = 0;
+    let firstError = "";
     const total = layout.reduce((s, r) => s + r.count, 0);
 
     try {
@@ -311,25 +322,33 @@ const QRGenerator = () => {
             });
             const data = await res.json();
             if (!res.ok || !data.success) {
-              console.error(`Seat ${seatNumber} failed:`, data.message);
+              const msg = data.message || `HTTP ${res.status}`;
+              console.error(`Seat ${seatNumber} failed:`, msg);
+              if (!firstError) firstError = msg;
               failed++;
             } else {
               created++;
             }
           } catch (err) {
             console.error(`Seat ${seatNumber} network error:`, err);
+            if (!firstError) firstError = "Network error — check connection.";
             failed++;
           }
         }
       }
 
-      if (failed > 0) {
-        setError(`${failed} seat(s) failed to save. ${created} saved successfully.`);
+      if (failed > 0 && created === 0) {
+        // All failed — show the actual backend error message
+        setError(`❌ All seats failed. Backend said: "${firstError}"`);
+      } else if (failed > 0) {
+        setError(`⚠️ ${failed} seat(s) failed ("${firstError}"). ${created} saved successfully.`);
       }
 
-      // Reload seats so QR codes from backend render correctly
-      await loadSeatsForHall(selectedHall);
-      setLayout([]);
+      if (created > 0) {
+        // Reload seats so QR codes from backend render correctly
+        await loadSeatsForHall(selectedHall);
+        setLayout([]);
+      }
     } finally {
       setGenerating(false);
       setProgress("");
