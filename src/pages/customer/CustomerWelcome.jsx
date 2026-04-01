@@ -13,8 +13,8 @@ const CustomerWelcome = () => {
 
   const seatId   = params.get("seatId");
   const cinemaId = params.get("cinemaId");
-  const hall     = params.get("hall");
-  const screen   = params.get("screen");
+  const hallId   = params.get("hallId"); // Specific ID for the hall/screen
+  const screen   = params.get("screen"); // Numeric screen number (e.g. 1)
   const seat     = params.get("seat");
   const type     = params.get("type");
 
@@ -27,18 +27,16 @@ const CustomerWelcome = () => {
   =============================== */
 
   useEffect(() => {
-
     if (screen) localStorage.setItem("screenNo", screen);
     if (seat)   localStorage.setItem("seatNo", seat);
     if (type)   localStorage.setItem("seatType", type);
 
     if (cinemaId) localStorage.setItem("customerTheaterId", cinemaId);
-    if (hall)     localStorage.setItem("customerHallId", hall);
-
-    // FIX: was saving as "seatId" but CustomerCart reads "customerSeatId"
-    if (seatId) localStorage.setItem("customerSeatId", seatId);
-
-  }, [screen, seat, seatId, cinemaId, hall, type]);
+    if (hallId)   localStorage.setItem("customerHallId", hallId);
+    
+    // As per task documentation: store customerSeatId
+    if (seatId)   localStorage.setItem("customerSeatId", seatId);
+  }, [screen, seat, seatId, cinemaId, hallId, type]);
 
   /* ===============================
      LOAD THEATER — GET /api/seat/:id
@@ -117,14 +115,13 @@ const CustomerWelcome = () => {
   =============================== */
 
   const handleOrderNow = () => {
-
     const finalTheaterId = localStorage.getItem("customerTheaterId") || cinemaId || "";
-    const finalScreen = screen || hall || "";
+    const finalHallId    = localStorage.getItem("customerHallId") || hallId || "";
+    const finalSeatId    = localStorage.getItem("customerSeatId") || seatId || "";
 
     navigate(
-      `/customer/menu?theaterId=${finalTheaterId}&cinemaId=${finalTheaterId}&seatId=${seatId || ""}&screen=${finalScreen}&seat=${seat || ""}&type=${type || ""}`
+      `/customer/menu?theaterId=${finalTheaterId}&hallId=${finalHallId}&seatId=${finalSeatId}&screen=${screen || ""}&seat=${seat || ""}&type=${type || ""}`
     );
-
   };
 
   /* ===============================
@@ -209,11 +206,11 @@ const CustomerWelcome = () => {
         <div className="welcome-info-box">
 
           <div className="info-item">
-            🎞 Screen: <b>{screen || hall}</b>
+            🎞 Screen: <b>{screen || "Unknown"}</b>
           </div>
 
           <div className="info-item">
-            💺 Seat: <b>{seat}</b>
+            💺 Seat: <b>{seat || "Unknown"}</b>
           </div>
 
           {type && (

@@ -55,8 +55,8 @@ const QRGenerator = () => {
 
   const [theaterData, setTheaterData] = useState(null);
   const [halls, setHalls] = useState([]);
-  const [selectedHall, setSelectedHall] = useState("");
-  const [screenNo, setScreenNo] = useState("");
+  const [selectedScreen, setSelectedScreen] = useState("");
+  const [hallId, setHallId] = useState("");
   const [generatedSeats, setGeneratedSeats] = useState([]);
   const [rowName, setRowName] = useState("");
   const [seatCount, setSeatCount] = useState("");
@@ -116,52 +116,69 @@ const QRGenerator = () => {
   }, [theaterId, ownerEmail]);
 
   // ─────────────────────────────────────────────────────────
-  //  LOAD SCREENS/HALLS — GET /api/owner/theaters/:theaterId/screens
-  //  (Fallback to /api/hall?cinemaId= if SaaS nested route fails)
+  //  HALL MAPPING LOGIC
+  //  1. Fetch halls using cinemaId
+  //  2. Find hall where hall.hallNumber === String(screenNumber)
+  //  3. If not found -> Create hall using POST /api/hall
   // ─────────────────────────────────────────────────────────
-  const loadHalls = useCallback(async (cid) => {
+  const mapScreenToHall = useCallback(async (screenNumber) => {
+    if (!screenNumber || !theaterData?._id) return;
+    
     setHallLoading(true);
+    setHallId("");
+    setError("");
+
     try {
-      // Try SaaS endpoint first
-      let res = await fetch(`${API_BASE}/owner/theaters/${cid}/screens`, {
+      // 1. Fetch
+      const res = await fetch(`${API_BASE}/hall?cinemaId=${theaterData._id}`, {
         headers: authHeaders(),
       });
-      let data = await res.json();
-
-      // Fallback to legacy if needed
-      if (!res.ok || !data.success) {
-        res = await fetch(`${API_BASE}/hall?cinemaId=${cid}`, {
-          headers: authHeaders(),
-        });
-        data = await res.json();
-      }
+      const data = await res.json();
 
       if (data.success) {
-        // Map data consistently
-        const allHalls = (data.screens || data.halls || []).map(h => ({
-          _id: h._id,
-          name: h.name || h.screenName || `Screen ${h.screenNumber || h.hallNumber || 1}`,
-          screenNumber: h.screenNumber || h.hallNumber || 1,
-          totalSeats: h.totalSeats || 0
-        }));
+        setHalls(data.halls || []);
         
-        setHalls(allHalls);
-        
-        if (allHalls.length === 1) {
-          setSelectedHall(allHalls[0]._id);
-          setScreenNo(String(allHalls[0].screenNumber));
+        // 2. Find (hallNumber must be string when comparing)
+        const matched = (data.halls || []).find(
+          (h) => String(h.hallNumber) === String(screenNumber)
+        );
+
+        if (matched) {
+          setHallId(matched._id);
+          loadSeatsForHall(matched._id);
+        } else {
+          // 3. Create if not found
+          setProgress(`Creating Screen ${screenNumber}...`);
+          const createRes = await fetch(`${API_BASE}/hall`, {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({
+              cinemaId: theaterData._id,
+              name: `Screen ${screenNumber}`,
+              hallNumber: String(screenNumber),
+            }),
+          });
+          const createData = await createRes.json();
+          if (createData.success && createData.hall) {
+            setHallId(createData.hall._id);
+            loadSeatsForHall(createData.hall._id);
+          } else {
+            setError(createData.message || "Failed to initialize screen/hall.");
+          }
         }
       }
     } catch (err) {
-      console.warn("Hall fetch error:", err);
+      console.error("Hall mapping error:", err);
+      setError("Failed to link screen to hall database.");
     } finally {
       setHallLoading(false);
+      setProgress("");
     }
-  }, []);
+  }, [theaterData, loadSeatsForHall]);
 
   useEffect(() => {
-    if (theaterData?._id) loadHalls(theaterData._id);
-  }, [theaterData, loadHalls]);
+    if (selectedScreen) mapScreenToHall(selectedScreen);
+  }, [selectedScreen, mapScreenToHall]);
 
   // ─────────────────────────────────────────────────────────
   //  CREATE HALL  — POST /api/hall
@@ -246,8 +263,8 @@ const QRGenerator = () => {
   }, []);
 
   useEffect(() => {
-    loadSeatsForHall(selectedHall);
-  }, [selectedHall, loadSeatsForHall]);
+    // This effect is now handled by mapScreenToHall
+  }, [hallId, loadSeatsForHall]);
 
   // ─────────────────────────────────────────────────────────
   // ROW BUILDER
@@ -284,22 +301,8 @@ const QRGenerator = () => {
     setLayout((prev) => prev.filter((_, idx) => idx !== i));
   };
   // ─────────────────────────────────────────────────────────
-  //  GENERATE & SAVE SEATS  — POST /api/seat per seat
-  //
-  //  Confirmed API: POST /api/seat → { hallId, seatNumber }
-  //  Returns: { success, seat: { _id, seatNumber, hallId, qrCode } }
-  //
-  //  NOTE: /api/halls/row is NOT confirmed in API docs.
-  //        We create seats one-by-one using the confirmed endpoint.
-  //        Backend auto-generates QR code per seat (confirmed in docs).
-  //
-  //  QR URL is generated by the backend embedded in seat.qrCode (base64 PNG)
-  //  The backend should be configured to encode:
-  //    https://pop-seat-frontend.vercel.app/#/customer/welcome?seatId=<id>&screen=<n>&seat=<seatNumber>&type=Standard
-  // ─────────────────────────────────────────────────────────
-  // ─────────────────────────────────────────────────────────
-  //  GENERATE & BULK SAVE SEATS
-  //  API: /api/owner/theaters/:theaterId/screens/:screenId/layout
+  //  GENERATE & SAVE SEATS (Old Way)
+  //  For each seat: POST /api/seat { hallId, seatNumber }
   // ─────────────────────────────────────────────────────────
   const generateSeats = async () => {
     setError("");
@@ -353,8 +356,8 @@ const QRGenerator = () => {
   const clearLayout = () => {
     setLayout([]);
     setGeneratedSeats([]);
-    setSelectedHall("");
-    setScreenNo("");
+    setSelectedScreen("");
+    setHallId("");
     setRowName("");
     setSeatCount("");
     setError("");
@@ -414,65 +417,27 @@ const QRGenerator = () => {
       <div className="qr-controls">
 
         {/* ── Hall selector ── */}
+        {/* ── Screen selector (numeric dropdown) ── */}
         <div>
           <label style={{ fontSize: 13, color: "#555", display: "block", marginBottom: 4 }}>
-            Select Hall / Screen *
+            Select Screen Number *
           </label>
-          {hallLoading ? (
-            <p style={{ fontSize: 13, color: "#888" }}>Loading halls…</p>
-          ) : halls.length === 0 ? (
-            // No halls — show inline create form
-            <div style={{ marginTop: 8 }}>
-              <p style={{ fontSize: 13, color: "#e55", marginBottom: 8 }}>
-                No halls found. Create one below:
-              </p>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                <input
-                  placeholder="Hall name (e.g. Audi 1)"
-                  value={newHallName}
-                  onChange={(e) => setNewHallName(e.target.value)}
-                  style={{
-                    flex: 1, minWidth: 150, padding: "6px 10px",
-                    borderRadius: 6, border: "1px solid #ccc",
-                  }}
-                />
-                <button
-                  onClick={createHall}
-                  disabled={creatingHall}
-                  style={{
-                    padding: "6px 16px", borderRadius: 6, border: "none",
-                    background: "#6C63FF", color: "#fff", cursor: "pointer",
-                    opacity: creatingHall ? 0.6 : 1,
-                  }}
-                >
-                  {creatingHall ? "Creating…" : "+ Create Hall"}
-                </button>
-              </div>
-              {hallError && (
-                <p style={{ color: "#e55", fontSize: 12, marginTop: 4 }}>{hallError}</p>
-              )}
-            </div>
-          ) : (
-            // Has halls — show dropdown
-            <select
-              value={selectedHall}
-              onChange={(e) => {
-                setSelectedHall(e.target.value);
-                const hall = halls.find((h) => h._id === e.target.value);
-                // Use screenNumber (new field) first, fallback to hallNumber
-                setScreenNo(
-                  String(hall?.screenNumber || hall?.hallNumber || "")
-                );
-              }}
-            >
-              <option value="">— Select Hall —</option>
-              {halls.map((h) => (
-                <option key={h._id} value={h._id}>
-                  {h.name} — Screen {h.screenNumber || h.hallNumber}
-                  {h.totalSeats > 0 ? ` · ${h.totalSeats} seats` : " · 0 seats"}
-                </option>
-              ))}
-            </select>
+          <select
+            value={selectedScreen}
+            onChange={(e) => setSelectedScreen(e.target.value)}
+            disabled={hallLoading || generating}
+          >
+            <option value="">— Select Screen —</option>
+            {Array.from({ length: Number(theaterData.totalScreens || 1) }, (_, i) => i + 1).map((n) => (
+              <option key={n} value={String(n)}>
+                Screen {n}
+              </option>
+            ))}
+          </select>
+          {hallLoading && (
+            <p style={{ fontSize: 12, color: "#6C63FF", marginTop: 4 }}>
+              Linking/Initializing hall...
+            </p>
           )}
         </div>
 
@@ -483,7 +448,7 @@ const QRGenerator = () => {
             value={rowName}
             onChange={(e) => setRowName(e.target.value)}
             maxLength={3}
-            disabled={!selectedHall}
+            disabled={!hallId || generating}
           />
           <input
             type="number"
@@ -492,12 +457,12 @@ const QRGenerator = () => {
             onChange={(e) => setSeatCount(e.target.value)}
             min="1"
             max="50"
-            disabled={!selectedHall}
+            disabled={!hallId || generating}
           />
           <button
             className="add-row-btn"
             onClick={addRowToLayout}
-            disabled={!selectedHall}
+            disabled={!hallId || generating}
           >
             Add Row
           </button>
@@ -536,10 +501,10 @@ const QRGenerator = () => {
           <button
             className="generate-btn"
             onClick={generateSeats}
-            disabled={generating || !selectedHall || layout.length === 0}
+            disabled={generating || !hallId || layout.length === 0}
             style={{ opacity: generating || layout.length === 0 ? 0.6 : 1 }}
           >
-            {generating ? "Generating…" : "Generate & Save Seats"}
+            {generating ? "Generating..." : "Generate & Save Seats"}
           </button>
           <button className="clear-btn" onClick={clearLayout} disabled={generating}>
             Clear
@@ -562,19 +527,12 @@ const QRGenerator = () => {
         <div className="qr-grid print-area">
           {generatedSeats.map((seat) => (
             <div key={seat._id} className="qr-card">
-              {/* Show backend-stored base64 QR; fallback to client-side QRCodeCanvas */}
-              {seat.qrCode ? (
-                <img
-                  src={seat.qrCode}
-                  alt={`QR for seat ${seat.seatNumber}`}
-                  width={120}
-                  height={120}
-                />
-              ) : seat.qrData ? (
-                <QRCodeCanvas value={seat.qrData} size={120} />
-              ) : null}
+              <QRCodeCanvas 
+                value={`https://popseat-frontend.vercel.app/#/customer/welcome?seatId=${seat._id}&hallId=${hallId}&screen=${selectedScreen}&seat=${seat.seatNumber}`}
+                size={120} 
+              />
               <h4>Seat {seat.seatNumber}</h4>
-              {screenNo && <p>Screen {screenNo}</p>}
+              <p>Screen {selectedScreen}</p>
               <p style={{ fontSize: 11 }}>
                 {theaterData.branchName || theaterData.name}
               </p>
