@@ -129,7 +129,10 @@ const Menu = () => {
             category         : capitalizeCategory(item.category || "Others"),
             // ✅ FIX 5 — backend returns full image URL; use it directly
             image            : item.image || "",
-            sizes            : [{ name: item.size || "Regular", price: item.price }],
+            // ✅ Use sizes array from backend if it exists, fallback to single fields
+            sizes            : ensureArray(item.sizes).length > 0 
+                               ? item.sizes 
+                               : [{ name: item.size || "Regular", price: item.price }],
             availableToppings: ensureArray(item.topping),
             availableDips    : ensureArray(item.dips),
             isAvailable      : item.available !== false,
@@ -259,6 +262,10 @@ const Menu = () => {
     formData.append("dips", JSON.stringify(
       dips.map(({ name, price }) => ({ name, price }))
     ));
+    // ✅ Send full sizes array to backend
+    formData.append("sizes", JSON.stringify(
+      sizes.map(({ name, price }) => ({ name, price }))
+    ));
 
     // ✅ Only append image if user picked a NEW file
     // If editing and no new file picked, backend keeps the existing image
@@ -304,7 +311,10 @@ const Menu = () => {
         category         : capitalizeCategory(saved.category || "Others"),
         image            : resolvedImage,
         cinemaId         : saved.cinemaId || activeTheaterId,
-        sizes            : [{ name: saved.size || "Regular", price: saved.price }],
+        // ✅ Sync local state with full sizes array returned by backend
+        sizes            : ensureArray(saved.sizes).length > 0 
+                           ? saved.sizes 
+                           : [{ name: saved.size || "Regular", price: saved.price }],
         availableToppings: ensureArray(saved.topping),
         availableDips    : ensureArray(saved.dips),
         isAvailable      : saved.available !== false,
