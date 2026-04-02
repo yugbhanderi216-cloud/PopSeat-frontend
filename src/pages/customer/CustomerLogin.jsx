@@ -206,125 +206,108 @@ const CustomerLogin = () => {
 
     <div className="login-page">
 
-      {/* BACK BUTTON */}
-
+      {/* HEADER */}
       <div className="login-header">
-
         <button className="back-btn" onClick={goBack}>
-          ←
+          ← Back
         </button>
-
       </div>
 
-      {/* CENTER CARD */}
-
       <div className="login-container">
-
         <div className="login-card">
+          <div className="login-brand">
+            <span className="brand-icon">🎟️</span>
+          </div>
 
-          <h2>Customer Login</h2>
+          <h1 className="login-title">Customer Login</h1>
+          <p className="login-subtitle">
+            Enter your email to verify and pay
+          </p>
 
-          <input
-            type="email"
-            placeholder="Enter Email Address"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setError("");
-            }}
-            disabled={otpSent || loading}
-            className="mobile-input"
-          />
-
-          {/* ERROR MESSAGE */}
-
-          {error && (
-            <p className="error-text" style={{ color: "red", fontSize: "13px", marginTop: "6px" }}>
-              {error}
-            </p>
+          {!otpSent && (
+            <div className="input-group fade-in">
+              <label className="input-label">Email Address</label>
+              <input
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError("");
+                }}
+                disabled={otpSent || loading}
+                className="login-input"
+              />
+            </div>
           )}
 
-          {!otpSent ? (
+          {/* ERROR ALERT */}
+          {error && (
+            <div className="error-alert fade-in">
+              <span className="error-icon">⚠️</span>
+              {error}
+            </div>
+          )}
 
+          {!otpSent && (
             <button
               onClick={handleSendOtp}
-              className="primary-btn"
-              disabled={loading}
+              className="login-primary-btn"
+              disabled={loading || !email}
             >
-              {loading ? "Sending..." : "Send OTP"}
+              {loading ? "Sending Code..." : "Send Verification Code"}
             </button>
+          )}
 
-          ) : (
-
-            <>
-
-              <p style={{ fontSize: "13px", color: "#555", marginBottom: "8px" }}>
-                OTP sent to <strong>{email}</strong>
+          {otpSent && (
+            <div className="otp-section fade-in">
+              <p className="otp-instruction">
+                We've sent a 6-digit code to <strong>{email}</strong>. 
+                Please enter it below.
               </p>
 
-              {/* OTP BOX — 6 digits to match API */}
-
               <div
-                className={`otp-box ${locked ? "locked" : ""}`}
+                className={`otp-grid ${locked ? "locked" : ""} ${error && attempts > 0 ? "error-shake" : ""}`}
                 onPaste={handleOtpPaste}
               >
-
                 {otp.map((digit, index) => (
-
                   <input
                     key={index}
                     type="text"
                     maxLength="1"
+                    inputMode="numeric"
+                    placeholder="•"
                     value={digit}
                     ref={(el) => (inputRefs.current[index] = el)}
-
-                    onChange={(e) =>
-                      handleOtpChange(e.target.value, index)
-                    }
-
-                    onKeyDown={(e) =>
-                      handleKeyDown(e, index)
-                    }
-
+                    onChange={(e) => handleOtpChange(e.target.value, index)}
+                    onKeyDown={(e) => handleKeyDown(e, index)}
                     disabled={locked || loading}
+                    className={digit ? "filled" : ""}
                   />
-
                 ))}
-
               </div>
 
-              {/* LOADING */}
-
-              {loading && <div className="spinner"></div>}
-
-              {/* TIMER / RESEND */}
-
-              {locked ? (
-
-                <p className="timer-text">
-                  Too many attempts. Try again in {timer}s
-                </p>
-
-              ) : timer > 0 ? (
-
-                <p className="timer-text">
-                  Resend OTP in {timer}s
-                </p>
-
-              ) : (
-
-                <button
-                  onClick={handleSendOtp}
-                  className="resend-btn"
-                  disabled={loading}
-                >
-                  Resend OTP
-                </button>
-
-              )}
-
-            </>
-
+              {/* CONTROLS */}
+              <div className="otp-controls">
+                {locked ? (
+                  <div className="lock-badge">
+                    Locked for {timer}s
+                  </div>
+                ) : timer > 0 ? (
+                  <p className="resend-timer">
+                    Resend code in <span>{timer}s</span>
+                  </p>
+                ) : (
+                  <button
+                    onClick={handleSendOtp}
+                    className="login-resend-btn"
+                    disabled={loading}
+                  >
+                    Resend OTP
+                  </button>
+                )}
+              </div>
+            </div>
           )}
 
         </div>
