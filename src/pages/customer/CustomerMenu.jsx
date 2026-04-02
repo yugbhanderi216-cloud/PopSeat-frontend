@@ -6,7 +6,9 @@ const API_BASE = "https://popseat.onrender.com";
 
 const getImageUrl = (url) => {
   if (!url) return "";
-  if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("blob:")) return url;
+  // Force https to prevent Mixed Content errors on HTTPS deployments
+  if (url.startsWith("http://")) url = url.replace("http://", "https://");
+  if (url.startsWith("data:") || url.startsWith("https://") || url.startsWith("blob:")) return url;
   return `${API_BASE}/${url.replace(/^\//, "")}`;
 };
 

@@ -60,8 +60,10 @@ const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 const getImageUrl = (url) => {
   if (!url) return "";
-  if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("blob:")) return url;
-  const base = API_BASE.replace("/api", "");
+  // Force https to prevent Mixed Content errors on HTTPS deployments
+  if (url.startsWith("http://")) url = url.replace("http://", "https://");
+  if (url.startsWith("data:") || url.startsWith("https://") || url.startsWith("blob:")) return url;
+  const base = API_BASE.replace("/api", "").replace("http://", "https://");
   return `${base}/${url.replace(/^\//, "")}`;
 };
 
