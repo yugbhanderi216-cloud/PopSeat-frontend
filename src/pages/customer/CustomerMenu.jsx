@@ -309,14 +309,14 @@ const CustomerMenu = () => {
 
                   <p className="desc">{item.description}</p>
 
-                  {/* Show price range if multiple variants exist */}
-                  <p className="price">
-                    {ensureArray(item.variants).length > 1
-                      ? `₹ ${Math.min(...item.variants.map((v) => v.price))} - ₹ ${Math.max(
-                          ...item.variants.map((v) => v.price)
-                        )}`
-                      : `₹ ${item.price}`}
-                  </p>
+                  {/* Premium Price Pill */}
+                  <div className="price-pill-container">
+                    <span className="price-pill">
+                      {ensureArray(item.variants).length > 1
+                        ? `From ₹ ${Math.min(...item.variants.map((v) => v.price))}`
+                        : `₹ ${item.price}`}
+                    </span>
+                  </div>
 
                   <p className="tap-note">Tap to customize ➜</p>
 

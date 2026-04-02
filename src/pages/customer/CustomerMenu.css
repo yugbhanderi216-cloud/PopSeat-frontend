@@ -48,9 +48,26 @@
 /* ===== DESCRIPTION ===== */
 .desc { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; color: var(--text-muted); margin: 8px 0; font-weight: 500; line-height: 1.4; }
 
-/* ===== SIZE ===== */
-.size-container { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
-.size-chip { padding: 4px 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; font-weight: 700; border-radius: 20px; background: var(--violet-soft); color: var(--violet); border: 1.5px solid var(--border-soft); text-transform: uppercase; letter-spacing: 0.5px; }
+/* ===== PRICE PILL ===== */
+.price-pill-container {
+  margin: 14px 0;
+  display: flex;
+  align-items: center;
+}
+
+.price-pill {
+  background: var(--violet-soft);
+  color: var(--violet);
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  border: 1px solid var(--violet-glow);
+  box-shadow: 0 2px 8px var(--violet-glow);
+  display: inline-block;
+  letter-spacing: 0.2px;
+}
 
 /* ===== FLOATING CART ===== */
 .bottom-cart-bar {
