@@ -11,14 +11,12 @@ const PaymentPage = () => {
   const params = new URLSearchParams(location.search);
 
   const seatId = params.get("seatId") || localStorage.getItem("customerSeatId");
-  const token = localStorage.getItem("customerToken") || "";
   const theaterId = localStorage.getItem("customerTheaterId") || "";
   const hallId = params.get("hallId") || localStorage.getItem("customerHallId") || localStorage.getItem("hallId") || "";
   const screen = localStorage.getItem("screenNo") || "";
   const seat = localStorage.getItem("seatNo") || "";
 
   const [cart, setCart] = useState([]);
-  const [method, setMethod] = useState("razorpay");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -49,29 +47,10 @@ const PaymentPage = () => {
 
   const authHeaders = () => ({
     "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
   });
 
-  const createRazorpayOrder = async () => {
-    // BUG FIX: Ensure orderId is a valid MongoDB ObjectId to prevent 500 error
-    const validInternalId = (theaterId && theaterId.length === 24) ? theaterId : "000000000000000000000000";
-
-    const res = await fetch(`${API_BASE}/payment/create`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify({
-        amount: total * 100, // paise
-        currency: "INR",
-        orderId: validInternalId,
-      }),
-    });
-
-    const data = await res.json();
-    if (!data.success) throw new Error(data.message || "Could not create payment order.");
-    return data.payment;
-  };
-
-  const createFoodOrder = async (paymentId) => {
+  // 👇 FIX: Calling /api/order handles BOTH creating the DB order and the Razorpay Order logic!
+  const createFoodOrder = async () => {
     const items = cart.map((item) => ({
       menuId: item.menuId || item._id,
       name: item.name,
@@ -86,7 +65,6 @@ const PaymentPage = () => {
         seatNumber: seat || seatId || "Unknown",
         hallId: hallId || "Unknown",
         totalAmount: total,
-        razorpayOrderId: paymentId,
         items,
       }),
     });
@@ -100,7 +78,7 @@ const PaymentPage = () => {
     const res = await fetch(`${API_BASE}/payment/verify`, {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({ orderId: paymentId }),
+      body: JSON.stringify({ orderId: paymentId }), 
     });
 
     const data = await res.json();
@@ -117,9 +95,12 @@ const PaymentPage = () => {
     }
 
     try {
-      const payment = await createRazorpayOrder();
-      const orderData = await createFoodOrder(payment._id);
+      // 1. Automatically generate the Order & Razorpay tracking object in ONE step
+      const orderData = await createFoodOrder();
+      
       const internalOrderId = orderData.order?._id;
+      const internalPaymentId = orderData.payment?._id;
+      const rzpOrderId = orderData.payment?.razorpayOrderId;
 
       const options = {
         key: RAZORPAY_KEY,
@@ -127,12 +108,12 @@ const PaymentPage = () => {
         currency: "INR",
         name: "PopSeat Cinema",
         description: "Food Order Payment",
-        order_id: payment.razorpayOrderId,
+        order_id: rzpOrderId, // Trigger Razorpay using the generated Tracker ID
         handler: async () => {
           try {
-            await verifyPayment(payment._id);
+            await verifyPayment(internalPaymentId);
             localStorage.setItem("currentOrderId", internalOrderId || "");
-            localStorage.setItem("currentPaymentId", payment._id || "");
+            localStorage.setItem("currentPaymentId", internalPaymentId || "");
             localStorage.removeItem("cart");
             navigate(`/tracking?theaterId=${theaterId}&screen=${screen}&seat=${seat}`);
           } catch (verifyErr) {
@@ -140,9 +121,8 @@ const PaymentPage = () => {
             setLoading(false);
           }
         },
-        prefill: { email: localStorage.getItem("customerEmail") || "" },
         theme: { color: "#6C63FF" },
-        modal: { ondismiss: () => { setLoading(false); setError("Payment cancelled."); } },
+        modal: { ondismiss: () => { setLoading(false); setError("Payment cancelled by user."); } },
       };
 
       const rzp = new window.Razorpay(options);
@@ -159,7 +139,7 @@ const PaymentPage = () => {
 
   const handlePayment = () => {
     if (cart.length === 0) { setError("Your cart is empty."); return; }
-    if (!theaterId) { setError("Cinema data missing. Scan QR code again."); return; }
+    if (!theaterId || !hallId) { setError("Cinema data missing. Scan QR code again."); return; }
     setError("");
     setLoading(true);
     startRazorpay();
