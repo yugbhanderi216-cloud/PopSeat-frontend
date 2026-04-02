@@ -262,23 +262,19 @@ const CustomerLogin = () => {
                 Please enter it below.
               </p>
 
-              <div
-                className={`otp-grid ${locked ? "locked" : ""} ${error && attempts > 0 ? "error-shake" : ""}`}
-                onPaste={handleOtpPaste}
-              >
+              <div className="otp-box" onPaste={handleOtpPaste}>
                 {otp.map((digit, index) => (
                   <input
                     key={index}
-                    type="text"
-                    maxLength="1"
-                    inputMode="numeric"
-                    placeholder="•"
-                    value={digit}
                     ref={(el) => (inputRefs.current[index] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength="1"
+                    value={digit}
                     onChange={(e) => handleOtpChange(e.target.value, index)}
                     onKeyDown={(e) => handleKeyDown(e, index)}
                     disabled={locked || loading}
-                    className={digit ? "filled" : ""}
+                    className="otp-input"
                   />
                 ))}
               </div>

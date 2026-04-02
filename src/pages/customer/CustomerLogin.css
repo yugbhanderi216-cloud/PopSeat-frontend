@@ -146,33 +146,34 @@
   margin-bottom: 24px;
 }
 
-.otp-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 14px;
-  margin-bottom: 30px;
+.otp-box {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
-.otp-grid input {
-  width: 100%;
+.otp-input {
+  flex: 1;
+  min-width: 0;
   aspect-ratio: 1;
-  background: #fcfcff; /* Match the ultra-light surface in screenshot */
-  border: 1px solid var(--border-soft);
-  border-radius: 14px;
   text-align: center;
-  font-family: 'Outfit', sans-serif;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-soft);
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
-  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  background: var(--surface2);
   outline: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.otp-grid input:focus {
-  background: white;
+.otp-input:focus {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px var(--violet-glow);
   border-color: var(--violet);
-  box-shadow: 0 4px 20px var(--violet-glow);
-  transform: translateY(-4px);
+  background: var(--surface);
 }
 
 .otp-grid input.filled {
