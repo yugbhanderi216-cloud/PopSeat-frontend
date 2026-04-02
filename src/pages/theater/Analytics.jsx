@@ -213,7 +213,7 @@ const Analytics = () => {
         <div className="analytics-card accent-blue"><h3>Delivered</h3><p>{stats.delivered}</p></div>
       </div>
 
-      <div className="chart-section" style={{ height: "400px", marginTop: "30px" }}>
+      <div className="chart-section" style={{ marginTop: "30px", padding: "20px", backgroundColor: "#fff", borderRadius: "8px", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
           <h3 style={{ color: "#333", fontSize: "1.1rem", margin: 0 }}>Performance Overview</h3>
           <div className="chart-range-filters">
@@ -236,28 +236,31 @@ const Analytics = () => {
             ))}
           </div>
         </div>
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={buildChartData(orders, chartRange)} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#888', fontSize: 12 }} dy={10} />
-            <YAxis yAxisId="left" allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: '#888', fontSize: 12 }} dx={-10} />
-            <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} tick={{ fill: '#888', fontSize: 12 }} dx={10} />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend verticalAlign="top" height={36} wrapperStyle={{ paddingBottom: "20px" }} />
-            <Area yAxisId="left" type="monotone" dataKey="Orders" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorOrders)" />
-            <Area yAxisId="right" type="monotone" dataKey="Revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
-          </AreaChart>
-        </ResponsiveContainer>
+        
+        <div style={{ width: "100%", height: 320, minHeight: 320 }}>
+          <ResponsiveContainer>
+            <AreaChart data={buildChartData(orders, chartRange)} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#888', fontSize: 12 }} dy={10} />
+              <YAxis yAxisId="left" allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: '#888', fontSize: 12 }} dx={-10} />
+              <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} tick={{ fill: '#888', fontSize: 12 }} dx={10} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend verticalAlign="top" height={36} wrapperStyle={{ paddingBottom: "20px" }} />
+              <Area yAxisId="left" type="monotone" dataKey="Orders" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorOrders)" />
+              <Area yAxisId="right" type="monotone" dataKey="Revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );
