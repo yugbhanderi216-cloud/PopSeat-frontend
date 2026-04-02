@@ -160,10 +160,10 @@ const OrderTracking = () => {
           </span>
         </p>
 
-        {/* SCREEN — from hallId or localStorage */}
-        {(order?.hallId || order?.screenNo || screen) && (
+        {/* SCREEN — from API JSON or localStorage */}
+        {(order?.hallId || order?.hallName || order?.screenNo || order?.screenNumber || screen) && (
           <p>
-            <strong>Screen:</strong> {order?.hallId?.name || order?.hallId || order?.screenNo || screen}
+            <strong>Screen:</strong> {order?.hallName || order?.hallId?.name || order?.hallId || order?.screenNumber || order?.screenNo || screen}
           </p>
         )}
 
@@ -212,7 +212,9 @@ const OrderTracking = () => {
                   fontSize: 13, color: "#555", marginBottom: 4 }}
               >
                 <span>{item.name} × {item.quantity}</span>
-                <span>₹ {item.total || item.price * item.quantity}</span>
+                { (item.total || item.price) && (
+                  <span>₹ {item.total || item.price * item.quantity}</span>
+                )}
               </div>
             ))}
           </div>
