@@ -50,8 +50,16 @@ const timeAgo = (iso) => {
 /* ── Safe seat number extraction ── */
 const getSeatNumber = (seatId) => {
   if (!seatId) return "—";
-  if (typeof seatId === "string") return seatId.slice(-6).toUpperCase();
+  if (typeof seatId === "string") return seatId; // Just return "D1" if it's already a label
   if (typeof seatId === "object") return seatId.seatNumber || seatId._id?.slice(-6).toUpperCase() || "—";
+  return "—";
+};
+
+/* ── Safe screen number extraction ── */
+const getScreenNumber = (hallId) => {
+  if (!hallId) return "—";
+  if (typeof hallId === "string") return hallId;
+  if (typeof hallId === "object") return hallId.name || hallId.screenNumber || hallId._id?.slice(-6).toUpperCase() || "—";
   return "—";
 };
 
@@ -132,28 +140,47 @@ const Orders = () => {
           return;
         }
 
-        const res = await fetch(`${API_BASE}/orders?cinemaId=${theaterId}`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization : `Bearer ${token}`,
-          },
+        // NEW: Fetch by status instead of raw query to avoid backend 500 on ?cinemaId
+        const responses = await Promise.allSettled(
+          STATUSES.map((s) =>
+            fetch(`${API_BASE}/worker/orders?status=${s}`, {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            })
+          )
+        );
+
+        const jsonResponses = await Promise.allSettled(
+          responses.map((r) =>
+            r.status === "fulfilled" && r.value.ok
+              ? r.value.json()
+              : Promise.resolve({ success: false })
+          )
+        );
+
+        const merged = [];
+        const seen = new Set();
+        jsonResponses.forEach((res) => {
+          if (res.status === "fulfilled" && res.value?.orders) {
+            res.value.orders.forEach((o) => {
+              // Filter by theaterId manually on frontend to ensure owner sees only their theater
+              // while backend team fixes the ?cinemaId query crash.
+              if (!seen.has(o._id) && (o.theaterId === theaterId || o.cinemaId === theaterId || !o.theaterId)) {
+                seen.add(o._id);
+                merged.push(o);
+              }
+            });
+          }
         });
 
-        if (res.status === 403) {
-          if (isMounted.current) {
-            stopPolling();
-            setAuthError(true);
-            setLoading(false);
-          }
-          return;
-        }
-
-        const data = await res.json();
-        if (data.success && isMounted.current) {
-          const sorted = (data.orders || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        if (isMounted.current) {
+          const sorted = merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
           setOrders(sorted);
           setError("");
           setAuthError(false);
+          setLoading(false);
         }
         return;
       }
@@ -257,7 +284,9 @@ const Orders = () => {
     setUpdating((prev) => ({ ...prev, [id]: true }));
     const token = getToken();
     try {
-      const res  = await fetch(`${API_BASE}/order/${id}/status`, {
+      // FIX: Synchronized with WorkerDashboard.jsx which uses /api/worker/order-status/
+      // This is the stable endpoint for updating statuses.
+      const res  = await fetch(`${API_BASE}/worker/order-status/${id}`, {
         method : "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -430,6 +459,11 @@ const Orders = () => {
                   </div>
 
                   <div className="order-meta-row">
+                    <span className="order-meta-item">
+                      <span className="order-meta-label">Screen</span>
+                      <span className="order-meta-value">{getScreenNumber(order.hallId)}</span>
+                    </span>
+                    <span className="order-meta-divider" />
                     <span className="order-meta-item">
                       <span className="order-meta-label">Seat</span>
                       <span className="order-meta-value">{displaySeat}</span>

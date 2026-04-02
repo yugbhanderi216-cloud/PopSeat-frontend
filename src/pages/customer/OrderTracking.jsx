@@ -160,10 +160,17 @@ const OrderTracking = () => {
           </span>
         </p>
 
-        {/* SEAT — from confirmed seatId.seatNumber */}
-        {order?.seatId?.seatNumber && (
+        {/* SCREEN — from hallId or localStorage */}
+        {(order?.hallId || order?.screenNo || screen) && (
           <p>
-            <strong>Seat:</strong> {order.seatId.seatNumber}
+            <strong>Screen:</strong> {order?.hallId?.name || order?.hallId || order?.screenNo || screen}
+          </p>
+        )}
+
+        {/* SEAT — from confirmed seatId.seatNumber */}
+        {(order?.seatId?.seatNumber || order?.seatNumber || seat) && (
+          <p>
+            <strong>Seat:</strong> {order?.seatId?.seatNumber || order?.seatNumber || seat}
           </p>
         )}
 

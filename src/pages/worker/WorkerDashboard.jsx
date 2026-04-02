@@ -282,9 +282,16 @@ const WorkerDashboard = () => {
                 <div className="order-details">
 
                   <div className="order-detail-row">
+                    <span className="detail-label">Screen</span>
+                    <span className="detail-value">
+                      {order.hallId?.name || order.hallId || order.screenNo || "—"}
+                    </span>
+                  </div>
+
+                  <div className="order-detail-row">
                     <span className="detail-label">Seat</span>
                     <span className="detail-value">
-                      {order.seatId?.seatNumber || order.seatId || "—"}
+                      {order.seatId?.seatNumber || order.seatId || order.seatNumber || "—"}
                     </span>
                   </div>
 
