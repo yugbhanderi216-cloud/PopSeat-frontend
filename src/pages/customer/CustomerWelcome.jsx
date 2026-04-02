@@ -10,13 +10,10 @@ const CustomerWelcome = () => {
   const location = useLocation();
 
   const params = useMemo(() => {
-    // 1. Try modern location.search first (?seatId=...)
     const searchParams = new URLSearchParams(location.search);
     if (searchParams.has("seatId") || searchParams.has("cinemaId")) {
       return searchParams;
     }
-
-    // 2. Fallback to hash parameters for legacy QR codes (/#/customer/welcome?seatId=...)
     const hash = location.hash || "";
     const queryIndex = hash.indexOf("?");
     const queryString = queryIndex !== -1 ? hash.slice(queryIndex + 1) : "";
@@ -26,10 +23,8 @@ const CustomerWelcome = () => {
   const getImageUrl = (url) => {
     if (!url) return "";
     if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("blob:")) return url;
-    // Fallback for relative paths just in case
     return `https://popseat.onrender.com/${url.replace(/^\//, "")}`;
   };
-
 
   const seatId = params.get("seatId");
   const cinemaId = params.get("cinemaId");
@@ -46,30 +41,24 @@ const CustomerWelcome = () => {
     if (screen) localStorage.setItem("screenNo", screen);
     if (seat) localStorage.setItem("seatNo", seat);
     if (type) localStorage.setItem("seatType", type);
-
     if (cinemaId) localStorage.setItem("customerTheaterId", cinemaId);
     if (hallId) localStorage.setItem("customerHallId", hallId);
-
     if (seatId) localStorage.setItem("customerSeatId", seatId);
   }, [screen, seat, seatId, cinemaId, hallId, type]);
 
   useEffect(() => {
-
     if (!seatId && !cinemaId) {
-      console.error("No valid IDs found in URL params:", params.toString());
       setError("Invalid QR code. No valid seat or cinema data found.");
       setLoading(false);
       return;
     }
 
     const fetchData = async () => {
-
       setLoading(true);
       setError("");
 
       try {
         if (seatId && hallId) {
-          // 1. Fetch seats for this hall to find the one we scanned
           const res = await fetch(`${API_BASE}/seat?hallId=${hallId}`);
           const data = await res.json();
 
@@ -78,11 +67,7 @@ const CustomerWelcome = () => {
           );
 
           if (data.success && foundSeat) {
-            // 2. Fetch cinema info using cinemaId from the seat/hall if available
-            // If the seat doesn't have cinemaId, we might need to fetch the hall first
-            // But let's check if we can get cinemaId from foundSeat.cinemaId or hallId
-            const cId = foundSeat.cinemaId || cinemaId; 
-            
+            const cId = foundSeat.cinemaId || cinemaId;
             if (cId) {
               const cRes = await fetch(`${API_BASE}/cinema/${cId}`);
               const cData = await cRes.json();
@@ -98,7 +83,6 @@ const CustomerWelcome = () => {
                 localStorage.setItem("customerTheaterId", cinema._id);
               }
             } else {
-              // Fallback to generic name if we still don't have cinemaId
               setTheater({ theaterName: "Cinema" });
             }
           } else {
@@ -106,7 +90,6 @@ const CustomerWelcome = () => {
           }
 
         } else if (cinemaId) {
-          // If we have cinemaId directly, skip seat lookup and fetch branding
           const res = await fetch(`${API_BASE}/cinema/${cinemaId}`);
           const data = await res.json();
 
@@ -131,11 +114,9 @@ const CustomerWelcome = () => {
       } finally {
         setLoading(false);
       }
-
     };
 
     fetchData();
-
   }, [seatId, cinemaId, hallId]);
 
   const handleOrderNow = () => {
@@ -151,29 +132,31 @@ const CustomerWelcome = () => {
   const backgroundStyle = {
     backgroundImage: theater?.banner
       ? `url(${getImageUrl(theater.banner)})`
-      : "linear-gradient(135deg,#b8a899,#9f8e7f)",
+      : undefined,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
 
+  /* ── Loading ── */
   if (loading) {
     return (
       <div className="welcome-container">
         <div className="welcome-glass">
           <div className="logo-placeholder">🎬</div>
-          <h2 style={{ color: "#fff", marginTop: 16 }}>Loading...</h2>
+          <h1 className="welcome-title" style={{ marginTop: 8 }}>Loading…</h1>
         </div>
       </div>
     );
   }
 
+  /* ── Error ── */
   if (error) {
     return (
       <div className="welcome-container">
         <div className="welcome-glass">
           <div className="logo-placeholder">⚠️</div>
-          <h2 style={{ color: "#fff", marginTop: 16 }}>Oops!</h2>
-          <p style={{ color: "#ffd", textAlign: "center", marginTop: 8 }}>
+          <h1 className="welcome-title" style={{ marginTop: 8 }}>Oops!</h1>
+          <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 10, lineHeight: 1.6 }}>
             {error}
           </p>
         </div>
@@ -181,68 +164,76 @@ const CustomerWelcome = () => {
     );
   }
 
+  /* ── Main ── */
   return (
-
-    <div className="welcome-container" style={backgroundStyle}>
-
+    <div className="welcome-container" style={theater?.banner ? backgroundStyle : undefined}>
       <div className="welcome-glass">
 
+        {/* Logo */}
         {theater?.logo ? (
-
           <img
             src={getImageUrl(theater.logo)}
             alt="Theater Logo"
             className="welcome-logo-modern"
             onError={(e) => { e.target.style.display = "none"; }}
           />
-
         ) : (
-
           <div className="logo-placeholder">🎬</div>
-
         )}
 
+        {/* Title */}
         <h1 className="welcome-title">
           Welcome to {theater?.theaterName || "Cinema"}
         </h1>
 
+        {/* Branch + City */}
         {theater?.branch && theater.branch !== theater.theaterName && (
-          <p style={{ color: "#eee", fontSize: "13px", marginTop: -8, marginBottom: 8 }}>
-            {theater.branch} • {theater.city}
+          <p className="welcome-branch">
+            {theater.branch}
+            <span className="dot" />
+            {theater.city}
           </p>
         )}
 
+        {/* Info box */}
         <div className="welcome-info-box">
 
-          <div className="info-item">
-            🎞 Screen: <b>{screen || "Unknown"}</b>
+          <div className="info-row">
+            <span className="info-label">
+              <span className="info-icon">🎞</span>
+              Screen
+            </span>
+            <span className="info-value">{screen || "Unknown"}</span>
           </div>
 
-          <div className="info-item">
-            💺 Seat: <b>{seat || "Unknown"}</b>
+          <div className="info-divider" />
+
+          <div className="info-row">
+            <span className="info-label">
+              <span className="info-icon">💺</span>
+              Seat
+            </span>
+            <span className="info-value">{seat || "Unknown"}</span>
           </div>
 
           {type && (
-            <div className={`seat-badge ${type.toLowerCase()}`}>
-              {type} Class
+            <div style={{ textAlign: "center", paddingTop: 4 }}>
+              <span className={`seat-badge ${type.toLowerCase()}`}>
+                {type} Class
+              </span>
             </div>
           )}
 
         </div>
 
-        <button
-          className="order-btn-modern"
-          onClick={handleOrderNow}
-        >
+        {/* CTA */}
+        <button className="order-btn-modern" onClick={handleOrderNow}>
           🍿 Start Ordering
         </button>
 
       </div>
-
     </div>
-
   );
-
 };
 
 export default CustomerWelcome;
