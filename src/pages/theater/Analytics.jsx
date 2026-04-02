@@ -292,7 +292,7 @@ const Analytics = () => {
 
         {/* Chart body — explicit pixel height fixes the -1 width/height Recharts bug */}
         <div className="chart-body">
-          <div style={{ width: "100%", height: 300 }}>
+          <div style={{ width: "100%", height: 300, minWidth: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={chartData}
