@@ -136,12 +136,17 @@ const Menu = () => {
             category         : capitalizeCategory(item.category || "Others"),
             // ✅ FIX 5 — backend returns full image URL; use it directly
             image            : item.image || "",
-            // ✅ Use sizes array from backend if it exists, fallback to single fields
-            sizes            : ensureArray(item.sizes).length > 0 
-                               ? item.sizes 
-                               : [{ name: item.size || "Regular", price: item.price }],
+            /* ── VARIANTS / SIZES ── */
+            // Backend now uses 'variants' array: [{ size, price }]
+            // We map it to frontend 'sizes' state: [{ name, price }]
+            sizes: (ensureArray(item.variants).length > 0)
+              ? item.variants.map((v) => ({ name: v.size, price: v.price }))
+              : (ensureArray(item.sizes).length > 0)
+                ? item.sizes.map((v) => ({ name: v.name || "Regular", price: v.price }))
+                : [{ name: item.size || "Regular", price: item.price }],
+
             availableToppings: ensureArray(item.topping),
-            availableDips    : ensureArray(item.dips),
+            availableDips: ensureArray(item.dips || item.availableDips || []),
             isAvailable      : item.available !== false,
           }));
         setItems(cleaned);
@@ -258,21 +263,26 @@ const Menu = () => {
     formData.append("name",        capitalizeWords(form.name));
     formData.append("category",    form.category.trim().toLowerCase());
     formData.append("description", capitalizeWords(form.description));
-    formData.append("price",       sizes[0]?.price ?? 0);
-    formData.append("size",        sizes[0]?.name  ?? "Regular");
-    formData.append("available",   true);
+    // Sequential appends for multiple variants (sizes)
+    if (sizes.length > 0) {
+      // Legacy support: also keep root price/size set to the first option
+      formData.append("price", sizes[0].price);
+      formData.append("size",  sizes[0].name);
 
-    // Arrays as JSON strings — backend must JSON.parse() these
-    formData.append("topping", JSON.stringify(
-      toppings.map(({ name, price }) => ({ name, price }))
-    ));
-    formData.append("dips", JSON.stringify(
-      dips.map(({ name, price }) => ({ name, price }))
-    ));
-    // ✅ Send full sizes array to backend
-    formData.append("sizes", JSON.stringify(
-      sizes.map(({ name, price }) => ({ name, price }))
-    ));
+      sizes.forEach((s) => {
+        formData.append("variants", JSON.stringify({ size: s.name, price: Number(s.price) }));
+      });
+    }
+
+    // Sequential appends for multiple toppings
+    toppings.forEach((t) => {
+      formData.append("topping", JSON.stringify({ name: t.name, price: Number(t.price) }));
+    });
+
+    // Sequential appends for multiple dips
+    dips.forEach((d) => {
+      formData.append("dips", JSON.stringify({ name: d.name, price: Number(d.price) }));
+    });
 
     // ✅ Only append image if user picked a NEW file
     // If editing and no new file picked, backend keeps the existing image
@@ -318,13 +328,16 @@ const Menu = () => {
         category         : capitalizeCategory(saved.category || "Others"),
         image            : resolvedImage,
         cinemaId         : saved.cinemaId || activeTheaterId,
-        // ✅ Sync local state with full sizes array returned by backend
-        sizes            : ensureArray(saved.sizes).length > 0 
-                           ? saved.sizes 
-                           : [{ name: saved.size || "Regular", price: saved.price }],
+        // Sync local state with variants/sizes returned by backend
+        sizes: (ensureArray(saved.variants).length > 0)
+          ? saved.variants.map((v) => ({ name: v.size, price: v.price }))
+          : (ensureArray(saved.sizes).length > 0)
+            ? saved.sizes.map((s) => ({ name: s.name || s.size || "Regular", price: s.price }))
+            : [{ name: saved.size || "Regular", price: saved.price }],
+
         availableToppings: ensureArray(saved.topping),
-        availableDips    : ensureArray(saved.dips),
-        isAvailable      : saved.available !== false,
+        availableDips: ensureArray(saved.dips || saved.availableDips || []),
+        isAvailable: saved.available !== false,
       };
 
       setItems((prev) =>
