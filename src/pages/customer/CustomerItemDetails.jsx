@@ -10,6 +10,8 @@ const getImageUrl = (url) => {
   return `${API_BASE}/${url.replace(/^\//, "")}`;
 };
 
+const ensureArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+
 const CustomerItemDetails = () => {
 
   const { state } = useLocation();
@@ -19,14 +21,14 @@ const CustomerItemDetails = () => {
   if (!item) return <h2 style={{ padding: 20 }}>Item Not Found</h2>;
 
   const sizeOptions =
-    item.variants && item.variants.length > 0
+    ensureArray(item.variants).length > 0
       ? item.variants.map((v) => ({ name: v.size || v.name, price: v.price }))
-      : item.sizes && item.sizes.length > 0
+      : ensureArray(item.sizes).length > 0
       ? item.sizes.map((s) => ({ name: s.name || s.size, price: s.price }))
       : [{ name: item.size || "Regular", price: item.price }];
 
-  const toppingOptions = item.availableToppings || item.topping || [];
-  const dipOptions = item.availableDips || item.dips || item.availableDips || [];
+  const toppingOptions = ensureArray(item.availableToppings || item.topping);
+  const dipOptions = ensureArray(item.availableDips || item.dips);
 
   const [selectedSize, setSelectedSize] = useState(sizeOptions[0]);
   const [qty, setQty] = useState(1);

@@ -10,6 +10,8 @@ const getImageUrl = (url) => {
   return `${API_BASE}/${url.replace(/^\//, "")}`;
 };
 
+const ensureArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+
 const CustomerMenu = () => {
 
   const location = useLocation();
@@ -307,7 +309,14 @@ const CustomerMenu = () => {
 
                   <p className="desc">{item.description}</p>
 
-                  <p className="price">₹ {item.price}</p>
+                  {/* Show price range if multiple variants exist */}
+                  <p className="price">
+                    {ensureArray(item.variants).length > 1
+                      ? `₹ ${Math.min(...item.variants.map((v) => v.price))} - ₹ ${Math.max(
+                          ...item.variants.map((v) => v.price)
+                        )}`
+                      : `₹ ${item.price}`}
+                  </p>
 
                   <p className="tap-note">Tap to customize ➜</p>
 
