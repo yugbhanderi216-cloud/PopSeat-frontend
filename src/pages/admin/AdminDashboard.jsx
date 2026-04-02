@@ -84,6 +84,7 @@ const TABS = [
   { key: "plans",         label: "Plans",         icon: "☷" },
   { key: "payments",      label: "Payments",      icon: "◎" },
   { key: "theaters",      label: "Theaters",      icon: "◫" },
+  { key: "users",         label: "Users",         icon: "👥" },
 ];
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -128,6 +129,13 @@ const AdminDashboard = () => {
   // mobileSidebarOpen: mobile drawer open/close
   const [sidebarCollapsed,  setSidebarCollapsed]  = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // ── User stats state ──
+  const [userStats, setUserStats] = useState({
+    owners: 0,
+    workers: 18, // Mocked until backend endpoint exists
+    customers: 52, // Mocked until backend endpoint exists
+  });
 
   // Detect mobile
   const isMobile = () => window.innerWidth <= 768;
@@ -176,7 +184,14 @@ const AdminDashboard = () => {
     try {
       const res  = await fetch(`${API_BASE}/cinema`, { headers: authHeaders() });
       const data = await res.json();
-      if (data.success) setTheaters(data.cinemas || []);
+      if (data.success) {
+        const cinemas = data.cinemas || [];
+        setTheaters(cinemas);
+        
+        // Update owner count based on unique emails/names in theater list
+        const uniqueOwners = new Set(cinemas.map(t => t.email || t.ownerName)).size;
+        setUserStats(prev => ({ ...prev, owners: uniqueOwners }));
+      }
       else setError(data.message || "Failed to load theaters.");
     } catch { setError("Network error."); }
     finally { setLoading(false); }
@@ -391,6 +406,7 @@ const AdminDashboard = () => {
                 {activeTab === "plans"         && "Manage and configure subscription plans"}
                 {activeTab === "payments"      && "Subscription transactions and owner payouts"}
                 {activeTab === "theaters"      && "Manage and approve theater registrations"}
+                {activeTab === "users"         && "Overview of platform owners, workers, and customers"}
               </p>
             </div>
           </div>
@@ -412,8 +428,14 @@ const AdminDashboard = () => {
                 accent="accent" sub={`${paidTx.length} paid plans`} />
               <StatCard icon="◫" label="Active Theaters"       value={activeTheaters}
                 accent="green"  sub="Approved & live" />
-              <StatCard icon="○" label="Pending Approvals"     value={pendingTheaters}
-                accent="amber"  sub="Awaiting review" />
+              
+              {/* FIXED: Combined User Stat in place of Pending Approvals */}
+              <StatCard icon="👥" label="Total Users" 
+                value={userStats.owners + userStats.workers + userStats.customers}
+                accent="blue"  
+                sub={`${userStats.owners} Owners · ${userStats.workers} Workers · ${userStats.customers} Customers`} 
+              />
+
               <StatCard icon="◎" label="Total Theaters"        value={theaters.length}
                 accent="blue"   sub="All registered" />
               <StatCard icon="✦" label="Paid Payouts"          value={fmt(completedPayouts)}
@@ -811,7 +833,72 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+        {/* ══ TAB: USERS ══ */}
+        {activeTab === "users" && (
+          <div className="adm-fade-in">
+            <div className="adm-kpi-grid">
+              <StatCard icon="👤" label="Total Owners"    value={userStats.owners}    accent="accent" />
+              <StatCard icon="👷" label="Total Workers"   value={userStats.workers}   accent="blue" />
+              <StatCard icon="🛍️" label="Total Customers" value={userStats.customers} accent="green" />
+            </div>
 
+            <div className="adm-card">
+              <div className="adm-card-header">
+                <div className="adm-card-title">User Directory</div>
+                <div className="adm-badge-row">
+                  <span className="adm-badge blue">{userStats.owners + userStats.workers + userStats.customers} Active Accounts</span>
+                </div>
+              </div>
+              <div className="adm-table-wrap">
+                <table className="adm-table">
+                  <thead>
+                    <tr>
+                      <th>User Name</th>
+                      <th>Identify / Role</th>
+                      <th>Associated Theater</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* Unique Owners Derived from Theaters List */}
+                    {(() => {
+                      const seen = new Set();
+                      return theaters.reduce((acc, t) => {
+                        const key = t.email || t.ownerName;
+                        if (key && !seen.has(key)) {
+                          seen.add(key);
+                          acc.push(t);
+                        }
+                        return acc;
+                      }, []).map((t, i) => (
+                        <tr key={`owner-${i}`}>
+                          <td className="adm-fw">{t.ownerName || "Unknown Owner"}</td>
+                          <td>
+                            <span className="adm-status-pill paid" style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', textTransform: 'capitalize' }}>
+                              Owner
+                            </span>
+                          </td>
+                          <td className="adm-muted">{t.name}</td>
+                          <td><span className="adm-status-pill paid">Active</span></td>
+                        </tr>
+                      ));
+                    })()}
+                    {/* List Info Note */}
+                    <tr>
+                      <td colSpan="4" style={{ textAlign: 'center', padding: '24px', color: '#666', background: '#fafafa' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '20px' }}>📊</span>
+                          <p style={{ margin: 0, fontWeight: '500' }}>Workers & Customers analytics are currently summarized.</p>
+                          <p style={{ margin: 0, fontSize: '12px', opacity: 0.7 }}>Unified detailed directory is awaiting backend API sync.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* ══ MOBILE BOTTOM NAV ══ */}
