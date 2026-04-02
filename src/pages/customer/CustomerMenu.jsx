@@ -309,13 +309,17 @@ const CustomerMenu = () => {
 
                   <p className="desc">{item.description}</p>
 
-                  {/* Premium Price Pill */}
-                  <div className="price-pill-container">
-                    <span className="price-pill">
-                      {ensureArray(item.variants).length > 1
-                        ? `From ₹ ${Math.min(...item.variants.map((v) => v.price))}`
-                        : `₹ ${item.price}`}
-                    </span>
+                  {/* NEW: Individual Size Chips for all Variants */}
+                  <div className="card-variants-container">
+                    {ensureArray(item.variants).length > 0 ? (
+                      item.variants.map((v, i) => (
+                        <span key={i} className="card-size-chip">
+                          {v.size} · ₹{v.price}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="card-size-chip">₹ {item.price}</span>
+                    )}
                   </div>
 
                   <p className="tap-note">Tap to customize ➜</p>
