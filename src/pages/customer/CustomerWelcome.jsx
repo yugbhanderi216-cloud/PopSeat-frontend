@@ -129,13 +129,6 @@ const CustomerWelcome = () => {
     );
   };
 
-  const backgroundStyle = {
-    backgroundImage: theater?.banner
-      ? `url(${getImageUrl(theater.banner)})`
-      : undefined,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
 
   /* ── Loading ── */
   if (loading) {
@@ -166,7 +159,7 @@ const CustomerWelcome = () => {
 
   /* ── Main ── */
   return (
-    <div className="welcome-container" style={theater?.banner ? backgroundStyle : undefined}>
+    <div className="welcome-container">
       <div className="welcome-glass">
 
         {/* Logo */}
