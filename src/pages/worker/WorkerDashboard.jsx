@@ -170,7 +170,7 @@ const WorkerDashboard = () => {
     try {
 
       const res  = await fetch(
-        `${API_BASE}/api/worker/orders/${orderId}/status`,
+        `${API_BASE}/api/worker/order-status/${orderId}`,
         {
           method  : "PUT",
           headers : authHeaders(),
