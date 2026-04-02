@@ -237,7 +237,7 @@ const Analytics = () => {
           </div>
         </div>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={buildChartData(filteredOrders, chartRange)} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <AreaChart data={buildChartData(orders, chartRange)} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
@@ -250,7 +250,7 @@ const Analytics = () => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
             <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#888', fontSize: 12 }} dy={10} />
-            <YAxis yAxisId="left" tickLine={false} axisLine={false} tick={{ fill: '#888', fontSize: 12 }} dx={-10} />
+            <YAxis yAxisId="left" allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: '#888', fontSize: 12 }} dx={-10} />
             <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} tick={{ fill: '#888', fontSize: 12 }} dx={10} />
             <Tooltip content={<CustomTooltip />} />
             <Legend verticalAlign="top" height={36} wrapperStyle={{ paddingBottom: "20px" }} />
