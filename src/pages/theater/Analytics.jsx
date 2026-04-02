@@ -52,27 +52,28 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-const buildChartData = (orders, range) => {
-  const now = new Date();
-  if (range === "daily") {
-    const buckets = {};
-    for (let h = 23; h >= 0; h--) {
-      const d = new Date(now); d.setHours(now.getHours() - h, 0, 0, 0);
-      const hr = d.getHours(); const key = `${hr.toString().padStart(2, "0")}:00`;
-      buckets[key] = { label: hr % 3 === 0 ? key : "", fullLabel: key, Orders: 0, Revenue: 0 };
+const buildChartData = (orders) => {
+  const map = {};
+
+  orders.forEach((o) => {
+    const date = new Date(o.createdAt).toLocaleDateString();
+
+    if (!map[date]) {
+      map[date] = {
+        label: date,
+        Orders: 0,
+        Revenue: 0,
+      };
     }
-    orders.forEach((o) => {
-      const d = new Date(o.createdAt); const diff = (now - d) / (1000 * 60 * 60);
-      if (diff <= 24) {
-        const key = `${d.getHours().toString().padStart(2, "0")}:00`;
-        if (buckets[key]) { buckets[key].Orders += 1; if (o.orderStatus === "delivered") buckets[key].Revenue += o.totalAmount || 0; }
-      }
-    });
-    return Object.values(buckets);
-  }
-  // Standard weekly/monthly/yearly logic remains same
-  const buckets = []; // Add other range builders as needed or keep existing logic
-  return buckets; // Simplified for this write, I'll use the original logic if possible
+
+    map[date].Orders += 1;
+
+    if (o.orderStatus === "delivered") {
+      map[date].Revenue += o.totalAmount || 0;
+    }
+  });
+
+  return Object.values(map);
 };
 
 const Analytics = () => {
@@ -115,8 +116,8 @@ const Analytics = () => {
       results.forEach((r) => {
         if (r.status === "fulfilled" && r.value?.success)
           (r.value.orders || []).forEach((o) => {
-            // Frontend filter to ensure cinema-specific data
-            if (!seen.has(o._id) && (o.cinemaId === cinemaId || o.theaterId === cinemaId || !o.cinemaId)) {
+            // Frontend filter: bypass for workers (since assignedTheaterId is missing), enforce for owners
+            if (!seen.has(o._id) && (role === "worker" || o.cinemaId === cinemaId || o.theaterId === cinemaId || !o.cinemaId)) {
               seen.add(o._id); merged.push(o);
             }
           });
@@ -163,8 +164,30 @@ const Analytics = () => {
         <div className="analytics-card accent-blue"><h3>Delivered</h3><p>{stats.delivered}</p></div>
       </div>
 
-      <div className="chart-section" style={{ padding: "40px 0" }}>
-          <p style={{ textAlign: "center", color: "#666" }}>Analytics charts are updating... Check back in a moment.</p>
+      <div className="chart-section" style={{ height: "400px", marginTop: "30px" }}>
+        <h3 style={{ marginBottom: "20px", color: "#333", fontSize: "1.1rem" }}>Performance Overview</h3>
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={buildChartData(filteredOrders)} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{fill: '#888', fontSize: 12}} dy={10} />
+            <YAxis yAxisId="left" tickLine={false} axisLine={false} tick={{fill: '#888', fontSize: 12}} dx={-10} />
+            <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} tick={{fill: '#888', fontSize: 12}} dx={10} />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend verticalAlign="top" height={36} wrapperStyle={{ paddingBottom: "20px" }}/>
+            <Area yAxisId="left" type="monotone" dataKey="Orders" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorOrders)" />
+            <Area yAxisId="right" type="monotone" dataKey="Revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
