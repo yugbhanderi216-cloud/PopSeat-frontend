@@ -25,7 +25,7 @@ const formatCurrency = (amount) =>
 
 const getImageUrl = (url) => {
   if (!url) return "";
-  if (url.startsWith("http") || url.startsWith("data:")) return url;
+  if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("blob:")) return url;
   return `${API_BASE}/${url.replace(/^\//, '')}`;
 };
 

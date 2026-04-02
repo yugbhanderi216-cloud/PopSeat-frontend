@@ -4,6 +4,12 @@ import "./CustomerMenu.css";
 
 const API_BASE = "https://popseat.onrender.com";
 
+const getImageUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("blob:")) return url;
+  return `${API_BASE}/${url.replace(/^\//, "")}`;
+};
+
 const CustomerMenu = () => {
 
   const location = useLocation();
@@ -294,9 +300,10 @@ const CustomerMenu = () => {
 
                 {item.image && (
                   <img
-                    src={item.image}
+                    src={getImageUrl(item.image)}
                     alt={item.name}
                     className="customer-food-img"
+                    onError={(e) => { e.target.style.display = "none"; }}
                   />
                 )}
 

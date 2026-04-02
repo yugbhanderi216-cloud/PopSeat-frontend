@@ -129,14 +129,8 @@ const OwnerHome = () => {
     setLoading(true);
     setError("");
     try {
-      // Try the owner-specific endpoint first
-      let res = await fetch(`${API_BASE}/api/owner/cinemas`, { headers: authHeaders() });
-
-      // If 404, the route isn't deployed yet — fall back to /api/cinema
-      // which filters by ownerId server-side when role === "owner"
-      if (res.status === 404) {
-        res = await fetch(`${API_BASE}/api/cinema`, { headers: authHeaders() });
-      }
+      // Fetch cinemas for the current owner
+      const res = await fetch(`${API_BASE}/api/cinema`, { headers: authHeaders() });
 
       // Guard: HTML response means server error, not JSON
       const contentType = res.headers.get("content-type") || "";

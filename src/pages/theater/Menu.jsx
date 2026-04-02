@@ -58,6 +58,13 @@ const capitalizeWords = (text) =>
 const MAX_FILE_SIZE_MB = 5;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
+const getImageUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("blob:")) return url;
+  const base = API_BASE.replace("/api", "");
+  return `${base}/${url.replace(/^\//, "")}`;
+};
+
 const EMPTY_FORM = {
   name: "",
   description: "",
@@ -519,7 +526,7 @@ const Menu = () => {
                   <div className="menu-card-img-wrap">
                     {item.image ? (
                       <img
-                        src={item.image}
+                        src={getImageUrl(item.image)}
                         alt={item.name}
                         onError={(e) => { e.target.style.display = "none"; }}
                       />
@@ -670,7 +677,7 @@ const Menu = () => {
 
               {form.image ? (
                 <div className="img-upload-preview">
-                  <img src={form.image} alt="preview" />
+                  <img src={getImageUrl(form.image)} alt="preview" />
                   <div className="img-upload-info">
                     <span className="img-upload-status">
                       {form.imageFile ? "✅ New image ready" : "🖼️ Current image"}

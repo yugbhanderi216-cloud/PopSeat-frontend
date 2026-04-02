@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@700;800&display=swap');
+
 /* ═══════════════════════════════════════════════════════
    THEATER / WORKER LAYOUT — Admin Dashboard Pattern
    Sticky sidebar · Fixed topbar · Mobile drawer + bottom nav
@@ -45,7 +47,6 @@
   --topbar-h: 60px;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@700;800&display=swap');
 
 *,
 *::before,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./CustomerWelcome.css";
 
@@ -9,10 +9,27 @@ const CustomerWelcome = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ FIX 1: Read params from location.hash, not location.search
-  // HashRouter puts query params inside the hash: /#/route?key=val
-  const queryString = location.hash.split("?")[1] || "";
-  const params = new URLSearchParams(queryString);
+  const params = useMemo(() => {
+    // 1. Try modern location.search first (?seatId=...)
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.has("seatId") || searchParams.has("cinemaId")) {
+      return searchParams;
+    }
+
+    // 2. Fallback to hash parameters for legacy QR codes (/#/customer/welcome?seatId=...)
+    const hash = location.hash || "";
+    const queryIndex = hash.indexOf("?");
+    const queryString = queryIndex !== -1 ? hash.slice(queryIndex + 1) : "";
+    return new URLSearchParams(queryString);
+  }, [location]);
+
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("blob:")) return url;
+    // Fallback for relative paths just in case
+    return `https://popseat.onrender.com/${url.replace(/^\//, "")}`;
+  };
+
 
   const seatId = params.get("seatId");
   const cinemaId = params.get("cinemaId");
@@ -25,10 +42,6 @@ const CustomerWelcome = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  /* ===============================
-     SAVE CUSTOMER DATA
-  =============================== */
-
   useEffect(() => {
     if (screen) localStorage.setItem("screenNo", screen);
     if (seat) localStorage.setItem("seatNo", seat);
@@ -40,13 +53,10 @@ const CustomerWelcome = () => {
     if (seatId) localStorage.setItem("customerSeatId", seatId);
   }, [screen, seat, seatId, cinemaId, hallId, type]);
 
-  /* ===============================
-     LOAD THEATER — GET /api/seat?hallId=
-  =============================== */
-
   useEffect(() => {
 
     if (!seatId && !cinemaId) {
+      console.error("No valid IDs found in URL params:", params.toString());
       setError("Invalid QR code. No valid seat or cinema data found.");
       setLoading(false);
       return;
@@ -59,28 +69,44 @@ const CustomerWelcome = () => {
 
       try {
         if (seatId && hallId) {
-          // ✅ FIX 2: Use GET /api/seat?hallId= — there is no /api/seat/:id endpoint
+          // 1. Fetch seats for this hall to find the one we scanned
           const res = await fetch(`${API_BASE}/seat?hallId=${hallId}`);
           const data = await res.json();
 
-          // ✅ FIX 3: Find seat by _id in the returned array — hallId is a plain
-          // string, not a populated object, so no nested .cinemaId available
           const foundSeat = data.seats?.find(
             (s) => String(s._id) === String(seatId)
           );
 
           if (data.success && foundSeat) {
-            // Seat confirmed valid — fetch cinema info separately via hallId
-            // so we can show theater name/logo/banner on this screen
-            setTheater({
-              theaterName: "Cinema",
-            });
+            // 2. Fetch cinema info using cinemaId from the seat/hall if available
+            // If the seat doesn't have cinemaId, we might need to fetch the hall first
+            // But let's check if we can get cinemaId from foundSeat.cinemaId or hallId
+            const cId = foundSeat.cinemaId || cinemaId; 
+            
+            if (cId) {
+              const cRes = await fetch(`${API_BASE}/cinema/${cId}`);
+              const cData = await cRes.json();
+              if (cData.success && cData.cinema) {
+                const cinema = cData.cinema;
+                setTheater({
+                  theaterName: cinema.name,
+                  banner: cinema.banner,
+                  logo: cinema.theaterLogo,
+                  branch: cinema.branchName,
+                  city: cinema.city,
+                });
+                localStorage.setItem("customerTheaterId", cinema._id);
+              }
+            } else {
+              // Fallback to generic name if we still don't have cinemaId
+              setTheater({ theaterName: "Cinema" });
+            }
           } else {
             setError("Seat not found. Please scan a valid QR code.");
           }
 
         } else if (cinemaId) {
-          // Fallback: legacy QR codes that carry cinemaId instead of seatId+hallId
+          // If we have cinemaId directly, skip seat lookup and fetch branding
           const res = await fetch(`${API_BASE}/cinema/${cinemaId}`);
           const data = await res.json();
 
@@ -112,10 +138,6 @@ const CustomerWelcome = () => {
 
   }, [seatId, cinemaId, hallId]);
 
-  /* ===============================
-     ORDER BUTTON
-  =============================== */
-
   const handleOrderNow = () => {
     const finalTheaterId = localStorage.getItem("customerTheaterId") || cinemaId || "";
     const finalHallId = localStorage.getItem("customerHallId") || hallId || "";
@@ -126,21 +148,13 @@ const CustomerWelcome = () => {
     );
   };
 
-  /* ===============================
-     BACKGROUND
-  =============================== */
-
   const backgroundStyle = {
     backgroundImage: theater?.banner
-      ? `url(${theater.banner})`
+      ? `url(${getImageUrl(theater.banner)})`
       : "linear-gradient(135deg,#b8a899,#9f8e7f)",
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
-
-  /* ===============================
-     LOADING STATE
-  =============================== */
 
   if (loading) {
     return (
@@ -152,10 +166,6 @@ const CustomerWelcome = () => {
       </div>
     );
   }
-
-  /* ===============================
-     ERROR STATE
-  =============================== */
 
   if (error) {
     return (
@@ -171,10 +181,6 @@ const CustomerWelcome = () => {
     );
   }
 
-  /* ===============================
-     RENDER
-  =============================== */
-
   return (
 
     <div className="welcome-container" style={backgroundStyle}>
@@ -184,9 +190,10 @@ const CustomerWelcome = () => {
         {theater?.logo ? (
 
           <img
-            src={theater.logo}
+            src={getImageUrl(theater.logo)}
             alt="Theater Logo"
             className="welcome-logo-modern"
+            onError={(e) => { e.target.style.display = "none"; }}
           />
 
         ) : (

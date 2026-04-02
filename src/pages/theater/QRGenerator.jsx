@@ -20,7 +20,7 @@ import "./QRGenerator.css";
 // ─────────────────────────────────────────────────────────────
 
 const API_BASE = "https://popseat.onrender.com/api";
-const CUSTOMER_BASE = "https://pop-seat-frontend.vercel.app/#/customer/welcome";
+const CUSTOMER_BASE = "https://pop-seat-frontend.vercel.app/customer/welcome";
 
 const getToken = () =>
   localStorage.getItem("token") ||
@@ -128,11 +128,18 @@ const QRGenerator = () => {
       const data = await res.json();
       if (data.success && data.seats) {
         setGeneratedSeats(
-          data.seats.map((s) => ({
-            _id: s._id,
-            seatNumber: s.seatNumber,
-            hallId: hId,
-          }))
+          data.seats
+            .map((s) => ({
+              _id: s._id,
+              seatNumber: s.seatNumber,
+              hallId: hId,
+            }))
+            .sort((a, b) =>
+              a.seatNumber.localeCompare(b.seatNumber, undefined, {
+                numeric: true,
+                sensitivity: "base",
+              })
+            )
         );
       } else {
         setGeneratedSeats([]);
@@ -308,7 +315,7 @@ const QRGenerator = () => {
       const existingIds = new Set(prev.map((s) => s._id));
       const fresh = saved.filter((s) => !existingIds.has(s._id));
       return [...prev, ...fresh].sort((a, b) =>
-        a.seatNumber.localeCompare(b.seatNumber)
+        a.seatNumber.localeCompare(b.seatNumber, undefined, { numeric: true, sensitivity: 'base' })
       );
     });
 
@@ -341,7 +348,7 @@ const QRGenerator = () => {
 
   // ── Build QR URL ──────────────────────────────────────────
   const buildQRUrl = (seat) =>
-    `${CUSTOMER_BASE}?seatId=${seat._id}&hallId=${seat.hallId}&screen=${selectedScreen}&seat=${seat.seatNumber}`;
+    `${CUSTOMER_BASE}?seatId=${seat._id}&hallId=${seat.hallId}&cinemaId=${theaterId}&screen=${selectedScreen}&seat=${seat.seatNumber}`;
 
   // ── Loading / guard screens ───────────────────────────────
   if (theaterLoading) {

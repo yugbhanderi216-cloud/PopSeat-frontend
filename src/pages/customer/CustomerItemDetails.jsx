@@ -4,6 +4,12 @@ import "./CustomerItemDetails.css";
 
 const API_BASE = "https://popseat.onrender.com";
 
+const getImageUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("blob:")) return url;
+  return `${API_BASE}/${url.replace(/^\//, "")}`;
+};
+
 const CustomerItemDetails = () => {
 
   const { state } = useLocation();
@@ -140,9 +146,10 @@ const CustomerItemDetails = () => {
         <div className="item-top">
 
           <img
-            src={item.image}
+            src={getImageUrl(item.image)}
             alt={item.name}
             className="item-image"
+            onError={(e) => { e.target.style.display = "none"; }}
           />
 
           <div className="item-details">
