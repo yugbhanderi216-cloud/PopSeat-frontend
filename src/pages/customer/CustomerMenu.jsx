@@ -55,12 +55,6 @@ const CustomerMenu = () => {
     if (hallId)    localStorage.setItem("customerHallId", hallId);
     if (seatId)    localStorage.setItem("customerSeatId", seatId);
 
-    // ── Auth guard: redirect to login if not authenticated ──
-    const token = localStorage.getItem("customerToken");
-    if (!token) {
-      const returnUrl = encodeURIComponent(window.location.href);
-      navigate(`/customer/login?redirect=${returnUrl}`, { replace: true });
-    }
   }, [screen, seat, theaterId, type]);
 
   /* ================= LOAD CATEGORIES — GET /api/category ================= */

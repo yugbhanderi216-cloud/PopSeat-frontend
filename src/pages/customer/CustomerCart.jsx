@@ -91,10 +91,11 @@ const CustomerCart = () => {
     const token  = localStorage.getItem("customerToken");
     const seatId = localStorage.getItem("customerSeatId");
 
-    // Not logged in — go to login, return here after
+    // Not logged in — go to login, then directly to payment
     if (!token) {
       if (theaterId) localStorage.setItem("customerTheaterId", theaterId);
-      navigate(`/customer/login?theaterId=${theaterId}`);
+      const returnUrl = encodeURIComponent(`/payment?theaterId=${theaterId}`);
+      navigate(`/customer/login?theaterId=${theaterId}&redirect=${returnUrl}`);
       return;
     }
 
