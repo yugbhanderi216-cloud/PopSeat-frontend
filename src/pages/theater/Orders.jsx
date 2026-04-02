@@ -290,15 +290,14 @@ const Orders = () => {
   }, [fetchOrders, startPolling, stopPolling]);
 
   /* ═══════════════════════════════════════
-     PUT /api/worker/order-status/:id ✅
+     PUT /api/worker/orders/:id/status ✅
   ═══════════════════════════════════════ */
   const updateStatus = async (id, status) => {
     setUpdating((prev) => ({ ...prev, [id]: true }));
     const token = getToken();
     try {
-      // FIX: Synchronized with WorkerDashboard.jsx which uses /api/worker/order-status/
-      // This is the stable endpoint for updating statuses.
-      const res  = await fetch(`${API_BASE}/worker/order-status/${id}`, {
+      // Changed to the correct endpoint based on api.txt: /api/worker/orders/:id/status
+      const res  = await fetch(`${API_BASE}/worker/orders/${id}/status`, {
         method : "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -314,7 +313,17 @@ const Orders = () => {
         return;
       }
 
-      const data = await res.json();
+      // Read response text first in case it's an HTML error page (like 404)
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error("Non-JSON Response body:", text);
+        setError(`Backend Error ${res.status}: the API endpoint is likely missing or incorrect.`);
+        return;
+      }
+
       if (data.success) {
         setOrders((prev) =>
           prev.map((o) => o._id === id ? { ...o, orderStatus: status } : o)

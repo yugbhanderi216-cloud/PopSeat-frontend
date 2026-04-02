@@ -170,7 +170,7 @@ const WorkerDashboard = () => {
     try {
 
       const res  = await fetch(
-        `${API_BASE}/api/worker/order-status/${orderId}`,
+        `${API_BASE}/api/worker/orders/${orderId}/status`,
         {
           method  : "PUT",
           headers : authHeaders(),
@@ -178,7 +178,16 @@ const WorkerDashboard = () => {
         }
       );
 
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error("Non-JSON Response:", text);
+        setError(`Backend Error ${res.status}: Update endpoint not found or incorrect.`);
+        setUpdatingId(null);
+        return;
+      }
 
       if (data.success) {
 
