@@ -20,7 +20,7 @@ import "./QRGenerator.css";
 // ─────────────────────────────────────────────────────────────
 
 const API_BASE = "https://popseat.onrender.com/api";
-const CUSTOMER_BASE = "https://popseat-frontend.vercel.app/#/customer/welcome";
+const CUSTOMER_BASE = "https://pop-seat-frontend.vercel.app/#/customer/welcome";
 
 const getToken = () =>
   localStorage.getItem("token") ||
