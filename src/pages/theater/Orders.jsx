@@ -296,8 +296,8 @@ const Orders = () => {
     setUpdating((prev) => ({ ...prev, [id]: true }));
     const token = getToken();
     try {
-      // Changed to the correct endpoint based on api.txt: /api/worker/orders/:id/status
-      const res  = await fetch(`${API_BASE}/worker/orders/${id}/status`, {
+      // Reverting to the confirmed endpoint: /api/worker/order-status/:id
+      const res  = await fetch(`${API_BASE}/worker/order-status/${id}`, {
         method : "PUT",
         headers: {
           "Content-Type": "application/json",
