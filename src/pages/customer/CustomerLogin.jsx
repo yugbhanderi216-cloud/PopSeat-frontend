@@ -8,9 +8,9 @@ const CustomerLogin = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const params    = new URLSearchParams(location.search);
+  const params = new URLSearchParams(location.search);
   const theaterId = params.get("theaterId");
-  const redirect  = params.get("redirect"); // set when coming from a QR scan
+  const redirect = params.get("redirect"); // set when coming from a QR scan
 
   const [email, setEmail] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -209,16 +209,12 @@ const CustomerLogin = () => {
       {/* HEADER */}
       <div className="login-header">
         <button className="back-btn" onClick={goBack}>
-          ← Back
+          ←
         </button>
       </div>
 
       <div className="login-container">
         <div className="login-card">
-          <div className="login-brand">
-            <span className="brand-icon">🎟️</span>
-          </div>
-
           <h1 className="login-title">Customer Login</h1>
           <p className="login-subtitle">
             Enter your email to verify and pay
@@ -262,7 +258,7 @@ const CustomerLogin = () => {
           {otpSent && (
             <div className="otp-section fade-in">
               <p className="otp-instruction">
-                We've sent a 6-digit code to <strong>{email}</strong>. 
+                We've sent a 6-digit code to <strong>{email}</strong>.
                 Please enter it below.
               </p>
 
