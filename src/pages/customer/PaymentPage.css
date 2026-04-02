@@ -1,123 +1,274 @@
-/* PAGE */
-.payment-page {
-  min-height: calc(100vh - 64px);
-  padding: 40px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* ═══════════════════════════════════════════
+   PREMIUM CUSTOMER PAYMENT STYLES
+   ═══════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --violet: #6C63FF;
+  --violet-deep: #4F46E5;
+  --violet-light: #8B84FF;
+  --violet-soft: rgba(108, 99, 255, 0.1);
+  --violet-glow: rgba(108, 99, 255, 0.3);
+  --surface: #ffffff;
+  --surface2: #f8f9ff;
+  --text: #1A1740;
+  --text-muted: #6B6891;
+  --border-soft: rgba(108, 99, 255, 0.1);
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
 }
 
-/* TITLE */
-.payment-page h2 {
-  font-family: Outfit, sans-serif;
-  font-size: 26px;
+.payment-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: #f2f0ff;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Background Texture */
+.payment-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(108, 99, 255, 0.05) 1px, transparent 1px);
+  background-size: 30px 30px;
+  z-index: 0;
+}
+
+.payment-page::after {
+  content: '';
+  position: fixed;
+  top: -10%;
+  right: -5%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(108, 99, 255, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+/* ─── PAYMENT CARD ──────────────────────────────────── */
+.payment-card {
+  position: relative;
+  z-index: 1;
+  background: var(--surface);
+  padding: 44px 36px;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 440px;
+  text-align: center;
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow);
+  animation: cardEntrance 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.payment-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--violet-deep), var(--violet-light), var(--violet-deep));
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── HEADERS ───────────────────────────────────────── */
+.payment-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
   font-weight: 800;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.payment-plan-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 26px;
+  font-weight: 900;
   color: var(--text);
+  margin-bottom: 20px;
+  letter-spacing: -0.02em;
+}
+
+/* ─── PRICE ─────────────────────────────────────────── */
+.payment-price-block {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.payment-currency {
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--violet);
+  margin-top: 10px;
+}
+
+.payment-amount {
+  font-family: 'Outfit', sans-serif;
+  font-size: 52px;
+  font-weight: 900;
+  color: var(--text);
+  background: linear-gradient(135deg, var(--violet-deep), var(--violet-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.plan-note {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
   margin-bottom: 24px;
 }
 
-/* MAIN CONTAINER */
-.payment-layout {
-  width: 100%;
-  max-width: 450px;
+.payment-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-soft), transparent);
+  margin-bottom: 24px;
+}
+
+/* ─── ORDER LIST ────────────────────────────────────── */
+.customer-order-list {
+  text-align: left;
+  margin-bottom: 28px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 }
 
-/* CARDS */
-.summary-box, .method-box {
-  background: var(--surface);
-  padding: 24px;
-  border-radius: 16px;
-  border: 1.5px solid var(--border-soft);
-  box-shadow: var(--shadow);
-  transition: all 0.2s ease;
-}
-.summary-box:hover, .method-box:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-/* SUMMARY ITEMS */
-.summary-box h4 {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 14.5px;
-  color: var(--text);
-  margin-top: 16px;
-  border-top: 1px solid var(--border-soft);
-  padding-top: 16px;
-}
-.summary-item {
+.customer-order-item {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 12px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13.5px;
-  color: var(--text-muted);
-}
-.summary-item span:last-child {
-  font-weight: 600;
-  color: var(--text);
-}
-
-/* PAYMENT OPTIONS */
-.method-box label {
-  display: flex;
   align-items: center;
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  border-radius: 10px;
-  cursor: pointer;
+  padding: 12px 16px;
   background: var(--surface2);
-  border: 1.5px solid var(--border-soft);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--text);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
   transition: all 0.2s ease;
 }
 
-.method-box label:hover {
+.customer-order-item:hover {
+  transform: translateX(4px);
   border-color: var(--violet);
-  background: var(--violet-soft);
+}
+
+.item-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.item-price {
+  font-size: 13.5px;
+  font-weight: 800;
   color: var(--violet);
 }
 
-.method-box input {
-  margin-right: 12px;
-  accent-color: var(--violet);
-  width: 16px;
-  height: 16px;
+/* ─── ERROR ─────────────────────────────────────────── */
+.payment-error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: left;
 }
 
-/* PAY BUTTON */
-.pay-btn {
-  margin-top: 8px;
+/* ─── BUTTONS ───────────────────────────────────────── */
+.payment-btn {
   width: 100%;
-  padding: 14px;
+  padding: 16px;
+  border-radius: 14px;
   border: none;
-  border-radius: 8px;
-  background: var(--violet);
+  background: linear-gradient(135deg, var(--violet), var(--violet-deep));
   color: white;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 24px var(--violet-glow);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 12px;
+}
+
+.payment-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(108, 99, 255, 0.4);
+}
+
+.payment-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.payment-btn-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.payment-spinner {
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.payment-btn-ghost {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 1.5px solid var(--border-soft);
+  color: var(--text-muted);
+  border-radius: 12px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.18s ease;
-  box-shadow: 0 3px 10px rgba(108, 99, 255, 0.3);
+  transition: all 0.2s ease;
 }
 
-.pay-btn:hover {
-  background: var(--violet-deep);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(108, 99, 255, 0.4);
-}
-.pay-btn:active {
-  transform: scale(0.98);
+.payment-btn-ghost:hover {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--text-muted);
 }
 
+/* ─── RESPONSIVE ────────────────────────────────────── */
 @media (max-width: 480px) {
-  .payment-page { padding: 30px 16px; }
-  .summary-box, .method-box { padding: 20px; }
+  .payment-card {
+    padding: 32px 24px;
+  }
+  .payment-amount {
+    font-size: 40px;
+  }
+  .payment-plan-name {
+    font-size: 22px;
+  }
 }
