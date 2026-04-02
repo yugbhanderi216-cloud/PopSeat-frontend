@@ -6,35 +6,35 @@ import {
 } from "recharts";
 import "./Analytics.css";
 
-const API_BASE     = "https://popseat.onrender.com/api";
+const API_BASE = "https://popseat.onrender.com/api";
 const ALL_STATUSES = ["placed", "preparing", "ready", "delivered"];
 
 const getToken = () =>
-  localStorage.getItem("ownerToken")  ||
+  localStorage.getItem("ownerToken") ||
   localStorage.getItem("workerToken") ||
-  localStorage.getItem("token")       || "";
+  localStorage.getItem("token") || "";
 
 const getRole = () =>
   (
-    localStorage.getItem("ownerRole")  ||
+    localStorage.getItem("ownerRole") ||
     localStorage.getItem("workerRole") ||
-    localStorage.getItem("role")       || ""
+    localStorage.getItem("role") || ""
   ).toLowerCase();
 
 const formatCurrency = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
 const STAT_FILTERS = [
-  { key: "today", label: "Today"   },
-  { key: "week",  label: "Weekly"  },
+  { key: "today", label: "Today" },
+  { key: "week", label: "Weekly" },
   { key: "month", label: "Monthly" },
-  { key: "year",  label: "Yearly"  },
+  { key: "year", label: "Yearly" },
 ];
 
 const CHART_RANGES = [
-  { key: "daily",   label: "Daily"   },
-  { key: "weekly",  label: "Weekly"  },
+  { key: "daily", label: "Daily" },
+  { key: "weekly", label: "Weekly" },
   { key: "monthly", label: "Monthly" },
-  { key: "yearly",  label: "Yearly"  },
+  { key: "yearly", label: "Yearly" },
 ];
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -52,28 +52,77 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-const buildChartData = (orders) => {
-  const map = {};
+const buildChartData = (orders, range) => {
+  const now = new Date();
 
-  orders.forEach((o) => {
-    const date = new Date(o.createdAt).toLocaleDateString();
-
-    if (!map[date]) {
-      map[date] = {
-        label: date,
-        Orders: 0,
-        Revenue: 0,
-      };
+  if (range === "daily") {
+    const buckets = {};
+    for (let h = 23; h >= 0; h--) {
+      const d = new Date(now); d.setHours(now.getHours() - h, 0, 0, 0);
+      const hr = d.getHours();
+      const key = `${hr.toString().padStart(2, "0")}:00`;
+      buckets[key] = { label: hr % 3 === 0 ? key : "", fullLabel: key, Orders: 0, Revenue: 0 };
     }
+    orders.forEach((o) => {
+      const d = new Date(o.createdAt);
+      const diffHours = (now - d) / (1000 * 60 * 60);
+      if (diffHours <= 24 && d.getDate() === now.getDate()) {
+        const key = `${d.getHours().toString().padStart(2, "0")}:00`;
+        if (buckets[key]) {
+          buckets[key].Orders += 1;
+          if (o.orderStatus === "delivered") buckets[key].Revenue += o.totalAmount || 0;
+        }
+      }
+    });
+    return Object.values(buckets);
+  }
 
-    map[date].Orders += 1;
-
-    if (o.orderStatus === "delivered") {
-      map[date].Revenue += o.totalAmount || 0;
+  if (range === "weekly" || range === "monthly") {
+    const buckets = {};
+    const days = range === "weekly" ? 7 : 30;
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      buckets[key] = { label: key, fullLabel: key, Orders: 0, Revenue: 0 };
     }
-  });
+    orders.forEach((o) => {
+      const d = new Date(o.createdAt);
+      const diffDays = (now - d) / (1000 * 60 * 60 * 24);
+      if (diffDays <= days) {
+        const key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        if (buckets[key]) {
+          buckets[key].Orders += 1;
+          if (o.orderStatus === "delivered") buckets[key].Revenue += o.totalAmount || 0;
+        }
+      }
+    });
+    return Object.values(buckets);
+  }
 
-  return Object.values(map);
+  if (range === "yearly") {
+    const buckets = {};
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now);
+      d.setMonth(now.getMonth() - i);
+      const key = d.toLocaleDateString('en-US', { month: 'short' });
+      buckets[key] = { label: key, fullLabel: key, Orders: 0, Revenue: 0 };
+    }
+    orders.forEach((o) => {
+      const d = new Date(o.createdAt);
+      const diffMonths = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+      if (diffMonths >= 0 && diffMonths <= 11) {
+        const key = d.toLocaleDateString('en-US', { month: 'short' });
+        if (buckets[key]) {
+          buckets[key].Orders += 1;
+          if (o.orderStatus === "delivered") buckets[key].Revenue += o.totalAmount || 0;
+        }
+      }
+    });
+    return Object.values(buckets);
+  }
+
+  return [];
 };
 
 const Analytics = () => {
@@ -165,25 +214,46 @@ const Analytics = () => {
       </div>
 
       <div className="chart-section" style={{ height: "400px", marginTop: "30px" }}>
-        <h3 style={{ marginBottom: "20px", color: "#333", fontSize: "1.1rem" }}>Performance Overview</h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+          <h3 style={{ color: "#333", fontSize: "1.1rem", margin: 0 }}>Performance Overview</h3>
+          <div className="chart-range-filters">
+            {CHART_RANGES.map(r => (
+              <button
+                key={r.key}
+                onClick={() => setChartRange(r.key)}
+                style={{
+                  margin: "0 5px",
+                  padding: "4px 10px",
+                  background: chartRange === r.key ? "#8b5cf6" : "#f1f5f9",
+                  color: chartRange === r.key ? "#fff" : "#333",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={buildChartData(filteredOrders)} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <AreaChart data={buildChartData(filteredOrders, chartRange)} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{fill: '#888', fontSize: 12}} dy={10} />
-            <YAxis yAxisId="left" tickLine={false} axisLine={false} tick={{fill: '#888', fontSize: 12}} dx={-10} />
-            <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} tick={{fill: '#888', fontSize: 12}} dx={10} />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#888', fontSize: 12 }} dy={10} />
+            <YAxis yAxisId="left" tickLine={false} axisLine={false} tick={{ fill: '#888', fontSize: 12 }} dx={-10} />
+            <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} tick={{ fill: '#888', fontSize: 12 }} dx={10} />
             <Tooltip content={<CustomTooltip />} />
-            <Legend verticalAlign="top" height={36} wrapperStyle={{ paddingBottom: "20px" }}/>
+            <Legend verticalAlign="top" height={36} wrapperStyle={{ paddingBottom: "20px" }} />
             <Area yAxisId="left" type="monotone" dataKey="Orders" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorOrders)" />
             <Area yAxisId="right" type="monotone" dataKey="Revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
           </AreaChart>

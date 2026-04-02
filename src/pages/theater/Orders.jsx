@@ -140,7 +140,6 @@ const Orders = () => {
           return;
         }
 
-        // NEW: Fetch by status instead of raw query to avoid backend 500 on ?cinemaId
         const responses = await Promise.allSettled(
           STATUSES.map((s) =>
             fetch(`${API_BASE}/worker/orders?status=${s}`, {
@@ -151,6 +150,21 @@ const Orders = () => {
             })
           )
         );
+
+        // Check if ANY response is 403 (Forbidden due to backend blocking owner token)
+        const has403 = responses.some(
+          (r) => r.status === "fulfilled" && r.value.status === 403
+        );
+
+        if (has403) {
+          if (isMounted.current) {
+            stopPolling();
+            setError("Backend returning 403 Forbidden: Owner token is not allowed to access worker routes.");
+            setAuthError(true);
+            setLoading(false);
+          }
+          return;
+        }
 
         const jsonResponses = await Promise.allSettled(
           responses.map((r) =>
@@ -165,8 +179,6 @@ const Orders = () => {
         jsonResponses.forEach((res) => {
           if (res.status === "fulfilled" && res.value?.orders) {
             res.value.orders.forEach((o) => {
-              // Filter by theaterId manually on frontend to ensure owner sees only their theater
-              // while backend team fixes the ?cinemaId query crash.
               if (!seen.has(o._id) && (o.theaterId === theaterId || o.cinemaId === theaterId || !o.theaterId)) {
                 seen.add(o._id);
                 merged.push(o);
