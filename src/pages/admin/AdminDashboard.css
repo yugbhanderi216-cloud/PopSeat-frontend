@@ -326,9 +326,10 @@
   display: inline-block; padding: 3px 9px;
   border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;
 }
-.adm-status-pill.paid     { background: var(--green-lt); color: var(--green); }
+.adm-status-pill.paid, .adm-status-pill.active { background: var(--green-lt); color: var(--green); }
 .adm-status-pill.pending  { background: var(--amber-lt); color: var(--amber); }
-.adm-status-pill.refunded { background: var(--red-lt);   color: var(--red);   }
+.adm-status-pill.upgraded { background: var(--purple-lt); color: var(--purple); }
+.adm-status-pill.refunded, .adm-status-pill.cancelled { background: var(--red-lt); color: var(--red); }
 
 /* ── PLAN BADGE ── */
 .adm-plan-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }

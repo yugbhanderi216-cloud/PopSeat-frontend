@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  AreaChart, Area, BarChart, Bar,
+  AreaChart, Area, BarChart, Bar, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend
 } from "recharts";
@@ -315,18 +315,29 @@ const AdminDashboard = () => {
   /* ── Stats ── */
   const activeTheaters  = theaters.filter((t) =>  t.isActive).length;
   const pendingTheaters = theaters.filter((t) => !t.isActive).length;
-  const paidTx      = useMemo(() => transactions.filter((t) => t.status === "paid"),    [transactions]);
-  const pendingTx   = useMemo(() => transactions.filter((t) => t.status === "pending"), [transactions]);
-  const subRevenue  = useMemo(() => paidTx.reduce((s, t) => s + t.amount, 0),           [paidTx]);
+  
+  const paidStatuses = ["paid", "active", "upgraded"];
+  const pendingStatuses = ["pending"];
+  
+  const paidTx      = useMemo(() => transactions.filter((t) => paidStatuses.includes(t.status?.toLowerCase())), [transactions]);
+  const pendingTx   = useMemo(() => transactions.filter((t) => pendingStatuses.includes(t.status?.toLowerCase())), [transactions]);
+  const subRevenue  = useMemo(() => paidTx.reduce((s, t) => s + Number(t.amount || 0), 0), [paidTx]);
 
   /* ── Filtered transactions ── */
   const filteredTx = useMemo(() =>
     transactions.filter((t) => {
-      const ms = txFilter === "all" || t.status === txFilter;
+      const normalizedStatus = t.status?.toLowerCase() || "";
+      let isStatusMatch = false;
+      if (txFilter === "all") isStatusMatch = true;
+      else if (txFilter === "paid" && paidStatuses.includes(normalizedStatus)) isStatusMatch = true;
+      else if (txFilter === "pending" && pendingStatuses.includes(normalizedStatus)) isStatusMatch = true;
+      else if (txFilter === "refunded" && ["refunded", "cancelled"].includes(normalizedStatus)) isStatusMatch = true;
+      else if (normalizedStatus === txFilter) isStatusMatch = true;
+
       const mq = !txSearch ||
-        t.owner.toLowerCase().includes(txSearch.toLowerCase()) ||
-        t.theater.toLowerCase().includes(txSearch.toLowerCase());
-      return ms && mq;
+        t.owner?.toLowerCase().includes(txSearch.toLowerCase()) ||
+        t.theater?.toLowerCase().includes(txSearch.toLowerCase());
+      return isStatusMatch && mq;
     }), [transactions, txFilter, txSearch]);
 
   /* ── Filtered theaters ── */
@@ -477,7 +488,7 @@ const AdminDashboard = () => {
                 <div className="adm-card-title" style={{ marginBottom: 14 }}>Revenue Breakdown</div>
                 {[
                   { label: "Subscription Revenue",  value: fmt(subRevenue),                                 color: "#6366f1" },
-                  { label: "Pending Sub Payments",  value: fmt(pendingTx.reduce((s,t)=>s+t.amount,0)),     color: "#d97706" },
+                  { label: "Pending Sub Payments",  value: fmt(pendingTx.reduce((s, t) => s + Number(t.amount || 0), 0)),     color: "#d97706" },
                 ].map((item) => (
                   <div key={item.label} className="adm-health-row">
                     <span className="adm-health-label">{item.label}</span>
@@ -545,15 +556,31 @@ const AdminDashboard = () => {
               </div>
               <div style={{ padding: "12px 8px 4px" }}>
                 <ResponsiveContainer width="100%" height={220}>
-                  <BarChart barSize={40} data={["Basic", "Standard", "Pro", "Enterprise"].map((plan) => ({
-                    plan,
-                    revenue: transactions.filter(t => t.plan === plan && t.status === "paid").reduce((s, t) => s + t.amount, 0),
-                  }))}>
+                  <BarChart barSize={40} data={(() => {
+                    const stats = {};
+                    paidStatuses.forEach(s => {
+                      transactions.filter(t => t.status?.toLowerCase() === s).forEach(t => {
+                        const pName = t.plan || "Other";
+                        stats[pName] = (stats[pName] || 0) + Number(t.amount || 0);
+                      });
+                    });
+                    return Object.keys(stats).map(plan => ({
+                      plan,
+                      revenue: stats[plan],
+                    }));
+                  })()}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="plan" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="revenue" name="revenue" radius={[6, 6, 0, 0]} fill="#6366f1" />
+                    <Bar dataKey="revenue" name="revenue" radius={[6, 6, 0, 0]}>
+                      {
+                        /* Assign colors dynamically */
+                        Object.keys(PLAN_COLOR).map((key, index) => (
+                           <Cell key={`cell-${index}`} fill={PLAN_COLOR[key] || "#6366f1"} />
+                        ))
+                      }
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -752,7 +779,7 @@ const AdminDashboard = () => {
                               {t.isActive ? "Active" : "Pending"}
                             </span>
                           </div>
-                          <div className="adm-tc-subtitle">{t.city || "—"}</div>
+                          <div className="adm-tc-subtitle">{t.branchName ? `${t.branchName}, ${t.city}` : (t.city || "—")}</div>
                         </div>
                         
                         <div className="adm-tc-body">
@@ -796,8 +823,9 @@ const AdminDashboard = () => {
                               <h4>Bank Details</h4>
                               {bank ? (
                                 <div className="adm-tc-bank-info">
-                                  <p><strong>Account Holder:</strong> {bank.accountHolder || "—"}</p>
+                                  <p><strong>Account Holder Name:</strong> {bank.accountHolder || "—"}</p>
                                   <p><strong>Account Number:</strong> {bank.accountNumber || "—"}</p>
+                                  <p><strong>IFSC Code:</strong> {bank.ifscCode || bank.ifsc || "—"}</p>
                                   <p><strong>UPI ID:</strong> {bank.upiId || "—"}</p>
                                 </div>
                               ) : (
