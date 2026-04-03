@@ -52,27 +52,6 @@ const MOCK_REVENUE = {
   ],
 };
 
-// ── Mock subscription transactions ──
-const MOCK_TRANSACTIONS = [
-  { id: "TXN001", owner: "Hitesh Patel",  theater: "PVR Ahmedabad",  plan: "Pro",        amount: 2000, status: "paid",     date: "2026-03-20" },
-  { id: "TXN002", owner: "Suresh Shah",   theater: "INOX Surat",     plan: "Basic",      amount: 800,  status: "paid",     date: "2026-03-19" },
-  { id: "TXN003", owner: "Rajan Mehta",   theater: "Cinepolis Pune", plan: "Standard",   amount: 1300, status: "pending",  date: "2026-03-19" },
-  { id: "TXN004", owner: "Anil Gupta",    theater: "PVR Mumbai",     plan: "Enterprise", amount: 2500, status: "paid",     date: "2026-03-18" },
-  { id: "TXN005", owner: "Mohan Kumar",   theater: "SPI Bangalore",  plan: "Pro",        amount: 2000, status: "refunded", date: "2026-03-17" },
-  { id: "TXN006", owner: "Deepak Singh",  theater: "INOX Delhi",     plan: "Basic",      amount: 800,  status: "pending",  date: "2026-03-17" },
-  { id: "TXN007", owner: "Vikram Nair",   theater: "Miraj Chennai",  plan: "Standard",   amount: 1300, status: "paid",     date: "2026-03-16" },
-  { id: "TXN008", owner: "Sita Reddy",    theater: "PVR Hyderabad",  plan: "Pro",        amount: 2000, status: "paid",     date: "2026-03-15" },
-];
-
-// ── Mock payouts ──
-const MOCK_PAYOUTS = [
-  { id: "PAY001", owner: "Hitesh Patel", theater: "PVR Ahmedabad",  amount: 1600, status: "pending", dueDate: "2026-03-25" },
-  { id: "PAY002", owner: "Suresh Shah",  theater: "INOX Surat",     amount: 640,  status: "paid",    dueDate: "2026-03-20" },
-  { id: "PAY003", owner: "Rajan Mehta",  theater: "Cinepolis Pune", amount: 1040, status: "pending", dueDate: "2026-03-26" },
-  { id: "PAY004", owner: "Anil Gupta",   theater: "PVR Mumbai",     amount: 2000, status: "paid",    dueDate: "2026-03-18" },
-  { id: "PAY005", owner: "Mohan Kumar",  theater: "SPI Bangalore",  amount: 1600, status: "pending", dueDate: "2026-03-27" },
-];
-
 const PLAN_COLOR = {
   Basic: "#6366f1", Standard: "#8b5cf6",
   Pro: "#a855f7", Enterprise: "#ec4899",
@@ -84,7 +63,6 @@ const TABS = [
   { key: "plans",         label: "Plans",         icon: "☷" },
   { key: "payments",      label: "Payments",      icon: "◎" },
   { key: "theaters",      label: "Theaters",      icon: "◫" },
-  { key: "users",         label: "Users",         icon: "👥" },
 ];
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -112,8 +90,7 @@ const AdminDashboard = () => {
   const [actionLoading,   setActionLoading]   = useState({});
   const [error,           setError]           = useState("");
   const [revenueRange,    setRevenueRange]    = useState("monthly");
-  const [transactions,    setTransactions]    = useState(MOCK_TRANSACTIONS);
-  const [payouts,         setPayouts]         = useState(MOCK_PAYOUTS);
+  const [transactions,    setTransactions]    = useState([]);
   const [txSearch,        setTxSearch]        = useState("");
   const [txFilter,        setTxFilter]        = useState("all");
   const [theaterSearch,   setTheaterSearch]   = useState("");
@@ -124,6 +101,9 @@ const AdminDashboard = () => {
   const [planModalOpen,   setPlanModalOpen]   = useState(false);
   const [planForm,        setPlanForm]        = useState({ _id: null, name: "", price: "", theaterLimit: "", duration: 30, features: "" });
 
+  const [expandedTheaterId, setExpandedTheaterId] = useState(null);
+  const [bankDetailsMap,    setBankDetailsMap]    = useState({});
+
   // ── Sidebar state ──
   // sidebarCollapsed: desktop toggle (hides sidebar, gives full width)
   // mobileSidebarOpen: mobile drawer open/close
@@ -133,8 +113,8 @@ const AdminDashboard = () => {
   // ── User stats state ──
   const [userStats, setUserStats] = useState({
     owners: 0,
-    workers: 18, // Mocked until backend endpoint exists
-    customers: 52, // Mocked until backend endpoint exists
+    workers: 0,
+    customers: 0,
   });
 
   // Detect mobile
@@ -185,12 +165,7 @@ const AdminDashboard = () => {
       const res  = await fetch(`${API_BASE}/cinema`, { headers: authHeaders() });
       const data = await res.json();
       if (data.success) {
-        const cinemas = data.cinemas || [];
-        setTheaters(cinemas);
-        
-        // Update owner count based on unique emails/names in theater list
-        const uniqueOwners = new Set(cinemas.map(t => t.email || t.ownerName)).size;
-        setUserStats(prev => ({ ...prev, owners: uniqueOwners }));
+        setTheaters(data.cinemas || []);
       }
       else setError(data.message || "Failed to load theaters.");
     } catch { setError("Network error."); }
@@ -201,14 +176,56 @@ const AdminDashboard = () => {
   const loadPlans = useCallback(async () => {
     setLoadingPlans(true);
     try {
-      const res = await fetch(`${API_BASE}/owner/plans`);
+      const res = await fetch(`${API_BASE}/admin/plans`, { headers: authHeaders() });
       const data = await res.json();
       if (data.success) setPlans(data.plans || []);
     } catch { /* silent */ }
     finally { setLoadingPlans(false); }
   }, []);
 
-  useEffect(() => { loadProfile(); loadTheaters(); loadPlans(); }, [loadProfile, loadTheaters, loadPlans]);
+  /* ── Load User Counts ── */
+  const loadUserCounts = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/user-counts`, { headers: authHeaders() });
+      const data = await res.json();
+      if (data.success && data.counts) {
+        setUserStats(data.counts);
+      }
+    } catch { /* silent */ }
+  }, []);
+
+  /* ── Load Transactions ── */
+  const loadTransactions = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/transactions`, { headers: authHeaders() });
+      const data = await res.json();
+      if (data.success && data.transactions) {
+        setTransactions(data.transactions);
+      }
+    } catch { /* silent */ }
+  }, []);
+
+  /* ── Load Bank Details ── */
+  const loadBankDetails = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/bank-details`, { headers: authHeaders() });
+      const data = await res.json();
+      if (data.success && data.cinemas) {
+        const map = {};
+        data.cinemas.forEach(c => { map[c.id] = c.bankDetails; });
+        setBankDetailsMap(map);
+      }
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => { 
+    loadProfile(); 
+    loadTheaters(); 
+    loadPlans(); 
+    loadUserCounts();
+    loadTransactions();
+    loadBankDetails();
+  }, [loadProfile, loadTheaters, loadPlans, loadUserCounts, loadTransactions, loadBankDetails]);
 
   /* ── Plan Actions ── */
   const openPlanModal = (plan = null) => {
@@ -233,6 +250,10 @@ const AdminDashboard = () => {
       duration: Number(planForm.duration) || 30,
       features: (typeof planForm.features === "string" ? planForm.features : "").split("\n").map(f => f.trim()).filter(Boolean)
     };
+
+    if (isEdit) {
+      body.isActive = true;
+    }
 
     if (!body.name) {
       setError("Plan Name is required.");
@@ -271,7 +292,7 @@ const AdminDashboard = () => {
   const updateTheaterStatus = async (cinemaId, isActive) => {
     setActionLoading((p) => ({ ...p, [cinemaId]: true }));
     try {
-      const res  = await fetch(`${API_BASE}/cinema/${cinemaId}`, {
+      const res  = await fetch(`${API_BASE}/admin/cinema/${cinemaId}/status`, {
         method: "PUT", headers: authHeaders(),
         body: JSON.stringify({ isActive }),
       });
@@ -282,10 +303,6 @@ const AdminDashboard = () => {
     } catch { setError("Network error."); }
     finally { setActionLoading((p) => ({ ...p, [cinemaId]: false })); }
   };
-
-  /* ── Release payout ── */
-  const releasePayout = (id) =>
-    setPayouts((p) => p.map((pay) => pay.id === id ? { ...pay, status: "paid" } : pay));
 
   /* ── Logout ── */
   const logout = () => {
@@ -301,10 +318,6 @@ const AdminDashboard = () => {
   const paidTx      = useMemo(() => transactions.filter((t) => t.status === "paid"),    [transactions]);
   const pendingTx   = useMemo(() => transactions.filter((t) => t.status === "pending"), [transactions]);
   const subRevenue  = useMemo(() => paidTx.reduce((s, t) => s + t.amount, 0),           [paidTx]);
-  const completedPayouts = useMemo(
-    () => payouts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0), [payouts]);
-  const pendingPayoutsTotal = useMemo(
-    () => payouts.filter((p) => p.status === "pending").reduce((s, p) => s + p.amount, 0), [payouts]);
 
   /* ── Filtered transactions ── */
   const filteredTx = useMemo(() =>
@@ -424,22 +437,15 @@ const AdminDashboard = () => {
         {activeTab === "overview" && (
           <div className="adm-fade-in">
             <div className="adm-kpi-grid">
-              <StatCard icon="⬡" label="Subscription Revenue" value={fmt(subRevenue)}
-                accent="accent" sub={`${paidTx.length} paid plans`} />
+              <StatCard icon="◎" label="Total Theaters"        value={theaters.length}
+                accent="blue"   sub="All registered" />
               <StatCard icon="◫" label="Active Theaters"       value={activeTheaters}
                 accent="green"  sub="Approved & live" />
-              
-              {/* FIXED: Combined User Stat in place of Pending Approvals */}
               <StatCard icon="👥" label="Total Users" 
                 value={userStats.owners + userStats.workers + userStats.customers}
                 accent="blue"  
                 sub={`${userStats.owners} Owners · ${userStats.workers} Workers · ${userStats.customers} Customers`} 
               />
-
-              <StatCard icon="◎" label="Total Theaters"        value={theaters.length}
-                accent="blue"   sub="All registered" />
-              <StatCard icon="✦" label="Paid Payouts"          value={fmt(completedPayouts)}
-                accent="green"  sub="Released to owners" />
             </div>
 
             <div className="adm-overview-row">
@@ -472,8 +478,6 @@ const AdminDashboard = () => {
                 {[
                   { label: "Subscription Revenue",  value: fmt(subRevenue),                                 color: "#6366f1" },
                   { label: "Pending Sub Payments",  value: fmt(pendingTx.reduce((s,t)=>s+t.amount,0)),     color: "#d97706" },
-                  { label: "Pending Payouts",        value: fmt(pendingPayoutsTotal),                       color: "#dc2626" },
-                  { label: "Completed Payouts",      value: fmt(completedPayouts),                          color: "#16a34a" },
                 ].map((item) => (
                   <div key={item.label} className="adm-health-row">
                     <span className="adm-health-label">{item.label}</span>
@@ -490,8 +494,6 @@ const AdminDashboard = () => {
           <div className="adm-fade-in">
             <div className="adm-kpi-grid">
               <StatCard icon="◈" label="Total Sub Revenue" value={fmt(subRevenue)}  accent="accent" />
-              <StatCard icon="✦" label="Active Plans"      value={activeTheaters}   accent="green"  />
-              <StatCard icon="○" label="Pending Plans"     value={pendingTheaters}  accent="amber"  />
               <StatCard icon="◎" label="Avg Plan Value"    value={fmt(subRevenue / (paidTx.length || 1))} accent="blue" />
             </div>
 
@@ -654,9 +656,8 @@ const AdminDashboard = () => {
           <div className="adm-fade-in">
             <div className="adm-kpi-grid">
               <StatCard icon="◎" label="Total Collected"  value={fmt(subRevenue)}          accent="accent" sub="From subscriptions" />
-              <StatCard icon="✦" label="Paid to Owners"   value={fmt(completedPayouts)}    accent="green"  sub="Released" />
-              <StatCard icon="◈" label="Pending Payouts"  value={fmt(pendingPayoutsTotal)} accent="amber"  sub="To be released" />
-              <StatCard icon="⬡" label="Platform Balance" value={fmt(subRevenue - completedPayouts - pendingPayoutsTotal)} accent="blue" sub="Net retained" />
+              <StatCard icon="◈" label="Pending Sub Payments" value={fmt(pendingTx.reduce((s, t) => s + t.amount, 0))} accent="amber" />
+              <StatCard icon="⬡" label="Total Transactions"   value={transactions.length} accent="blue" />
             </div>
 
             <div className="adm-card" style={{ marginBottom: 20 }}>
@@ -704,45 +705,6 @@ const AdminDashboard = () => {
                 </table>
               </div>
             </div>
-
-            <div className="adm-card">
-              <div className="adm-card-header">
-                <div className="adm-card-title">Owner Payouts</div>
-                <div className="adm-badge-row">
-                  <span className="adm-badge amber">{payouts.filter(p => p.status === "pending").length} pending</span>
-                  <span className="adm-badge green">{payouts.filter(p => p.status === "paid").length} completed</span>
-                </div>
-              </div>
-              <div className="adm-table-wrap">
-                <table className="adm-table">
-                  <thead><tr>
-                    <th>Payout ID</th><th>Owner</th><th>Theater</th>
-                    <th>Amount</th><th>Due Date</th><th>Status</th><th>Action</th>
-                  </tr></thead>
-                  <tbody>
-                    {payouts.map((p) => (
-                      <tr key={p.id}>
-                        <td><span className="adm-tx-id">{p.id}</span></td>
-                        <td className="adm-fw">{p.owner}</td>
-                        <td className="adm-muted">{p.theater}</td>
-                        <td className="adm-amount">{fmt(p.amount)}</td>
-                        <td className="adm-muted">{p.dueDate}</td>
-                        <td><span className={`adm-status-pill ${p.status}`}>{p.status}</span></td>
-                        <td>
-                          {p.status === "pending" ? (
-                            <button className="adm-release-btn" onClick={() => releasePayout(p.id)}>
-                              Release Payment
-                            </button>
-                          ) : (
-                            <span className="adm-muted" style={{ fontSize: 12 }}>Completed</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
           </div>
         )}
 
@@ -777,128 +739,82 @@ const AdminDashboard = () => {
                   <p>No theaters found</p>
                 </div>
               ) : (
-                <div className="adm-table-wrap">
-                  <table className="adm-table">
-                    <thead><tr>
-                      <th>Theater</th><th>Owner</th><th>Location</th>
-                      <th>Contact</th><th>Screens</th><th>Hours</th>
-                      <th>Status</th><th>Action</th>
-                    </tr></thead>
-                    <tbody>
-                      {filteredTheaters.map((t) => (
-                        <tr key={t._id}>
-                          <td>
-                            <div className="adm-fw">{t.name}</div>
-                            <div className="adm-muted" style={{ fontSize: 11 }}>{t.branchName}</div>
-                          </td>
-                          <td>
-                            <div>{t.ownerName || "—"}</div>
-                            <div className="adm-muted" style={{ fontSize: 11 }}>{t.email || "—"}</div>
-                          </td>
-                          <td>
-                            <div>{t.city || "—"}</div>
-                            <div className="adm-muted" style={{ fontSize: 11 }}>{t.address || "—"}</div>
-                          </td>
-                          <td>{t.contactNumber || "—"}</td>
-                          <td style={{ textAlign: "center" }}>{t.totalScreens || "—"}</td>
-                          <td style={{ fontSize: 12 }}>
-                            {formatTime(t.openingTime)}<br />{formatTime(t.closingTime)}
-                          </td>
-                          <td>
+                <div className="adm-theater-card-grid">
+                  {filteredTheaters.map((t) => {
+                    const isExpanded = expandedTheaterId === t._id;
+                    const bank = bankDetailsMap[t._id];
+                    return (
+                      <div className="adm-theater-card" key={t._id}>
+                        <div className="adm-tc-header">
+                          <div className="adm-tc-title-row">
+                            <h3 className="adm-tc-name">{t.name}</h3>
                             <span className={`adm-status-pill ${t.isActive ? "paid" : "pending"}`}>
                               {t.isActive ? "Active" : "Pending"}
                             </span>
-                          </td>
-                          <td>
-                            {t.isActive ? (
-                              <button className="adm-act-btn disable"
-                                disabled={actionLoading[t._id]}
-                                onClick={() => updateTheaterStatus(t._id, false)}>
-                                {actionLoading[t._id] ? "..." : "Disable"}
-                              </button>
-                            ) : (
-                              <button className="adm-act-btn approve"
-                                disabled={actionLoading[t._id]}
-                                onClick={() => updateTheaterStatus(t._id, true)}>
-                                {actionLoading[t._id] ? "..." : "Approve"}
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          </div>
+                          <div className="adm-tc-subtitle">{t.city || "—"}</div>
+                        </div>
+                        
+                        <div className="adm-tc-body">
+                          <div className="adm-tc-info">
+                            <span className="adm-tc-icon">👤</span> 
+                            <span>{t.ownerName || "No Owner specified"}</span>
+                          </div>
+                        </div>
+
+                        <div className="adm-tc-actions">
+                          <button className="adm-act-btn detail" onClick={() => setExpandedTheaterId(isExpanded ? null : t._id)}>
+                            {isExpanded ? "Hide Details" : "View Details"}
+                          </button>
+                          {t.isActive ? (
+                            <button className="adm-act-btn disable" disabled={actionLoading[t._id]} onClick={() => updateTheaterStatus(t._id, false)}>
+                              {actionLoading[t._id] ? "..." : "Disable"}
+                            </button>
+                          ) : (
+                            <button className="adm-act-btn approve" disabled={actionLoading[t._id]} onClick={() => updateTheaterStatus(t._id, true)}>
+                              {actionLoading[t._id] ? "..." : "Approve"}
+                            </button>
+                          )}
+                        </div>
+
+                        {isExpanded && (
+                          <div className="adm-tc-expanded">
+                            <div className="adm-tc-exp-grid">
+                              <div className="adm-tc-exp-col">
+                                <h4>Contact Info</h4>
+                                <p><strong>Email:</strong> {t.email || "—"}</p>
+                                <p><strong>Phone:</strong> {t.contactNumber || "—"}</p>
+                                <p><strong>Address:</strong> {t.address || "—"}</p>
+                              </div>
+                              <div className="adm-tc-exp-col">
+                                <h4>Operations</h4>
+                                <p><strong>Screens:</strong> {t.totalScreens || "—"}</p>
+                                <p><strong>Timings:</strong> {formatTime(t.openingTime)} - {formatTime(t.closingTime)}</p>
+                              </div>
+                            </div>
+                            <div className="adm-tc-exp-bank">
+                              <h4>Bank Details</h4>
+                              {bank ? (
+                                <div className="adm-tc-bank-info">
+                                  <p><strong>Account Holder:</strong> {bank.accountHolder || "—"}</p>
+                                  <p><strong>Account Number:</strong> {bank.accountNumber || "—"}</p>
+                                  <p><strong>UPI ID:</strong> {bank.upiId || "—"}</p>
+                                </div>
+                              ) : (
+                                <p className="adm-muted" style={{fontSize: 13}}>No bank details available.</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
           </div>
         )}
-        {/* ══ TAB: USERS ══ */}
-        {activeTab === "users" && (
-          <div className="adm-fade-in">
-            <div className="adm-kpi-grid">
-              <StatCard icon="👤" label="Total Owners"    value={userStats.owners}    accent="accent" />
-              <StatCard icon="👷" label="Total Workers"   value={userStats.workers}   accent="blue" />
-              <StatCard icon="🛍️" label="Total Customers" value={userStats.customers} accent="green" />
-            </div>
 
-            <div className="adm-card">
-              <div className="adm-card-header">
-                <div className="adm-card-title">User Directory</div>
-                <div className="adm-badge-row">
-                  <span className="adm-badge blue">{userStats.owners + userStats.workers + userStats.customers} Active Accounts</span>
-                </div>
-              </div>
-              <div className="adm-table-wrap">
-                <table className="adm-table">
-                  <thead>
-                    <tr>
-                      <th>User Name</th>
-                      <th>Identify / Role</th>
-                      <th>Associated Theater</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* Unique Owners Derived from Theaters List */}
-                    {(() => {
-                      const seen = new Set();
-                      return theaters.reduce((acc, t) => {
-                        const key = t.email || t.ownerName;
-                        if (key && !seen.has(key)) {
-                          seen.add(key);
-                          acc.push(t);
-                        }
-                        return acc;
-                      }, []).map((t, i) => (
-                        <tr key={`owner-${i}`}>
-                          <td className="adm-fw">{t.ownerName || "Unknown Owner"}</td>
-                          <td>
-                            <span className="adm-status-pill paid" style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', textTransform: 'capitalize' }}>
-                              Owner
-                            </span>
-                          </td>
-                          <td className="adm-muted">{t.name}</td>
-                          <td><span className="adm-status-pill paid">Active</span></td>
-                        </tr>
-                      ));
-                    })()}
-                    {/* List Info Note */}
-                    <tr>
-                      <td colSpan="4" style={{ textAlign: 'center', padding: '24px', color: '#666', background: '#fafafa' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '20px' }}>📊</span>
-                          <p style={{ margin: 0, fontWeight: '500' }}>Workers & Customers analytics are currently summarized.</p>
-                          <p style={{ margin: 0, fontSize: '12px', opacity: 0.7 }}>Unified detailed directory is awaiting backend API sync.</p>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
 
       {/* ══ MOBILE BOTTOM NAV ══ */}
