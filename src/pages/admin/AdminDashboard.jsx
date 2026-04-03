@@ -72,6 +72,7 @@ const AdminDashboard = () => {
   const [txFilter,        setTxFilter]        = useState("all");
   const [theaterSearch,   setTheaterSearch]   = useState("");
   const [theaterFilter,   setTheaterFilter]   = useState("all");
+  const [overviewMetric,  setOverviewMetric]  = useState("both"); // "revenue", "subs", "both"
 
   const [plans,           setPlans]           = useState([]);
   const [loadingPlans,    setLoadingPlans]    = useState(false);
@@ -500,24 +501,63 @@ const AdminDashboard = () => {
             <div className="adm-overview-row">
               <div className="adm-card adm-chart-card">
                 <div className="adm-card-header">
-                  <div className="adm-card-title">Subscription Revenue (Last 6 Months)</div>
+                  <div className="adm-card-title">Platform Performance</div>
+                  <div className="adm-seg-btns">
+                    {[
+                      { key: "revenue", label: "💰 Revenue", color: "#6366f1" },
+                      { key: "subs",    label: "📦 Subs",    color: "#8b5cf6" },
+                      { key: "both",    label: "💠 Both",    color: "var(--text)" }
+                    ].map((m) => (
+                      <button key={m.key}
+                        className={`adm-seg-btn ${overviewMetric === m.key ? "active" : ""}`}
+                        style={overviewMetric === m.key ? { color: m.color } : {}}
+                        onClick={() => setOverviewMetric(m.key)}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div style={{ padding: "12px 8px 4px" }}>
-                  <ResponsiveContainer width="100%" height={180}>
+                  <ResponsiveContainer width="100%" height={220}>
                     <AreaChart data={realRevenueData.monthly}>
                       <defs>
                         <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.2} />
                           <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                         </linearGradient>
+                        <linearGradient id="subCntGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%"  stopColor="#8b5cf6" stopOpacity={0.15} />
+                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                        </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                      <YAxis hide />
+                      
+                      {/* Left Axis: Revenue */}
+                      {(overviewMetric === "revenue" || overviewMetric === "both") && (
+                        <YAxis yAxisId="left" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
+                      )}
+                      
+                      {/* Right Axis: Subscriptions */}
+                      {(overviewMetric === "subs" || overviewMetric === "both") && (
+                        <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={30} />
+                      )}
+
                       <Tooltip content={<CustomTooltip />} />
-                      <Area type="monotone" dataKey="revenue" name="revenue"
-                        stroke="#6366f1" strokeWidth={2} fill="url(#revGrad)" dot={false} 
-                        data={realRevenueData.monthly.filter(d => d.revenue > 0 || d.subs > 0).length > 0 ? realRevenueData.monthly : realRevenueData.monthly.slice(-6)} />
+                      <Legend verticalAlign="top" height={36} />
+
+                      {/* Area: Revenue */}
+                      {(overviewMetric === "revenue" || overviewMetric === "both") && (
+                        <Area yAxisId="left" type="monotone" dataKey="revenue" name="Revenue"
+                          stroke="#6366f1" strokeWidth={2} fill="url(#revGrad)" dot={false} />
+                      )}
+
+                      {/* Area: Subscriptions */}
+                      {(overviewMetric === "subs" || overviewMetric === "both") && (
+                        <Area yAxisId="right" type="monotone" dataKey="subs" name="Subscriptions"
+                          stroke="#8b5cf6" strokeWidth={2} fill="url(#subCntGrad)" dot={false} />
+                      )}
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
