@@ -904,6 +904,7 @@ const AdminDashboard = () => {
                               <h4>Bank Details</h4>
                               {bank ? (
                                 <div className="adm-tc-bank-info">
+                                  <p><strong>Bank Name:</strong> {bank.bankName || "—"}</p>
                                   <p><strong>Account Holder Name:</strong> {bank.accountHolder || "—"}</p>
                                   <p><strong>Account Number:</strong> {bank.accountNumber || "—"}</p>
                                   <p><strong>IFSC Code:</strong> {bank.ifscCode || bank.ifsc || "—"}</p>

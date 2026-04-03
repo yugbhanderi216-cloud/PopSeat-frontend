@@ -58,8 +58,9 @@
   width: var(--sidebar-w);
   min-height: 100vh;
   height: 100vh;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
   background: var(--surface);
   border-right: 1px solid var(--border);
   display: flex;
@@ -160,8 +161,21 @@
   flex: 1;
   padding: 24px 28px 40px;
   min-width: 0;
+  margin-left: var(--sidebar-w);
   overflow-x: hidden;
-  transition: padding 0.25s;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* Collapse state handling for main content margins */
+.adm-root.sidebar-collapsed .adm-main {
+  margin-left: 0;
+}
+
+@media (max-width: 768px) {
+  .adm-main {
+    margin-left: 0;
+    padding: 16px 14px 90px;
+  }
 }
 
 /* ── TOPBAR ── */
