@@ -449,6 +449,15 @@
   white-space: nowrap;
 }
 
+.order-items-empty {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-dim, #ABA8CC);
+  font-style: italic;
+  text-align: center;
+  padding: 4px 0;
+}
+
 /* ─── Action button (right side) ─── */
 .order-actions {
   display: flex;

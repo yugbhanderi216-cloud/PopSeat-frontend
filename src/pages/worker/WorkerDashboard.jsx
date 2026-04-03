@@ -271,6 +271,8 @@ const WorkerDashboard = () => {
             const action     = STATUS_FLOW[status];
             const ordId      = order._id;
             const isUpdating = updatingId === ordId;
+            // Fallback: backend may use cartItems/orderItems/foodItems instead of items
+            const orderItems = order.items || order.cartItems || order.orderItems || order.foodItems || [];
 
             return (
 
@@ -325,13 +327,13 @@ const WorkerDashboard = () => {
                 </div>
 
                 {/* Items list */}
-                {Array.isArray(order.items) && order.items.length > 0 && (
+                {Array.isArray(orderItems) && orderItems.length > 0 && (
                   <div className="order-items">
-                    {order.items.map((item, i) => (
+                    {orderItems.map((item, i) => (
                       <div key={i} className="order-item-row">
-                        <span>{item.name}</span>
-                        <span>×{item.quantity}</span>
-                        <span>₹{item.price}</span>
+                        <span>{item.name || item.itemName || item.foodName || "Item"}</span>
+                        <span>×{item.quantity || item.qty || 1}</span>
+                        <span>₹{item.price || item.unitPrice || 0}</span>
                       </div>
                     ))}
                   </div>

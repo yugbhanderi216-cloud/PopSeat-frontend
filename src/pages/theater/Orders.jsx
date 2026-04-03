@@ -464,6 +464,8 @@ const Orders = () => {
             const nextLabel     = NEXT_LABEL[currentStatus];
             const isUpdating    = !!updating[order._id];
             const displaySeat   = order.seatNumber || getSeatNumber(order.seatId);
+            // Fallback: backend may use cartItems/orderItems/foodItems instead of items
+            const orderItems    = order.items || order.cartItems || order.orderItems || order.foodItems || [];
 
             return (
               <div key={order._id} className="order-card">
@@ -504,22 +506,30 @@ const Orders = () => {
                     </span>
                   </div>
 
-                  {Array.isArray(order.items) && order.items.length > 0 && (
-                    <div className="order-items">
-                      {order.items.map((item, i) => (
+                  {/* ── Order Items ── */}
+                  <div className="order-items">
+                    {Array.isArray(orderItems) && orderItems.length > 0 ? (
+                      orderItems.map((item, i) => (
                         <div key={i} className="order-item-row">
                           <span className="order-item-dot" />
-                          <span className="order-item-name">{item.name}</span>
-                          <span className="order-item-qty">× {item.quantity}</span>
-                          {item.price && (
+                          <span className="order-item-name">
+                            {item.name || item.itemName || item.foodName || "Item"}
+                            {item.size ? ` (${item.size})` : ""}
+                          </span>
+                          <span className="order-item-qty">× {item.quantity || item.qty || 1}</span>
+                          {(item.price || item.unitPrice) && (
                             <span className="order-item-price">
-                              ₹{item.price * item.quantity}
+                              ₹{(item.price || item.unitPrice) * (item.quantity || item.qty || 1)}
                             </span>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      ))
+                    ) : (
+                      <div className="order-items-empty">
+                        🍽️ Item details not provided by the server
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {nextStatus && currentStatus !== "delivered" && (
