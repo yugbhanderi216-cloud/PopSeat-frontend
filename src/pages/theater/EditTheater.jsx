@@ -447,7 +447,7 @@ const EditTheater = () => {
           <div className="edit-field-row">
             <div className="edit-field">
               <label className="edit-label">Theater Logo
-                <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}>(optional)</span>
+                <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}></span>
               </label>
               <input className="edit-input" name="theaterLogo" type="file" accept="image/*" onChange={handleFileChange} />
               {theaterData.theaterLogo && (
@@ -461,7 +461,7 @@ const EditTheater = () => {
             </div>
             <div className="edit-field">
               <label className="edit-label">Banner Image
-                <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}>(optional)</span>
+                <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}></span>
               </label>
               <input className="edit-input" name="banner" type="file" accept="image/*" onChange={handleFileChange} />
               {theaterData.banner && (
@@ -480,7 +480,7 @@ const EditTheater = () => {
         <div className="edit-section">
           <h3 className="edit-section-title">
             Bank Details
-            <span style={{ fontSize: 12, color: "#aaa", fontWeight: 400, marginLeft: 8 }}>(optional)</span>
+            <span style={{ fontSize: 12, color: "#aaa", fontWeight: 400, marginLeft: 8 }}></span>
           </h3>
           <div className="edit-field-row">
             <div className="edit-field">
@@ -511,7 +511,7 @@ const EditTheater = () => {
             </div>
           </div>
           <div className="edit-field">
-            <label className="edit-label">UPI ID (optional)</label>
+            <label className="edit-label">UPI ID</label>
             <input className="edit-input" name="upiId" value={theaterData.upiId} onChange={handleChange} placeholder="UPI ID" />
           </div>
         </div>

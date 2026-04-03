@@ -1,488 +1,318 @@
 /* ═══════════════════════════════════════════
-   GOOGLE FONTS
+   DESIGN TOKENS (Shared System)
 ═══════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface2: #f9fafb;
+  --border: #e4e7ec;
+  --text: #0f172a;
+  --text-2: #334155;
+  --muted: #64748b;
+  --dim: #94a3b8;
+  --accent: #6366f1;
+  --accent-dk: #4f46e5;
+  --accent-lt: #eef2ff;
+  --green: #16a34a;
+  --green-lt: #f0fdf4;
+  --amber: #d97706;
+  --amber-lt: #fffbeb;
+  --red: #dc2626;
+  --red-lt: #fef2f2;
+  --blue: #2563eb;
+  --blue-lt: #eff6ff;
+  --sh: 0 1px 2px rgba(0, 0, 0, .06), 0 1px 3px rgba(0, 0, 0, .04);
+  --sh-md: 0 4px 12px rgba(0, 0, 0, .07);
+  --sh-lg: 0 8px 28px rgba(0, 0, 0, .09);
+  --radius: 10px;
+  --radius-lg: 14px;
+}
 
 /* ═══════════════════════════════════════════
-   PAGE WRAPPER
+   PAGE
 ═══════════════════════════════════════════ */
 .edit-page {
+  padding: 24px 28px 60px;
+  background: var(--bg);
   min-height: 100vh;
-  background: var(--bg, #F2F0FF);
-  padding: 36px 20px 60px;
+  color: var(--text);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  box-sizing: border-box;
   display: flex;
   justify-content: center;
-  position: relative;
-  box-sizing: border-box;
-}
-
-/* Dot-grid texture */
-.edit-page::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: radial-gradient(circle, rgba(108,99,255,0.05) 1px, transparent 1px);
-  background-size: 28px 28px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Ambient glow */
-.edit-page::after {
-  content: '';
-  position: fixed;
-  bottom: -80px;
-  right: -80px;
-  width: 400px;
-  height: 400px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(108,99,255,0.08) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
 }
 
 /* ═══════════════════════════════════════════
-   CARD CONTAINER
+   CONTAINER CARD
 ═══════════════════════════════════════════ */
 .edit-container {
-  position: relative;
-  z-index: 1;
   width: 100%;
-  max-width: 720px;
-  background: var(--surface, #fff);
-  border-radius: 24px;
-  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
-  box-shadow:
-    0 2px 16px rgba(108,99,255,0.10),
-    inset 0 1px 0 rgba(255,255,255,0.9);
-  padding: 40px 40px 36px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  color: var(--text, #1A1740);
-  box-sizing: border-box;
-  animation: cardReveal 0.45s cubic-bezier(0.22,1,0.36,1) both;
+  max-width: 800px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--sh-md);
+  padding: 40px;
+  position: relative;
   overflow: hidden;
+  animation: fadeUp 0.4s ease both;
   align-self: flex-start;
 }
 
-/* Shimmer top accent */
 .edit-container::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(
-    90deg,
-    var(--violet-deep, #4F46E5),
-    var(--violet-light, #8B84FF),
-    var(--violet-deep, #4F46E5)
-  );
-  background-size: 200% 100%;
-  animation: shimmer 3s linear infinite;
+  top: 0; left: 0;
+  width: 6px; height: 100%;
+  background: var(--accent);
+  z-index: 10;
 }
 
-@keyframes cardReveal {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* Loading state variant */
-.edit-container--loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 40px;
-  gap: 18px;
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ═══════════════════════════════════════════
-   LOADING SPINNER
-═══════════════════════════════════════════ */
-.edit-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--violet-soft, rgba(108,99,255,0.12));
-  border-top-color: var(--violet, #6C63FF);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-.edit-loading-text {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-muted, #6B6891);
-  margin: 0;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ═══════════════════════════════════════════
-   HEADER — FIX 3
+   HEADER
 ═══════════════════════════════════════════ */
 .edit-header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 28px;
-  padding-bottom: 22px;
-  border-bottom: 1px solid var(--border-soft, rgba(108,99,255,0.09));
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
 }
 
 .edit-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 22px;
-  font-weight: 900;
-  color: var(--text, #1A1740);
-  margin: 0 0 3px;
-  letter-spacing: -0.02em;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
+  letter-spacing: -0.5px;
 }
 
 .edit-subtitle {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-dim, #ABA8CC);
-  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-top: 4px;
 }
 
-/* ═══════════════════════════════════════════
-   BACK BUTTON — FIX 7
-   Separate class so it doesn't get violet styles
-═══════════════════════════════════════════ */
 .edit-back-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  background: var(--surface2, #F7F6FF);
-  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
-  border-radius: 10px;
-  color: var(--text-muted, #6B6891);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.18s ease;
-  padding: 8px 16px;
+  transition: all 0.12s;
+  margin-top: 12px;
 }
 
 .edit-back-btn:hover {
-  background: var(--violet-soft, rgba(108,99,255,0.08));
-  border-color: var(--violet, #6C63FF);
-  color: var(--violet, #6C63FF);
-}
-
-/* Icon variant (just ← in header) */
-.edit-back-btn--icon {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  font-size: 18px;
-  flex-shrink: 0;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-lt);
 }
 
 /* ═══════════════════════════════════════════
-   STATUS MESSAGES — FIX 2
+   STATUS MESSAGES
 ═══════════════════════════════════════════ */
 .edit-msg {
-  border-radius: 10px;
-  padding: 11px 15px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  padding: 12px 16px;
+  border-radius: var(--radius);
   font-size: 13px;
   font-weight: 600;
-  margin-bottom: 18px;
+  margin-bottom: 24px;
   line-height: 1.5;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  animation: fadeIn 0.3s ease;
 }
 
-.edit-msg--success {
-  background: rgba(34,197,94,0.08);
-  border: 1px solid rgba(34,197,94,0.24);
-  color: #15803d;
-}
+.edit-msg--success { background: var(--green-lt); border: 1px solid rgba(22, 163, 74, 0.22); color: var(--green); }
+.edit-msg--error { background: var(--red-lt); border: 1px solid rgba(220, 38, 38, 0.22); color: var(--red); }
 
-.edit-msg--error {
-  background: rgba(239,68,68,0.08);
-  border: 1px solid rgba(239,68,68,0.22);
-  color: #dc2626;
-}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* ═══════════════════════════════════════════
    FORM SECTIONS
 ═══════════════════════════════════════════ */
 .edit-section {
-  margin-bottom: 28px;
+  margin-bottom: 40px;
 }
+
+.edit-section:last-of-type { margin-bottom: 24px; }
 
 .edit-section-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 13.5px;
+  font-size: 11px;
   font-weight: 800;
-  color: var(--text-muted, #6B6891);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin: 0 0 18px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-soft, rgba(108,99,255,0.09));
+  letter-spacing: 0.12em;
+  color: var(--dim);
+  margin: 0 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-/* Two-column field row */
+.edit-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ═══════════════════════════════════════════
+   FIELDS & INPUTS
+═══════════════════════════════════════════ */
 .edit-field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
+}
+
+@media (max-width: 600px) {
+  .edit-field-row { grid-template-columns: 1fr; gap: 0; }
 }
 
 .edit-field {
   display: flex;
   flex-direction: column;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
-/* ═══════════════════════════════════════════
-   LABELS
-═══════════════════════════════════════════ */
 .edit-label {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
-  color: var(--text-muted, #6B6891);
-  margin-bottom: 6px;
+  color: var(--muted);
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
-  gap: 3px;
 }
 
-.edit-required {
-  color: #EF4444;
-  font-size: 13px;
-  line-height: 1;
-}
+.edit-required { color: var(--red); margin-left: 2px; }
 
-/* ═══════════════════════════════════════════
-   INPUTS — FIX 6: box-sizing added
-═══════════════════════════════════════════ */
-.edit-input {
-  width: 100%;
-  box-sizing: border-box; /* FIX 6 */
-  padding: 11px 13px;
-  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
-  border-radius: 10px;
-  font-size: 13.5px;
-  font-weight: 500;
-  background: var(--surface2, #F7F6FF);
-  color: var(--text, #1A1740);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  transition: all 0.18s ease;
-  box-shadow: inset 0 1px 2px rgba(108,99,255,0.04);
-  outline: none;
-}
-
-.edit-input::placeholder { color: var(--text-dim, #ABA8CC); }
-
-.edit-input:focus {
-  border-color: var(--violet, #6C63FF);
-  background: var(--surface, #fff);
-  box-shadow: 0 0 0 3px var(--violet-glow, rgba(108,99,255,0.14));
-}
-
-.edit-input:hover:not(:focus) {
-  border-color: var(--border, rgba(108,99,255,0.18));
-}
-
-/* Time input special styling */
-.edit-input--time {
-  cursor: pointer;
-  color-scheme: light;
-}
-
-/* ═══════════════════════════════════════════
-   TEXTAREA
-═══════════════════════════════════════════ */
-.edit-textarea {
+.edit-input, .edit-textarea {
   width: 100%;
   box-sizing: border-box;
-  padding: 11px 13px;
-  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
-  border-radius: 10px;
+  padding: 11px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
   font-size: 13.5px;
   font-weight: 500;
-  background: var(--surface2, #F7F6FF);
-  color: var(--text, #1A1740);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  resize: vertical;
-  min-height: 90px;
-  transition: all 0.18s ease;
-  box-shadow: inset 0 1px 2px rgba(108,99,255,0.04);
+  transition: all .12s;
   outline: none;
 }
 
-.edit-textarea::placeholder { color: var(--text-dim, #ABA8CC); }
-
-.edit-textarea:focus {
-  border-color: var(--violet, #6C63FF);
-  background: var(--surface, #fff);
-  box-shadow: 0 0 0 3px var(--violet-glow, rgba(108,99,255,0.14));
+.edit-input:focus, .edit-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-lt);
 }
 
-.edit-textarea:hover:not(:focus) {
-  border-color: var(--border, rgba(108,99,255,0.18));
+.edit-input--time { cursor: pointer; color-scheme: light; }
+.edit-textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+
+/* ═══════════════════════════════════════════
+   MEDIA & PREVIEWS
+═══════════════════════════════════════════ */
+.edit-field img {
+  border: 1px solid var(--border);
+  box-shadow: var(--sh);
+  object-fit: cover;
+  transition: all 0.2s;
+}
+
+.edit-field img:hover { transform: scale(1.02); box-shadow: var(--sh-md); }
+
+/* File input styling nudge */
+input[type="file"] {
+  font-size: 12px;
+  color: var(--dim);
+  padding: 8px 10px;
+  background: var(--surface2);
+  border-radius: 8px;
+  cursor: pointer;
 }
 
 /* ═══════════════════════════════════════════
-   SAVE BUTTON — FIX 7: explicit class
+   SAVE BUTTON
 ═══════════════════════════════════════════ */
 .edit-save-btn {
   width: 100%;
-  padding: 14px 20px;
-  border-radius: 12px;
+  padding: 14px;
+  border-radius: var(--radius);
   border: none;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 14.5px;
-  font-weight: 800;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
-  letter-spacing: 0.01em;
-  background: linear-gradient(
-    135deg,
-    var(--violet, #6C63FF) 0%,
-    var(--violet-deep, #4F46E5) 100%
-  );
-  color: white;
-  box-shadow:
-    0 4px 18px rgba(108,99,255,0.35),
-    inset 0 1px 0 rgba(255,255,255,0.14);
-  transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
-  position: relative;
-  overflow: hidden;
-  margin-top: 8px;
-}
-
-/* Shine overlay */
-.edit-save-btn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 55%);
-}
-
-.edit-save-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 26px rgba(108,99,255,0.44);
-}
-
-.edit-save-btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.99);
-  box-shadow: 0 3px 10px rgba(108,99,255,0.28);
-}
-
-.edit-save-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* Loading state inside button */
-.edit-save-loading {
+  transition: all 0.15s;
+  box-shadow: var(--sh);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
 }
 
+.edit-save-btn:hover:not(:disabled) {
+  background: var(--accent-dk);
+  transform: translateY(-1px);
+  box-shadow: var(--sh-md);
+}
+
+.edit-save-btn:active:not(:disabled) { transform: translateY(0); }
+.edit-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.edit-save-loading { display: flex; align-items: center; gap: 10px; }
 .edit-save-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2.5px solid rgba(255,255,255,0.35);
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
-  flex-shrink: 0;
 }
+
+/* ═══════════════════════════════════════════
+   LOADING & EMPTY
+═══════════════════════════════════════════ */
+.edit-container--loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+}
+
+.edit-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--accent-lt);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ═══════════════════════════════════════════
    RESPONSIVE
 ═══════════════════════════════════════════ */
-@media (max-width: 720px) {
-  .edit-page       { padding: 20px 14px 48px; }
-  .edit-container  { padding: 28px 22px 26px; border-radius: 18px; }
-  .edit-title      { font-size: 19px; }
-  .edit-field-row  { grid-template-columns: 1fr; gap: 0; }
+@media (max-width: 860px) {
+  .edit-page { padding: 16px; }
+  .edit-container { padding: 32px 24px; }
 }
 
-@media (max-width: 400px) {
-  .edit-container  { padding: 22px 16px 22px; }
-  .edit-save-btn   { font-size: 13.5px; padding: 13px; }
-}
-/* ═══════════════════════════════════════════
-   ADD THESE RULES TO THE BOTTOM OF EditTheater.css
-   Media section + section badge
-═══════════════════════════════════════════ */
-
-/* Section badge (e.g. "Stored — not editable here") */
-.edit-section-badge {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--text-dim, #ABA8CC);
-  background: var(--surface2, #F7F6FF);
-  border: 1px solid var(--border-soft, rgba(108,99,255,0.09));
-  border-radius: 999px;
-  padding: 3px 10px;
-  margin-left: 8px;
-  vertical-align: middle;
-}
-
-/* Media preview row */
-.edit-media-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 8px;
-}
-
-.edit-media-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.edit-media-item--wide {
-  flex: 1;
-  min-width: 200px;
-}
-
-.edit-media-label {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-dim, #ABA8CC);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin: 0;
-}
-
-.edit-media-img {
-  width: 72px;
-  height: 72px;
-  object-fit: cover;
-  border-radius: 10px;
-  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
-  box-shadow: 0 2px 8px rgba(108,99,255,0.08);
-}
-
-.edit-media-img--banner {
-  width: 100%;
-  max-width: 320px;
-  height: 90px;
-  border-radius: 10px;
+@media (max-width: 480px) {
+  .edit-container { padding: 24px 16px; border-radius: 0; border: none; box-shadow: none; }
+  .edit-container::before { width: 4px; }
+  .edit-title { font-size: 20px; }
 }
