@@ -73,6 +73,7 @@ const AdminDashboard = () => {
   const [theaterSearch,   setTheaterSearch]   = useState("");
   const [theaterFilter,   setTheaterFilter]   = useState("all");
   const [overviewMetric,  setOverviewMetric]  = useState("both"); // "revenue", "subs", "both"
+  const [subscriptionMetric, setSubscriptionMetric] = useState("both"); // "revenue", "subs", "both"
 
   const [plans,           setPlans]           = useState([]);
   const [loadingPlans,    setLoadingPlans]    = useState(false);
@@ -589,16 +590,35 @@ const AdminDashboard = () => {
 
             <div className="adm-card" style={{ marginBottom: 20 }}>
               <div className="adm-card-header">
-                <div className="adm-card-title">Subscription Revenue</div>
-                <div className="adm-seg-btns">
-                  {["daily", "weekly", "monthly", "yearly"].map((r) => (
-                    <button key={r}
-                      className={`adm-seg-btn ${revenueRange === r ? "active" : ""}`}
-                      onClick={() => setRevenueRange(r)}
-                    >
-                      {r.charAt(0).toUpperCase() + r.slice(1)}
-                    </button>
-                  ))}
+                <div className="adm-card-title">Subscription Trends</div>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  {/* Time Range Toggle */}
+                  <div className="adm-seg-btns">
+                    {["daily", "weekly", "monthly", "yearly"].map((r) => (
+                      <button key={r}
+                        className={`adm-seg-btn ${revenueRange === r ? "active" : ""}`}
+                        onClick={() => setRevenueRange(r)}
+                      >
+                        {r.charAt(0).toUpperCase() + r.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Metric Toggle */}
+                  <div className="adm-seg-btns">
+                    {[
+                      { key: "revenue", label: "💰 Revenue", color: "#6366f1" },
+                      { key: "subs",    label: "📦 Subs",    color: "#8b5cf6" },
+                      { key: "both",    label: "💠 Both",    color: "var(--text)" }
+                    ].map((m) => (
+                      <button key={m.key}
+                        className={`adm-seg-btn ${subscriptionMetric === m.key ? "active" : ""}`}
+                        style={subscriptionMetric === m.key ? { color: m.color } : {}}
+                        onClick={() => setSubscriptionMetric(m.key)}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div style={{ padding: "12px 8px 4px" }}>
@@ -616,16 +636,33 @@ const AdminDashboard = () => {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis yAxisId="left"  tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                    
+                    {/* Left Axis: Revenue */}
+                    {(subscriptionMetric === "revenue" || subscriptionMetric === "both") && (
+                      <YAxis yAxisId="left" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                    )}
+
+                    {/* Right Axis: Subscriptions */}
+                    {(subscriptionMetric === "subs" || subscriptionMetric === "both") && (
+                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                    )}
+
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Area yAxisId="left"  type="monotone" dataKey="revenue" name="revenue"
-                      stroke="#6366f1" strokeWidth={2} fill="url(#subRevGrad)" dot={false} 
-                      data={realRevenueData[revenueRange]} />
-                    <Area yAxisId="right" type="monotone" dataKey="subs" name="subscriptions"
-                      stroke="#8b5cf6" strokeWidth={2} fill="url(#subCntGrad)" dot={false} 
-                      data={realRevenueData[revenueRange]} />
+                    <Legend verticalAlign="top" height={36} />
+
+                    {/* Area: Revenue */}
+                    {(subscriptionMetric === "revenue" || subscriptionMetric === "both") && (
+                      <Area yAxisId="left" type="monotone" dataKey="revenue" name="Revenue"
+                        stroke="#6366f1" strokeWidth={2} fill="url(#subRevGrad)" dot={false} 
+                        data={realRevenueData[revenueRange]} />
+                    )}
+
+                    {/* Area: Subscriptions */}
+                    {(subscriptionMetric === "subs" || subscriptionMetric === "both") && (
+                      <Area yAxisId="right" type="monotone" dataKey="subs" name="Subscriptions"
+                        stroke="#8b5cf6" strokeWidth={2} fill="url(#subCntGrad)" dot={false} 
+                        data={realRevenueData[revenueRange]} />
+                    )}
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
