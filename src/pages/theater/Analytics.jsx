@@ -6,7 +6,7 @@ import {
 } from "recharts";
 import "./Analytics.css";
 
-const API_BASE = "https://popseat.onrender.com/api";
+const API_BASE   = "https://popseat.onrender.com/api";
 const ALL_STATUSES = ["placed", "preparing", "ready", "delivered"];
 
 const getToken = () =>
@@ -24,19 +24,26 @@ const getRole = () =>
 const formatCurrency = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
 const CHART_RANGES = [
-  { key: "daily",   label: "Daily"   },
-  { key: "weekly",  label: "Weekly"  },
-  { key: "monthly", label: "Monthly" },
-  { key: "yearly",  label: "Yearly"  },
+  { key: "daily",   label: "Today"   },
+  { key: "weekly",  label: "7 Days"  },
+  { key: "monthly", label: "30 Days" },
+  { key: "yearly",  label: "12 Mo."  },
 ];
 
-// Orders tab | Revenue tab | Both tab
 const CHART_METRICS = [
   { key: "orders",  label: "Orders"  },
   { key: "revenue", label: "Revenue" },
   { key: "both",    label: "Both"    },
 ];
 
+const STATUS_CONFIG = [
+  { key: "placed",    label: "Placed",    color: "#6C63FF" },
+  { key: "preparing", label: "Preparing", color: "#f59e0b" },
+  { key: "ready",     label: "Ready",     color: "#0891b2" },
+  { key: "delivered", label: "Delivered", color: "#16a34a" },
+];
+
+/* ── Tooltip ── */
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
@@ -52,25 +59,25 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
+/* ── Build time-bucketed chart data ── */
 const buildChartData = (orders, range) => {
   const now = new Date();
 
   if (range === "daily") {
     const buckets = {};
     for (let h = 23; h >= 0; h--) {
-      const d = new Date(now); d.setHours(now.getHours() - h, 0, 0, 0);
-      const hr = d.getHours();
-      const key = `${hr.toString().padStart(2, "0")}:00`;
+      const d   = new Date(now); d.setHours(now.getHours() - h, 0, 0, 0);
+      const key = `${d.getHours().toString().padStart(2, "0")}:00`;
       buckets[key] = { label: key, Orders: 0, Revenue: 0 };
     }
     orders.forEach((o) => {
-      const d = new Date(o.createdAt);
-      const diffHours = (now - d) / (1000 * 60 * 60);
-      if (diffHours <= 24 && d.getDate() === now.getDate()) {
+      const d        = new Date(o.createdAt);
+      const diffHrs  = (now - d) / (1000 * 60 * 60);
+      if (diffHrs <= 24 && d.getDate() === now.getDate()) {
         const key = `${d.getHours().toString().padStart(2, "00")}:00`;
         if (buckets[key]) {
-          buckets[key].Orders += 1;
-          if (o.orderStatus === "delivered") buckets[key].Revenue += o.totalAmount || 0;
+          buckets[key].Orders  += 1;
+          buckets[key].Revenue += o.totalAmount || 0;
         }
       }
     });
@@ -78,22 +85,21 @@ const buildChartData = (orders, range) => {
   }
 
   if (range === "weekly" || range === "monthly") {
+    const days    = range === "weekly" ? 7 : 30;
     const buckets = {};
-    const days = range === "weekly" ? 7 : 30;
     for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(now.getDate() - i);
+      const d   = new Date(now); d.setDate(now.getDate() - i);
       const key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
       buckets[key] = { label: key, Orders: 0, Revenue: 0 };
     }
     orders.forEach((o) => {
-      const d = new Date(o.createdAt);
+      const d        = new Date(o.createdAt);
       const diffDays = (now - d) / (1000 * 60 * 60 * 24);
       if (diffDays <= days) {
         const key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
         if (buckets[key]) {
-          buckets[key].Orders += 1;
-          if (o.orderStatus === "delivered") buckets[key].Revenue += o.totalAmount || 0;
+          buckets[key].Orders  += 1;
+          buckets[key].Revenue += o.totalAmount || 0;
         }
       }
     });
@@ -103,20 +109,18 @@ const buildChartData = (orders, range) => {
   if (range === "yearly") {
     const buckets = {};
     for (let i = 11; i >= 0; i--) {
-      const d = new Date(now);
-      d.setMonth(now.getMonth() - i);
+      const d   = new Date(now); d.setMonth(now.getMonth() - i);
       const key = d.toLocaleDateString("en-US", { month: "short" });
       buckets[key] = { label: key, Orders: 0, Revenue: 0 };
     }
     orders.forEach((o) => {
-      const d = new Date(o.createdAt);
-      const diffMonths =
-        (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+      const d          = new Date(o.createdAt);
+      const diffMonths = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
       if (diffMonths >= 0 && diffMonths <= 11) {
         const key = d.toLocaleDateString("en-US", { month: "short" });
         if (buckets[key]) {
-          buckets[key].Orders += 1;
-          if (o.orderStatus === "delivered") buckets[key].Revenue += o.totalAmount || 0;
+          buckets[key].Orders  += 1;
+          buckets[key].Revenue += o.totalAmount || 0;
         }
       }
     });
@@ -126,14 +130,37 @@ const buildChartData = (orders, range) => {
   return [];
 };
 
+/* ── Compute top-selling items from orders ── */
+const buildTopItems = (orders) => {
+  const map = {};
+  orders.forEach((o) => {
+    const items =
+      o.items || o.cartItems || o.orderItems || o.foodItems || [];
+    items.forEach((item) => {
+      const name = item.name || item.itemName || item.foodName || "Unknown Item";
+      const qty  = item.quantity || item.qty || 1;
+      const rev  = (item.price || item.unitPrice || 0) * qty;
+      if (!map[name]) map[name] = { name, qty: 0, revenue: 0 };
+      map[name].qty     += qty;
+      map[name].revenue += rev;
+    });
+  });
+  return Object.values(map)
+    .sort((a, b) => b.qty - a.qty)
+    .slice(0, 8);
+};
+
+// ─────────────────────────────────────────────
+//  Analytics Component
+// ─────────────────────────────────────────────
 const Analytics = () => {
-  const location = useLocation();
+  const location       = useLocation();
   const [searchParams] = useSearchParams();
-  const role = getRole();
+  const role           = getRole();
 
   const cinemaId = useMemo(() => {
     const fromUrl   = searchParams.get("theaterId") || "";
-    const fromState = location.state?.theaterId || "";
+    const fromState = location.state?.theaterId     || "";
     if (fromUrl)   return fromUrl;
     if (fromState) return fromState;
     if (role === "worker") return localStorage.getItem("assignedTheaterId") || "";
@@ -142,21 +169,30 @@ const Analytics = () => {
 
   const [orders,      setOrders]      = useState([]);
   const [chartRange,  setChartRange]  = useState("weekly");
-  const [chartMetric, setChartMetric] = useState("orders"); // "orders" | "revenue" | "both"
+  const [chartMetric, setChartMetric] = useState("orders");
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState("");
 
+  /* ── Fetch all orders across statuses ── */
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     setError("");
     const token = getToken();
+    if (!token) {
+      setError("No auth token. Please log in again.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const results = await Promise.allSettled(
         ALL_STATUSES.map((s) =>
           fetch(`${API_BASE}/worker/orders?status=${s}`, {
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          }).then((r) => r.json())
+          }).then((r) => {
+            if (!r.ok) return { success: false };
+            return r.json();
+          })
         )
       );
 
@@ -175,9 +211,8 @@ const Analytics = () => {
       });
 
       setOrders(merged);
-      if (!merged.length) setError("No orders found for this theater yet.");
     } catch {
-      setError("Failed to load analytics data.");
+      setError("Failed to load analytics data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -185,22 +220,43 @@ const Analytics = () => {
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-  const now = new Date();
+  /* ── Derived stats ── */
+  const stats = useMemo(() => {
+    const delivered = orders.filter((o) => o.orderStatus === "delivered");
+    const revenue   = delivered.reduce((s, o) => s + (o.totalAmount || 0), 0);
+    const avgOrder  = delivered.length ? Math.round(revenue / delivered.length) : 0;
+    const pending   = orders.filter((o) => ["placed", "preparing", "ready"].includes(o.orderStatus)).length;
+    const convRate  = orders.length ? Math.round((delivered.length / orders.length) * 100) : 0;
 
-  const stats = useMemo(() => ({
-    total:     orders.length,
-    revenue:   orders.filter(o => o.orderStatus === "delivered").reduce((s, o) => s + (o.totalAmount || 0), 0),
-    delivered: orders.filter(o => o.orderStatus === "delivered").length,
-    preparing: orders.filter(o => o.orderStatus === "preparing").length,
-    placed:    orders.filter(o => o.orderStatus === "placed").length,
-  }), [orders]);
+    return {
+      total:     orders.length,
+      revenue,
+      delivered: delivered.length,
+      preparing: orders.filter((o) => o.orderStatus === "preparing").length,
+      placed:    orders.filter((o) => o.orderStatus === "placed").length,
+      ready:     orders.filter((o) => o.orderStatus === "ready").length,
+      pending,
+      avgOrder,
+      convRate,
+    };
+  }, [orders]);
 
   const chartData = useMemo(() => buildChartData(orders, chartRange), [orders, chartRange]);
+  const topItems  = useMemo(() => buildTopItems(orders), [orders]);
 
-  /* ── Which areas to render based on chartMetric ── */
+  /* ── Chart range summary numbers ── */
+  const rangeSummary = useMemo(() => {
+    const totals = chartData.reduce(
+      (acc, d) => ({ orders: acc.orders + d.Orders, revenue: acc.revenue + d.Revenue }),
+      { orders: 0, revenue: 0 }
+    );
+    return totals;
+  }, [chartData]);
+
   const showOrders  = chartMetric === "orders"  || chartMetric === "both";
   const showRevenue = chartMetric === "revenue" || chartMetric === "both";
 
+  /* ── Loading ── */
   if (loading) {
     return (
       <div className="analytics-container">
@@ -217,29 +273,44 @@ const Analytics = () => {
 
       {/* ── TOPBAR ── */}
       <div className="analytics-topbar">
-        <h2 className="analytics-title">📊 Analytics</h2>
+        <div className="analytics-topbar-left">
+          <h2 className="analytics-title">📊 Analytics</h2>
+          {orders.length > 0 && (
+            <span className="analytics-badge">{orders.length} orders total</span>
+          )}
+        </div>
         <button className="analytics-refresh-btn" onClick={fetchOrders}>↻ Refresh</button>
       </div>
 
-      {error && <p className="analytics-info">{error}</p>}
+      {/* ── ERROR ── */}
+      {error && (
+        <div className="analytics-error">
+          <span>⚠️ {error}</span>
+          <button className="analytics-error-close" onClick={() => setError("")}>✕</button>
+        </div>
+      )}
 
       {/* ── STAT CARDS ── */}
       <div className="analytics-grid">
         <div className="analytics-card accent-violet">
           <p className="card-label">Total Orders</p>
           <p className="card-value">{stats.total}</p>
+          <p className="card-sub">{stats.pending} pending</p>
         </div>
         <div className="analytics-card accent-green">
           <p className="card-label">Revenue</p>
           <p className="card-value">{formatCurrency(stats.revenue)}</p>
+          <p className="card-sub">from delivered orders</p>
         </div>
         <div className="analytics-card accent-blue">
           <p className="card-label">Delivered</p>
           <p className="card-value">{stats.delivered}</p>
+          <p className="card-sub">{stats.convRate}% conversion</p>
         </div>
         <div className="analytics-card accent-amber">
-          <p className="card-label">Preparing</p>
-          <p className="card-value">{stats.preparing}</p>
+          <p className="card-label">Avg Order Value</p>
+          <p className="card-value">{formatCurrency(stats.avgOrder)}</p>
+          <p className="card-sub">per delivered order</p>
         </div>
       </div>
 
@@ -250,12 +321,26 @@ const Analytics = () => {
         <div className="chart-header">
           <div className="chart-header-top">
             <h3 className="chart-title">Performance Overview</h3>
+            {/* Summary line */}
+            <div className="chart-summary">
+              {showOrders && (
+                <span className="csum-item csum-orders">
+                  <span className="csum-dot" style={{ background: "#8b5cf6" }} />
+                  {rangeSummary.orders} orders
+                </span>
+              )}
+              {showOrders && showRevenue && <span className="csum-sep">·</span>}
+              {showRevenue && (
+                <span className="csum-item csum-revenue">
+                  <span className="csum-dot" style={{ background: "#10b981" }} />
+                  {formatCurrency(rangeSummary.revenue)}
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Controls row: metric tabs + range tabs */}
+          {/* Controls row */}
           <div className="chart-controls">
-
-            {/* Metric toggle: Orders | Revenue | Both */}
             <div className="ctrl-group">
               <span className="ctrl-label">Show</span>
               <div className="chart-toggle-group">
@@ -271,7 +356,6 @@ const Analytics = () => {
               </div>
             </div>
 
-            {/* Range toggle: Daily | Weekly | Monthly | Yearly */}
             <div className="ctrl-group">
               <span className="ctrl-label">Range</span>
               <div className="chart-toggle-group">
@@ -286,105 +370,185 @@ const Analytics = () => {
                 ))}
               </div>
             </div>
-
           </div>
         </div>
 
-        {/* Chart body — explicit pixel height fixes the -1 width/height Recharts bug */}
+        {/* Chart body */}
         <div className="chart-body">
-          <div style={{ width: "100%", height: 300, minWidth: 0 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={chartData}
-                margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#8b5cf6" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}    />
-                  </linearGradient>
-                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#10b981" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}    />
-                  </linearGradient>
-                </defs>
+          {orders.length === 0 ? (
+            <div className="chart-empty">
+              <span className="chart-empty-icon">📈</span>
+              <p>No data to display yet. Orders will appear here once placed.</p>
+            </div>
+          ) : (
+            <div style={{ width: "100%", height: 280, minWidth: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#8b5cf6" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}    />
+                    </linearGradient>
+                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#10b981" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}    />
+                    </linearGradient>
+                  </defs>
 
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: "#888", fontSize: 11 }}
-                  dy={8}
-                />
-
-                {/* Left Y-axis for Orders */}
-                {showOrders && (
-                  <YAxis
-                    yAxisId="left"
-                    allowDecimals={false}
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(108,99,255,0.07)" />
+                  <XAxis
+                    dataKey="label"
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fill: "#888", fontSize: 11 }}
-                    dx={-4}
+                    tick={{ fill: "#ABA8CC", fontSize: 11 }}
+                    dy={8}
                   />
-                )}
 
-                {/* Right Y-axis for Revenue */}
-                {showRevenue && (
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: "#888", fontSize: 11 }}
-                    dx={4}
-                    tickFormatter={(v) => v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `₹${v}`}
-                  />
-                )}
+                  {showOrders && (
+                    <YAxis
+                      yAxisId="left"
+                      allowDecimals={false}
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: "#ABA8CC", fontSize: 11 }}
+                      dx={-4}
+                    />
+                  )}
 
-                <Tooltip content={<CustomTooltip />} />
-                <Legend
-                  verticalAlign="top"
-                  height={32}
-                  wrapperStyle={{ paddingBottom: 12 }}
-                />
+                  {showRevenue && (
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: "#ABA8CC", fontSize: 11 }}
+                      dx={4}
+                      tickFormatter={(v) => v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `₹${v}`}
+                    />
+                  )}
 
-                {showOrders && (
-                  <Area
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="Orders"
-                    stroke="#8b5cf6"
-                    strokeWidth={2.5}
-                    fillOpacity={1}
-                    fill="url(#colorOrders)"
-                    dot={false}
-                    activeDot={{ r: 5, strokeWidth: 0 }}
-                  />
-                )}
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend verticalAlign="top" height={32} wrapperStyle={{ paddingBottom: 12 }} />
 
-                {showRevenue && (
-                  <Area
-                    yAxisId={showOrders ? "right" : "left"}
-                    type="monotone"
-                    dataKey="Revenue"
-                    stroke="#10b981"
-                    strokeWidth={2.5}
-                    fillOpacity={1}
-                    fill="url(#colorRevenue)"
-                    dot={false}
-                    activeDot={{ r: 5, strokeWidth: 0 }}
-                  />
-                )}
+                  {showOrders && (
+                    <Area
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="Orders"
+                      stroke="#8b5cf6"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#colorOrders)"
+                      dot={false}
+                      activeDot={{ r: 5, strokeWidth: 0 }}
+                    />
+                  )}
 
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+                  {showRevenue && (
+                    <Area
+                      yAxisId={showOrders ? "right" : "left"}
+                      type="monotone"
+                      dataKey="Revenue"
+                      stroke="#10b981"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#colorRevenue)"
+                      dot={false}
+                      activeDot={{ r: 5, strokeWidth: 0 }}
+                    />
+                  )}
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── BOTTOM ROW: Status Distribution + Top Items ── */}
+      <div className="analytics-bottom-row">
+
+        {/* Order Status Distribution */}
+        <div className="status-section">
+          <h3 className="section-title">📦 Order Status</h3>
+          {orders.length === 0 ? (
+            <p className="analytics-empty">No orders yet.</p>
+          ) : (
+            STATUS_CONFIG.map(({ key, label, color }) => {
+              const count = orders.filter((o) => o.orderStatus === key).length;
+              const pct   = orders.length > 0 ? (count / orders.length) * 100 : 0;
+              return (
+                <div key={key} className="status-bar-row">
+                  <div className="status-bar-meta">
+                    <span className="status-bar-label">
+                      <span className="status-dot" style={{ background: color }} />
+                      {label}
+                    </span>
+                    <span className="status-bar-count">
+                      {count}
+                      <span className="status-pct"> ({pct.toFixed(0)}%)</span>
+                    </span>
+                  </div>
+                  <div className="status-bar-track">
+                    <div
+                      className="status-bar-fill"
+                      style={{ width: `${pct}%`, background: color }}
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Top Selling Items */}
+        <div className="top-items">
+          <h3 className="section-title">🔥 Top Selling Items</h3>
+
+          {topItems.length === 0 ? (
+            <div className="top-items-empty">
+              <span>🍽️</span>
+              <p>
+                {orders.length === 0
+                  ? "No orders yet."
+                  : "Order items data not available from server."}
+              </p>
+            </div>
+          ) : (
+            <>
+              {topItems.map((item, idx) => {
+                const maxQty = topItems[0].qty;
+                const barPct = maxQty > 0 ? (item.qty / maxQty) * 100 : 0;
+                const medals = ["🥇", "🥈", "🥉"];
+                return (
+                  <div key={item.name} className="top-item">
+                    <div className="top-item-left">
+                      <div className="top-item-name">
+                        <span className="top-item-rank">
+                          {idx < 3 ? medals[idx] : `#${idx + 1}`}
+                        </span>
+                        {item.name}
+                      </div>
+                      <div className="top-item-bar-track">
+                        <div
+                          className="top-item-bar-fill"
+                          style={{ width: `${barPct}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="top-item-stats">
+                      <span className="top-item-qty">{item.qty} sold</span>
+                      {item.revenue > 0 && (
+                        <span className="top-item-rev">{formatCurrency(item.revenue)}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
 
       </div>
-
     </div>
   );
 };
