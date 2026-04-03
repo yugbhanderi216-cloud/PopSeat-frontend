@@ -2,13 +2,18 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./Orders.css";
 
 // APIs USED:
-//   GET /api/worker/orders?status=   ✅ confirmed
-//   PUT /api/worker/order-status/:id ✅ confirmed
+//   GET /api/worker/orders?status=   ✅
+//   PUT /api/worker/order-status/:id ✅
 //
-// FIXES IN THIS VERSION:
-//   FIX 4: Detect 403 from raw response before .json() — stop polling + redirect
-//   FIX 5: Check HTTP status before parsing JSON (403 was silently swallowed)
-//   FIX 6: timeAgo updates every 30s via a ticker state, not just on data refresh
+// FRONTEND FIXES IN THIS VERSION:
+//   FIX-A: Owner 403 → show error banner, NOT logout screen (owner token rejected ≠ session expired)
+//   FIX-B: Owner merge now checks `success` flag consistently with worker path
+//   FIX-C: `!o.theaterId` fallback removed — was showing other-theater orders to owners
+//   FIX-D: Guard added for unknown role (neither owner nor worker)
+//   FIX-E: timeAgo dead `tick` arg removed; re-render still works via state change
+//   FIX-F: `role` and `theaterId` moved into useRef so fetchOrders closure always reads correct value
+//   FIX-G: Owner missing theaterId shows proper error message instead of silent exit
+//   FIX-H: worker path also sets setLoading(false) explicitly before returning on 403
 
 const API_BASE = "https://popseat.onrender.com/api";
 
@@ -39,6 +44,7 @@ const STATUS_META = {
 };
 
 /* ── Relative time ── */
+// FIX-E: removed dead second param
 const timeAgo = (iso) => {
   if (!iso) return "";
   const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
@@ -50,7 +56,7 @@ const timeAgo = (iso) => {
 /* ── Safe seat number extraction ── */
 const getSeatNumber = (seatId) => {
   if (!seatId) return "—";
-  if (typeof seatId === "string") return seatId; // Just return "D1" if it's already a label
+  if (typeof seatId === "string") return seatId;
   if (typeof seatId === "object") return seatId.seatNumber || seatId._id?.slice(-6).toUpperCase() || "—";
   return "—";
 };
@@ -68,30 +74,36 @@ const Orders = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState("");
-  const [authError,    setAuthError]    = useState(false); // FIX 4: separate auth error state
+  const [authError,    setAuthError]    = useState(false);
   const [updating,     setUpdating]     = useState({});
-  // FIX 6: ticker increments every 30s to force timeAgo re-render
+  // Ticker increments every 30s to force timeAgo re-render
   const [tick,         setTick]         = useState(0);
   const intervalRef = useRef(null);
   const isMounted   = useRef(true);
 
-  const role  = (
+  // FIX-F: Store role & theaterId in refs so fetchOrders always reads fresh values
+  // (plain variables in component body are captured stale by useCallback closures)
+  const roleRef = useRef("");
+  const theaterIdRef = useRef("");
+
+  // Compute and sync role/theaterId refs on every render
+  const roleRaw = (
     localStorage.getItem("ownerRole")  ||
     localStorage.getItem("workerRole") ||
     localStorage.getItem("role")       || ""
   ).toLowerCase();
+  roleRef.current = roleRaw;
 
-  const theaterId = role === "worker"
+  theaterIdRef.current = roleRaw === "worker"
     ? (localStorage.getItem("assignedTheaterId") || localStorage.getItem("customerTheaterId") || "")
     : (localStorage.getItem("activeOwnerTheaterId") || localStorage.getItem("customerTheaterId") || "");
-
 
   useEffect(() => {
     isMounted.current = true;
     return () => { isMounted.current = false; };
   }, []);
 
-  // FIX 6: Update relative timestamps every 30 seconds
+  // Update relative timestamps every 30 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       if (isMounted.current) setTick((t) => t + 1);
@@ -114,15 +126,15 @@ const Orders = () => {
   }, []);
 
   /* ═══════════════════════════════════════
-     GET /api/worker/orders?status= ✅
-     FIX 4 + FIX 5: Check HTTP status BEFORE calling .json()
-     403 = bad/missing token → stop polling, show login error
-     Other non-200 = log and skip gracefully
+     GET /api/worker/orders?status=
   ═══════════════════════════════════════ */
   const fetchOrders = useCallback(async () => {
-    const token = getToken();
+    const token    = getToken();
+    // FIX-F: read from refs (always current values, no stale closure)
+    const role     = roleRef.current;
+    const theaterId = theaterIdRef.current;
 
-    // FIX 4: If no token at all, stop immediately — don't spam 403s
+    // No token at all → show session error and stop
     if (!token) {
       if (isMounted.current) {
         stopPolling();
@@ -132,11 +144,25 @@ const Orders = () => {
       return;
     }
 
+    // FIX-D: Guard unknown role — show error instead of silent failure
+    if (role !== "owner" && role !== "worker") {
+      if (isMounted.current) {
+        setError("Unknown user role. Please log in again.");
+        setLoading(false);
+        stopPolling();
+      }
+      return;
+    }
+
     try {
       // ── OWNERS ──
       if (role === "owner") {
+        // FIX-G: Missing theaterId shows clear error instead of silent exit
         if (!theaterId) {
-          if (isMounted.current) setLoading(false);
+          if (isMounted.current) {
+            setError("No theater selected. Please select a theater from the dashboard.");
+            setLoading(false);
+          }
           return;
         }
 
@@ -151,7 +177,8 @@ const Orders = () => {
           )
         );
 
-        // Check if ANY response is 403 (Forbidden due to backend blocking owner token)
+        // FIX-A: Owner 403 → show error banner only, NOT logout screen
+        // (Owner token being rejected ≠ session expired — it's a backend permission bug)
         const has403 = responses.some(
           (r) => r.status === "fulfilled" && r.value.status === 403
         );
@@ -159,9 +186,12 @@ const Orders = () => {
         if (has403) {
           if (isMounted.current) {
             stopPolling();
-            setError("Backend returning 403 Forbidden: Owner token is not allowed to access worker routes.");
-            setAuthError(true);
+            setError(
+              "⚠️ Backend is blocking owner access to order data (403 Forbidden). " +
+              "Ask your backend developer to allow owner tokens on GET /api/worker/orders."
+            );
             setLoading(false);
+            // FIX-A: Do NOT setAuthError(true) — owner should NOT be logged out
           }
           return;
         }
@@ -175,11 +205,16 @@ const Orders = () => {
         );
 
         const merged = [];
-        const seen = new Set();
+        const seen   = new Set();
+        // FIX-B: check `success` flag (consistent with worker path)
+        // FIX-C: removed `|| !o.theaterId` — was showing other-theater orders
         jsonResponses.forEach((res) => {
-          if (res.status === "fulfilled" && res.value?.orders) {
-            res.value.orders.forEach((o) => {
-              if (!seen.has(o._id) && (o.theaterId === theaterId || o.cinemaId === theaterId || !o.theaterId)) {
+          if (res.status === "fulfilled" && res.value?.success) {
+            (res.value.orders || []).forEach((o) => {
+              if (
+                !seen.has(o._id) &&
+                (o.theaterId === theaterId || o.cinemaId === theaterId)
+              ) {
                 seen.add(o._id);
                 merged.push(o);
               }
@@ -198,9 +233,6 @@ const Orders = () => {
       }
 
       // ── WORKERS ──
-      // FIX 5: Fetch responses separately so we can check HTTP status
-      // before calling .json() — Promise.allSettled with .then(r.json())
-      // was swallowing 403s because json() still resolves on 403.
       const rawResponses = await Promise.allSettled(
         STATUSES.map((status) =>
           fetch(`${API_BASE}/worker/orders?status=${status}`, {
@@ -212,7 +244,6 @@ const Orders = () => {
         )
       );
 
-      // FIX 4: Check if ANY response is 403 → token is invalid/expired
       const has403 = rawResponses.some(
         (r) => r.status === "fulfilled" && r.value.status === 403
       );
@@ -221,12 +252,12 @@ const Orders = () => {
         if (isMounted.current) {
           stopPolling();
           setAuthError(true);
+          // FIX-H: explicitly set loading false before returning
           setLoading(false);
         }
         return;
       }
 
-      // Now safely parse JSON from successful responses
       const jsonResponses = await Promise.allSettled(
         rawResponses.map((r) =>
           r.status === "fulfilled" && r.value.ok
@@ -290,14 +321,13 @@ const Orders = () => {
   }, [fetchOrders, startPolling, stopPolling]);
 
   /* ═══════════════════════════════════════
-     PUT /api/worker/orders/:id/status ✅
+     PUT /api/worker/order-status/:id
   ═══════════════════════════════════════ */
   const updateStatus = async (id, status) => {
     setUpdating((prev) => ({ ...prev, [id]: true }));
     const token = getToken();
     try {
-      // Endpoint to update order status as confirmed by the API documentation
-      const res  = await fetch(`${API_BASE}/worker/order-status/${id}`, {
+      const res = await fetch(`${API_BASE}/worker/order-status/${id}`, {
         method : "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -306,25 +336,25 @@ const Orders = () => {
         body: JSON.stringify({ status }),
       });
 
-      // FIX 4: Check for 403 on update too
       if (res.status === 403) {
         stopPolling();
         setAuthError(true);
         return;
       }
 
-      // Read response text first in case it's an HTML error page (like 404)
+      // Read as text first — guards against HTML 404 error pages from backend
       const text = await res.text();
       let data;
       try {
         data = JSON.parse(text);
-      } catch (err) {
-        console.error("Non-JSON Response body:", text);
-        setError(`Backend Error ${res.status}: the API endpoint is likely missing or incorrect.`);
+      } catch {
+        console.error("Non-JSON response body:", text);
+        setError(`Backend Error ${res.status}: The status update endpoint is missing or incorrect. See backend bug report.`);
         return;
       }
 
       if (data.success) {
+        // Optimistic UI: update the order locally without waiting for next poll
         setOrders((prev) =>
           prev.map((o) => o._id === id ? { ...o, orderStatus: status } : o)
         );
@@ -333,7 +363,7 @@ const Orders = () => {
       }
     } catch (err) {
       console.error("Update status error:", err);
-      setError("Network error. Could not update order.");
+      setError("Network error. Could not update order status.");
     } finally {
       setUpdating((prev) => ({ ...prev, [id]: false }));
     }
@@ -348,7 +378,7 @@ const Orders = () => {
     return acc;
   }, {});
 
-  /* ── FIX 4: Auth error screen — shown instead of loading ── */
+  /* ── Auth error screen ── */
   if (authError) {
     return (
       <div className="orders-container">
@@ -356,13 +386,12 @@ const Orders = () => {
           <span className="orders-auth-icon">🔒</span>
           <h3 className="orders-auth-title">Session Expired</h3>
           <p className="orders-auth-sub">
-            Your worker session has expired or the token is missing.
+            Your session has expired or the token is missing.
             Please log in again to continue.
           </p>
           <button
             className="orders-auth-btn"
             onClick={() => {
-              // Clear stale tokens and redirect to login
               [
                 "ownerToken", "ownerEmail", "ownerRole",
                 "workerToken", "workerEmail", "workerRole",
@@ -464,7 +493,7 @@ const Orders = () => {
             const nextLabel     = NEXT_LABEL[currentStatus];
             const isUpdating    = !!updating[order._id];
             const displaySeat   = order.seatNumber || getSeatNumber(order.seatId);
-            // Fallback: backend may use cartItems/orderItems/foodItems instead of items
+            // Try all possible field names the backend might use for items
             const orderItems    = order.items || order.cartItems || order.orderItems || order.foodItems || [];
 
             return (
@@ -499,9 +528,9 @@ const Orders = () => {
                     <span className="order-meta-divider" />
                     <span className="order-meta-item">
                       <span className="order-meta-label">Time</span>
-                      {/* FIX 6: tick dependency forces re-render every 30s */}
-                      <span className="order-meta-value order-time">
-                        {timeAgo(order.createdAt, tick)}
+                      {/* FIX-E: tick is in JSX expression so re-render still fires; removed dead arg from timeAgo */}
+                      <span className="order-meta-value order-time" data-tick={tick}>
+                        {timeAgo(order.createdAt)}
                       </span>
                     </span>
                   </div>
@@ -526,7 +555,7 @@ const Orders = () => {
                       ))
                     ) : (
                       <div className="order-items-empty">
-                        🍽️ Item details not provided by the server
+                        🍽️ Item details not included in server response
                       </div>
                     )}
                   </div>
