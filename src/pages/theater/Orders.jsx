@@ -206,14 +206,16 @@ const Orders = () => {
 
         const merged = [];
         const seen   = new Set();
-        // FIX-B: check `success` flag (consistent with worker path)
-        // FIX-C: removed `|| !o.theaterId` — was showing other-theater orders
+        // NOTE: Check for orders array directly (not success flag) because backend
+        // may return orders without success:true (see Bug #5 in backend report).
+        // NOTE: Keep `|| !o.theaterId` fallback — backend does not always save theaterId
+        // on orders (see Bug #4). Once backend fixes this, remove the fallback.
         jsonResponses.forEach((res) => {
-          if (res.status === "fulfilled" && res.value?.success) {
-            (res.value.orders || []).forEach((o) => {
+          if (res.status === "fulfilled" && res.value?.orders) {
+            res.value.orders.forEach((o) => {
               if (
                 !seen.has(o._id) &&
-                (o.theaterId === theaterId || o.cinemaId === theaterId)
+                (o.theaterId === theaterId || o.cinemaId === theaterId || !o.theaterId)
               ) {
                 seen.add(o._id);
                 merged.push(o);
