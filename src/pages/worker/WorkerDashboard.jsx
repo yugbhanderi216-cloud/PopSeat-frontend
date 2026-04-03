@@ -13,7 +13,8 @@ import "./WorkerDashboard.css";
 //   Currently shows ALL orders from all theaters.
 // ─────────────────────────────────────────────────────────────
 
-const API_BASE = "https://popseat.onrender.com";
+// FIX: Standardized to include /api — consistent with Orders.jsx and Analytics.jsx
+const API_BASE = "https://popseat.onrender.com/api";
 
 // FIX: was reading only "token" — now uses workerToken fallback
 const authHeaders = () => ({
@@ -95,7 +96,7 @@ const WorkerDashboard = () => {
 
       const responses = await Promise.allSettled(
         ACTIVE_STATUSES.map((status) =>
-          fetch(`${API_BASE}/api/worker/orders?status=${status}`, {
+          fetch(`${API_BASE}/worker/orders?status=${status}`, {
             headers: authHeaders(),
           }).then((r) => r.json())
         )
@@ -170,7 +171,7 @@ const WorkerDashboard = () => {
     try {
 
       const res  = await fetch(
-        `${API_BASE}/api/worker/order-status/${orderId}`,
+        `${API_BASE}/worker/order-status/${orderId}`,
         {
           method  : "PUT",
           headers : authHeaders(),

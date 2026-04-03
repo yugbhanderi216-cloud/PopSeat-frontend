@@ -2,7 +2,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./TheaterDashboard.css";
 
-const API_BASE = "https://popseat.onrender.com";
+// FIX: Standardized to include /api — consistent with Orders.jsx and Analytics.jsx
+const API_BASE = "https://popseat.onrender.com/api";
 const WORKER_STATUSES = ["placed", "preparing", "ready", "delivered"];
 
 const formatTime = (time) => {
@@ -77,7 +78,7 @@ const TheaterDashboard = () => {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/api/cinema/${theaterId}`, { headers: authHeaders() });
+      const res = await fetch(`${API_BASE}/cinema/${theaterId}`, { headers: authHeaders() });
       const data = await res.json();
       if (!res.ok || !data.success) {
         setError(data.message || "Failed to load theater.");
@@ -100,7 +101,7 @@ const TheaterDashboard = () => {
       // Bypass the crashing /api/orders?cinemaId query.
       const responses = await Promise.allSettled(
         WORKER_STATUSES.map((status) =>
-          fetch(`${API_BASE}/api/worker/orders?status=${status}`, {
+          fetch(`${API_BASE}/worker/orders?status=${status}`, {
             headers: authHeaders(),
           }).then((r) => r.json())
         )

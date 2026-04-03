@@ -63,9 +63,12 @@ const PaymentPage = () => {
       headers: authHeaders(),
       body: JSON.stringify({
         seatNumber: seat || seatId || "Unknown",
-        hallId: hallId || "Unknown",
+        hallId:     hallId || "Unknown",
         totalAmount: total,
         items,
+        // FIX Bug#5: send theaterId so backend can save it on the order document
+        // This allows owner dashboard to filter orders by theater
+        theaterId: theaterId || localStorage.getItem("customerTheaterId") || "",
       }),
     });
 
