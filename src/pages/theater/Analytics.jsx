@@ -74,7 +74,7 @@ const buildChartData = (orders, range) => {
       const d        = new Date(o.createdAt);
       const diffHrs  = (now - d) / (1000 * 60 * 60);
       if (diffHrs <= 24 && d.getDate() === now.getDate()) {
-        const key = `${d.getHours().toString().padStart(2, "00")}:00`;
+        const key = `${d.getHours().toString().padStart(2, "0")}:00`;
         if (buckets[key]) {
           buckets[key].Orders  += 1;
           buckets[key].Revenue += o.totalAmount || 0;
@@ -404,6 +404,7 @@ const Analytics = () => {
                     dy={8}
                   />
 
+                  {/* Always render at least one Y-axis. If both are shown, orders go left, revenue goes right. */}
                   {showOrders && (
                     <YAxis
                       yAxisId="left"
@@ -417,12 +418,12 @@ const Analytics = () => {
 
                   {showRevenue && (
                     <YAxis
-                      yAxisId="right"
-                      orientation="right"
+                      yAxisId={showOrders ? "right" : "left"}
+                      orientation={showOrders ? "right" : "left"}
                       tickLine={false}
                       axisLine={false}
                       tick={{ fill: "#ABA8CC", fontSize: 11 }}
-                      dx={4}
+                      dx={showOrders ? 4 : -4}
                       tickFormatter={(v) => v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `₹${v}`}
                     />
                   )}
@@ -456,6 +457,11 @@ const Analytics = () => {
                       dot={false}
                       activeDot={{ r: 5, strokeWidth: 0 }}
                     />
+                  )}
+
+                  {/* Fallback: if neither axis was rendered (shouldn't happen), render a hidden left axis */}
+                  {!showOrders && !showRevenue && (
+                    <YAxis yAxisId="left" hide />
                   )}
                 </AreaChart>
               </ResponsiveContainer>
