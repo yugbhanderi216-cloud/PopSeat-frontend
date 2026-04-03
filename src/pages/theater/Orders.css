@@ -1,19 +1,46 @@
 /* ═══════════════════════════════════════════
    GOOGLE FONTS
 ═══════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface2: #f9fafb;
+  --border: #e4e7ec;
+  --text: #0f172a;
+  --text-2: #334155;
+  --muted: #64748b;
+  --dim: #94a3b8;
+  --accent: #6366f1;
+  --accent-dk: #4f46e5;
+  --accent-lt: #eef2ff;
+  --green: #16a34a;
+  --green-lt: #f0fdf4;
+  --amber: #d97706;
+  --amber-lt: #fffbeb;
+  --red: #dc2626;
+  --red-lt: #fef2f2;
+  --blue: #2563eb;
+  --blue-lt: #eff6ff;
+  --purple: #7c3aed;
+  --purple-lt: #f5f3ff;
+  --sh: 0 1px 2px rgba(0, 0, 0, .06), 0 1px 3px rgba(0, 0, 0, .04);
+  --sh-md: 0 4px 12px rgba(0, 0, 0, .07);
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+
 
 /* ═══════════════════════════════════════════
    CONTAINER
 ═══════════════════════════════════════════ */
 .orders-container {
-  padding: 24px 20px 60px;
-  background: var(--bg, #F2F0FF);
+  padding: 24px 28px 60px;
+  background: var(--bg);
   min-height: 100vh;
-  color: var(--text, #1A1740);
-  max-width: 860px;
+  color: var(--text);
+  max-width: 900px;
   margin: 0 auto;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
   position: relative;
   box-sizing: border-box;
 }
@@ -36,38 +63,35 @@
 ═══════════════════════════════════════════ */
 .orders-topbar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-soft, rgba(108,99,255,0.09));
-  gap: 12px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .orders-topbar-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.orders-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  letter-spacing: -0.3px;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.orders-title {
-  font-family: 'Outfit', sans-serif;
-  font-size: 22px;
-  font-weight: 900;
-  color: var(--text, #1A1740);
-  margin: 0;
-  letter-spacing: -0.02em;
-}
-
 /* FIX 1: live polling indicator dot */
 .orders-live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #22C55E;
-  box-shadow: 0 0 0 3px rgba(34,197,94,0.20);
-  animation: livePulse 2s ease-in-out infinite;
-  flex-shrink: 0;
+  display: none;
 }
 
 @keyframes livePulse {
@@ -76,30 +100,27 @@
 }
 
 .orders-refresh-btn {
-  background: var(--surface, #fff);
-  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--text-muted, #6B6891);
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.22s ease;
-  box-shadow: 0 1px 4px rgba(108,99,255,0.07);
+  white-space: nowrap;
+  box-shadow: var(--sh);
+  transition: all .12s;
   flex-shrink: 0;
 }
 
 .orders-refresh-btn:hover {
-  background: var(--violet-soft, rgba(108,99,255,0.08));
-  border-color: var(--violet, #6C63FF);
-  color: var(--violet, #6C63FF);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(108,99,255,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .orders-refresh-btn:active {
-  transform: translateY(0);
+  transform: translateY(1px);
 }
 
 /* ═══════════════════════════════════════════
@@ -112,7 +133,7 @@
   justify-content: center;
   padding: 60px 20px;
   gap: 16px;
-  color: var(--text-muted, #6B6891);
+  color: var(--muted);
   font-size: 14px;
   font-weight: 500;
 }
@@ -120,8 +141,8 @@
 .orders-spinner {
   width: 36px;
   height: 36px;
-  border: 3px solid var(--violet-soft, rgba(108,99,255,0.12));
-  border-top-color: var(--violet, #6C63FF);
+  border: 3px solid var(--accent-lt);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -166,10 +187,13 @@
 ═══════════════════════════════════════════ */
 .orders-filter-tabs {
   display: flex;
-  gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+  gap: 2px;
   margin-bottom: 22px;
   overflow-x: auto;
-  padding-bottom: 4px;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -179,32 +203,27 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
-  background: var(--surface, #fff);
-  color: var(--text-muted, #6B6891);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 12.5px;
-  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all .12s;
   white-space: nowrap;
-  flex-shrink: 0;
-  box-shadow: 0 1px 4px rgba(108,99,255,0.06);
 }
 
 .filter-tab:hover {
-  background: var(--violet-soft, rgba(108,99,255,0.08));
-  border-color: var(--border, rgba(108,99,255,0.22));
-  color: var(--violet, #6C63FF);
+  color: var(--text);
+  background: var(--bg);
 }
 
 .filter-tab.active {
-  background: linear-gradient(135deg, var(--violet, #6C63FF) 0%, var(--violet-deep, #4F46E5) 100%);
-  color: white;
-  border-color: transparent;
-  box-shadow: 0 3px 12px rgba(108,99,255,0.30);
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: var(--sh);
 }
 
 .filter-tab-count {
@@ -214,17 +233,17 @@
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  border-radius: 999px;
-  background: var(--surface2, #F7F6FF);
-  color: var(--text-muted, #6B6891);
-  font-size: 10.5px;
-  font-weight: 800;
-  transition: all 0.18s ease;
+  border-radius: 20px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  transition: all .12s;
 }
 
 .filter-tab.active .filter-tab-count {
-  background: rgba(255,255,255,0.22);
-  color: white;
+  background: var(--accent-lt);
+  color: var(--accent);
 }
 
 /* ═══════════════════════════════════════════
@@ -233,22 +252,21 @@
 .orders-empty {
   text-align: center;
   padding: 60px 20px;
-  background: var(--surface, #fff);
-  border: 1.5px dashed var(--border, rgba(108,99,255,0.18));
-  border-radius: 20px;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
 }
 
 .orders-empty-icon {
   font-size: 48px;
   display: block;
   margin-bottom: 14px;
-  filter: drop-shadow(0 4px 10px rgba(108,99,255,0.14));
 }
 
 .orders-empty p {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-muted, #6B6891);
+  color: var(--muted);
   margin: 0;
 }
 
@@ -265,54 +283,74 @@
    ORDER CARD — FIX 2, FIX 5
 ═══════════════════════════════════════════ */
 .order-card {
-  background: var(--surface, #fff);
-  border-radius: 16px;
-  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
-  box-shadow: 0 2px 12px rgba(108,99,255,0.07), inset 0 1px 0 rgba(255,255,255,0.9);
-  transition: all 0.22s ease;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--sh);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-  padding: 20px;
-  animation: slideIn 0.3s ease both;
+  padding: 18px 22px;
+  animation: fadeInUp .3s ease both;
   position: relative;
   overflow: hidden;
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(8px); }
+/* Glassy inner glow for that premium SaaS feel */
+.order-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Top accent on hover */
+/* Side accent stripe like Admin cards */
 .order-card::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--violet, #6C63FF), transparent);
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  top: 0; left: 0;
+  width: 5px;
+  height: 100%;
+  background: var(--border); /* Fallback */
+  opacity: 1;
+  transition: background 0.25s, width 0.2s;
+  z-index: 3;
 }
+
+/* Status-specific accent colors (via :has selector to avoid touching JSX) */
+.order-card:has(.status-placed)::before    { background: var(--blue); }
+.order-card:has(.status-preparing)::before { background: var(--amber); }
+.order-card:has(.status-ready)::before     { background: var(--purple); }
+.order-card:has(.order-delivered-badge)::before { background: var(--green); }
 
 .order-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 28px rgba(108,99,255,0.12);
-  border-color: var(--border, rgba(108,99,255,0.20));
+  transform: translateY(-2px) scale(1.002);
+  box-shadow: var(--sh-md), 0 10px 25px rgba(0,0,0,0.04);
+  border-color: #d1d5db;
 }
 
-.order-card:hover::before { opacity: 1; }
+.order-card:hover::before {
+  width: 8px;
+}
 
-/* New order flash animation */
+/* New order accent */
 .new-order {
-  border-color: var(--violet, #6C63FF);
-  animation: slideIn 0.3s ease both, flashHighlight 1.5s ease-in-out 3;
+  border-color: var(--accent);
+  background: var(--accent-lt);
 }
-
-@keyframes flashHighlight {
-  0%, 100% { background: var(--violet-soft, rgba(108,99,255,0.06)); }
-  50%       { background: var(--surface, #fff); }
+.new-order::before {
+  background: var(--accent);
+  width: 5px;
 }
 
 /* ─── Order info (left side) ─── */
@@ -333,26 +371,27 @@
 }
 
 .order-id {
-  font-family: 'Outfit', sans-serif;
-  font-size: 16px;
-  font-weight: 900;
-  color: var(--text, #1A1740);
-  letter-spacing: -0.01em;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.2px;
 }
 
-/* FIX 5: status badge via CSS */
+/* Status badge via CSS */
 .order-status-badge {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 10.5px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 4px 11px;
-  border-radius: 999px;
-  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
   white-space: nowrap;
   flex-shrink: 0;
 }
+
+/* Color logic for status badges */
+.order-status-badge[class*="placed"] { background: var(--blue-lt); color: var(--blue); }
+.order-status-badge[class*="preparing"] { background: var(--amber-lt); color: var(--amber); }
+.order-status-badge[class*="ready"] { background: var(--purple-lt); color: var(--purple); }
+.order-status-badge[class*="delivered"] { background: var(--green-lt); color: var(--green); }
 
 /* FIX 4: meta row with seat, total, time */
 .order-meta-row {
@@ -369,42 +408,41 @@
 }
 
 .order-meta-label {
-  font-size: 9.5px;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-dim, #ABA8CC);
+  letter-spacing: 0.05em;
+  color: var(--muted);
 }
 
 .order-meta-value {
-  font-family: 'Outfit', sans-serif;
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--text, #1A1740);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
 }
 
-.order-total { color: #16a34a; }
+.order-total { color: var(--green); }
 
 /* FIX 4: relative time styling */
 .order-time {
-  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted, #6B6891);
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .order-meta-divider {
   width: 1px;
-  height: 28px;
-  background: var(--border-soft, rgba(108,99,255,0.09));
+  height: 24px;
+  background: var(--border);
+  opacity: 0.7;
   flex-shrink: 0;
 }
 
 /* Items list — FIX 2 */
 .order-items {
-  background: var(--surface2, #F7F6FF);
-  border: 1px solid var(--border-soft, rgba(108,99,255,0.09));
-  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
@@ -421,38 +459,36 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--violet, #6C63FF);
+  background: var(--accent);
   flex-shrink: 0;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .order-item-name {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text, #1A1740);
+  color: var(--text-2);
   flex: 1;
   min-width: 0;
 }
 
 .order-item-qty {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted, #6B6891);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
   white-space: nowrap;
 }
 
 .order-item-price {
-  font-family: 'Outfit', sans-serif;
-  font-size: 12.5px;
-  font-weight: 800;
-  color: #16a34a;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green);
   white-space: nowrap;
 }
 
 .order-items-empty {
   font-size: 12px;
-  font-weight: 500;
-  color: var(--text-dim, #ABA8CC);
+  color: var(--dim);
   font-style: italic;
   text-align: center;
   padding: 4px 0;
@@ -468,64 +504,53 @@
 
 /* FIX 2: action button uses class, not inline */
 .order-action-btn {
-  padding: 11px 18px;
+  padding: 10px 18px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
-  font-family: 'Plus Jakarta Sans', sans-serif;
   font-weight: 700;
   font-size: 13px;
-  transition: all 0.20s ease;
+  transition: all .15s;
   white-space: nowrap;
-  position: relative;
-  overflow: hidden;
   min-width: 140px;
 }
 
-/* Base — violet (placed → preparing) */
+/* start preparing (blue logic from admin would be Blue or Accent) */
 .order-action-btn {
-  background: linear-gradient(135deg, var(--violet, #6C63FF) 0%, var(--violet-deep, #4F46E5) 100%);
+  background: var(--accent);
   color: white;
-  box-shadow: 0 3px 12px rgba(108,99,255,0.30), inset 0 1px 0 rgba(255,255,255,0.14);
-}
-
-.order-action-btn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.10) 0%, transparent 55%);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, .28);
 }
 
 .order-action-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 18px rgba(108,99,255,0.42);
+  background: var(--accent-dk);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, .42);
+  transform: translateY(-1px);
 }
 
-.order-action-btn:active:not(:disabled) { transform: translateY(0); }
-
-.order-action-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+.order-action-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  box-shadow: 0 1px 4px rgba(99, 102, 241, .2);
 }
 
-/* preparing → ready: amber */
+/* status-preparing -> Ready (Amber) */
 .order-action-btn.status-preparing {
-  background: linear-gradient(135deg, #F59E0B 0%, #d97706 100%);
-  box-shadow: 0 3px 12px rgba(245,158,11,0.30), inset 0 1px 0 rgba(255,255,255,0.14);
+  background: var(--amber);
+  box-shadow: 0 2px 8px rgba(217, 119, 6, .28);
 }
 .order-action-btn.status-preparing:hover:not(:disabled) {
-  box-shadow: 0 5px 18px rgba(245,158,11,0.42);
+  background: #b45309;
+  box-shadow: 0 3px 12px rgba(217, 119, 6, .36);
 }
 
-/* ready → delivered: teal */
+/* status-ready -> Deliver (Green) */
 .order-action-btn.status-ready {
-  background: linear-gradient(135deg, #0891b2 0%, #0369a1 100%);
-  box-shadow: 0 3px 12px rgba(8,145,178,0.28), inset 0 1px 0 rgba(255,255,255,0.14);
+  background: var(--green);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, .28);
 }
 .order-action-btn.status-ready:hover:not(:disabled) {
-  box-shadow: 0 5px 18px rgba(8,145,178,0.40);
+  background: #15803d;
+  box-shadow: 0 3px 12px rgba(22, 163, 74, .36);
 }
 
 /* Button loading state */
@@ -550,13 +575,12 @@
 .order-delivered-badge {
   display: inline-flex;
   align-items: center;
-  padding: 9px 16px;
-  border-radius: 10px;
-  background: rgba(34,197,94,0.10);
-  border: 1px solid rgba(34,197,94,0.24);
-  color: #16a34a;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 12.5px;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  background: var(--green-lt);
+  border: 1px solid #bdf0d2;
+  color: var(--green);
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
@@ -599,57 +623,53 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 80px 32px;
-  background: var(--surface, #fff);
-  border: 1.5px solid rgba(239,68,68,0.20);
-  border-radius: 20px;
+  padding: 60px 24px;
+  background: var(--surface);
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius-lg);
   margin-top: 12px;
-  box-shadow: 0 4px 20px rgba(239,68,68,0.08);
+  box-shadow: var(--sh-md);
 }
 
 .orders-auth-icon {
-  font-size: 52px;
-  display: block;
-  margin-bottom: 18px;
-  filter: drop-shadow(0 4px 12px rgba(239,68,68,0.18));
+  font-size: 48px;
+  opacity: .7;
+  margin-bottom: 16px;
 }
 
 .orders-auth-title {
-  font-family: 'Outfit', sans-serif;
-  font-size: 22px;
-  font-weight: 900;
-  color: var(--text, #1A1740);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
   margin: 0 0 10px;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.3px;
 }
 
 .orders-auth-sub {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-muted, #6B6891);
-  margin: 0 0 28px;
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 24px;
   line-height: 1.6;
   max-width: 320px;
 }
 
 .orders-auth-btn {
-  padding: 12px 32px;
-  border-radius: 10px;
+  padding: 10px 28px;
+  border-radius: var(--radius);
   border: none;
-  background: linear-gradient(135deg, #EF4444 0%, #dc2626 100%);
+  background: var(--red);
   color: white;
-  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(239,68,68,0.30);
-  transition: all 0.20s ease;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, .28);
+  transition: all .12s;
 }
 
 .orders-auth-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(239,68,68,0.40);
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(220, 38, 38, .36);
 }
 
 /* Also add edit-section-badge to EditTheater.css */

@@ -79,6 +79,8 @@ const OwnerHome = () => {
   const [subLoading, setSubLoading] = useState(true);
   const [subError, setSubError] = useState("");
 
+  const [expandedTheaterId, setExpandedTheaterId] = useState(null);
+
   const isMounted = useRef(true);
   useEffect(() => {
     isMounted.current = true;
@@ -525,89 +527,99 @@ const OwnerHome = () => {
                   <button className="btn-dashboard" onClick={() => openDashboard(t)}>
                     Open Dashboard
                   </button>
-                  <button
-                    className="btn-delete-theater"
-                    disabled={!!deleteLoading[t._id]}
-                    onClick={() =>
-                      setConfirmDelete({ type: "theater", id: t._id, label: t.name })
-                    }
-                  >
-                    {deleteLoading[t._id] ? "Deleting..." : "Delete"}
-                  </button>
+                  <div className="secondary-actions">
+                    <button
+                      className="btn-view-details"
+                      onClick={() => setExpandedTheaterId(expandedTheaterId === t._id ? null : t._id)}
+                    >
+                      {expandedTheaterId === t._id ? "Hide Details" : "View Details"}
+                    </button>
+                    <button
+                      className="btn-delete-theater"
+                      disabled={!!deleteLoading[t._id]}
+                      onClick={() =>
+                        setConfirmDelete({ type: "theater", id: t._id, label: t.name })
+                      }
+                    >
+                      {deleteLoading[t._id] ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
                 </div>
 
                 {/* WORKERS SECTION */}
-                <div className="workers-section">
-                  <div className="workers-section-title">
-                    <span>👷 Workers</span>
-                    <span className="worker-count">{workers.length} added</span>
-                  </div>
-
-                  <div className="worker-form">
-                    <input
-                      className="worker-input"
-                      placeholder="Worker Name"
-                      value={wInput.name || ""}
-                      onChange={(e) => updateWorkerInput(t._id, "name", e.target.value)}
-                    />
-                    <input
-                      className="worker-input"
-                      placeholder="Worker Email"
-                      type="email"
-                      autoComplete="off"
-                      value={wInput.email || ""}
-                      onChange={(e) => updateWorkerInput(t._id, "email", e.target.value)}
-                    />
-                    <input
-                      className="worker-input"
-                      placeholder="Worker Password"
-                      type="password"
-                      autoComplete="new-password"
-                      value={wInput.password || ""}
-                      onChange={(e) => updateWorkerInput(t._id, "password", e.target.value)}
-                    />
-                    <button
-                      className="btn-add-worker"
-                      onClick={() => handleAddWorker(t._id)}
-                      disabled={!!actionLoading[`add-${t._id}`]}
-                    >
-                      {actionLoading[`add-${t._id}`] ? "Adding..." : "+ Add Worker"}
-                    </button>
-                  </div>
-
-                  {workers.length > 0 ? (
-                    <div className="worker-list">
-                      {workers.map((w) => {
-                        const wId = w._id || w.id;
-                        return (
-                          <div key={wId} className="worker-row">
-                            <div className="worker-avatar">
-                              {(w.name || "?")[0].toUpperCase()}
-                            </div>
-                            <div className="worker-info">
-                              <span className="worker-name">{w.name}</span>
-                              <span className="worker-email">{w.email}</span>
-                            </div>
-                            <button
-                              className="btn-delete-worker"
-                              onClick={() =>
-                                setConfirmDelete({
-                                  type: "worker", id: wId,
-                                  cinemaId: t._id, label: w.name,
-                                })
-                              }
-                              disabled={!!deleteLoading[wId]}
-                            >
-                              {deleteLoading[wId] ? "..." : "🗑️"}
-                            </button>
-                          </div>
-                        );
-                      })}
+                {expandedTheaterId === t._id && (
+                  <div className="workers-section">
+                    <div className="workers-section-title">
+                      <span>👷 Workers</span>
+                      <span className="worker-count">{workers.length} added</span>
                     </div>
-                  ) : (
-                    <p className="no-workers-text">No workers added yet</p>
-                  )}
-                </div>
+
+                    <div className="worker-form">
+                      <input
+                        className="worker-input"
+                        placeholder="Worker Name"
+                        value={wInput.name || ""}
+                        onChange={(e) => updateWorkerInput(t._id, "name", e.target.value)}
+                      />
+                      <input
+                        className="worker-input"
+                        placeholder="Worker Email"
+                        type="email"
+                        autoComplete="off"
+                        value={wInput.email || ""}
+                        onChange={(e) => updateWorkerInput(t._id, "email", e.target.value)}
+                      />
+                      <input
+                        className="worker-input"
+                        placeholder="Worker Password"
+                        type="password"
+                        autoComplete="new-password"
+                        value={wInput.password || ""}
+                        onChange={(e) => updateWorkerInput(t._id, "password", e.target.value)}
+                      />
+                      <button
+                        className="btn-add-worker"
+                        onClick={() => handleAddWorker(t._id)}
+                        disabled={!!actionLoading[`add-${t._id}`]}
+                      >
+                        {actionLoading[`add-${t._id}`] ? "Adding..." : "+ Add Worker"}
+                      </button>
+                    </div>
+
+                    {workers.length > 0 ? (
+                      <div className="worker-list">
+                        {workers.map((w) => {
+                          const wId = w._id || w.id;
+                          return (
+                            <div key={wId} className="worker-row">
+                              <div className="worker-avatar">
+                                {(w.name || "?")[0].toUpperCase()}
+                              </div>
+                              <div className="worker-info">
+                                <span className="worker-name">{w.name}</span>
+                                <span className="worker-email">{w.email}</span>
+                              </div>
+                              <button
+                                className="btn-delete-worker"
+                                onClick={() =>
+                                  setConfirmDelete({
+                                    type: "worker", id: wId,
+                                    cinemaId: t._id, label: w.name,
+                                  })
+                                }
+                                disabled={!!deleteLoading[wId]}
+                              >
+                                {deleteLoading[wId] ? "..." : "🗑️"}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="no-workers-text">No workers added yet</p>
+                    )}
+                  </div>
+                )}
 
               </div>
             );
