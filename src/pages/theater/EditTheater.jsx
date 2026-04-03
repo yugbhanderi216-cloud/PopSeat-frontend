@@ -372,7 +372,6 @@ const EditTheater = () => {
 
         {/* HEADER */}
         <div className="edit-header">
-          <button className="edit-back-btn edit-back-btn--icon" onClick={() => navigate(-1)}>←</button>
           <div>
             <h2 className="edit-title">Edit Theater</h2>
             <p className="edit-subtitle">

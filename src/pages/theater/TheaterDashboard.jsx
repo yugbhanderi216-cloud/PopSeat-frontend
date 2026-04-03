@@ -139,12 +139,21 @@ const TheaterDashboard = () => {
     };
   }, [theater, fetchOrders]);
 
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([fetchTheater(), fetchOrders()]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) return <div className="dashboard-state"><p>Loading theater...</p></div>;
   if (error) return <div className="dashboard-state error"><p>{error}</p></div>;
   if (!theater) return null;
 
   const totalOrders = orders.length;
-  const totalRevenue = orders.filter((o) => o.orderStatus === "delivered").reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
   const statusCounts = WORKER_STATUSES.reduce((acc, s) => {
     acc[s] = orders.filter((o) => o.orderStatus === s).length;
     return acc;
@@ -152,12 +161,15 @@ const TheaterDashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <div className="dashboard-banner" style={{ backgroundImage: theater.banner ? `url(${getImageUrl(theater.banner)})` : "linear-gradient(135deg,#6C63FF,#4338CA,#312E81)" }}>
-        <div className="banner-overlay">
+      <div className="dashboard-header">
+        <div className="dashboard-header-left">
           {theater.theaterLogo && <img src={getImageUrl(theater.theaterLogo)} alt="Logo" className="dashboard-logo" />}
-          <h1>{theater.name}</h1>
-          <p>{theater.branchName} • {theater.city}</p>
+          <div className="header-text">
+            <h1>{theater.name}</h1>
+            <p>{theater.branchName} • {theater.city}</p>
+          </div>
         </div>
+        <button className="dashboard-refresh-btn" onClick={handleRefresh}>↻ Refresh</button>
       </div>
 
       <div className="dashboard-stats">

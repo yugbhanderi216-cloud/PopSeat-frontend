@@ -125,10 +125,13 @@ const Orders = () => {
     }
   }, []);
 
+
   /* ═══════════════════════════════════════
      GET /api/worker/orders?status=
   ═══════════════════════════════════════ */
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async (manualRefresh = false) => {
+    if (manualRefresh === true && isMounted.current) setLoading(true);
+
     const token    = getToken();
     // FIX-F: read from refs (always current values, no stale closure)
     const role     = roleRef.current;
@@ -431,7 +434,7 @@ const Orders = () => {
           <h2 className="orders-title">📦 Orders</h2>
           <div className="orders-live-dot" title="Live updates every 5s" />
         </div>
-        <button className="orders-refresh-btn" onClick={fetchOrders}>↻ Refresh</button>
+        <button className="orders-refresh-btn" onClick={() => fetchOrders(true)}>↻ Refresh</button>
       </div>
 
       {/* ERROR */}

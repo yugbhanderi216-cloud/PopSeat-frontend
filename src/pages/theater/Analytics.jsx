@@ -21,6 +21,11 @@ const getRole = () =>
     localStorage.getItem("role") || ""
   ).toLowerCase();
 
+const getTheaterId = (role) =>
+  role === "worker"
+    ? (localStorage.getItem("assignedTheaterId") || localStorage.getItem("customerTheaterId") || "")
+    : (localStorage.getItem("activeOwnerTheaterId") || localStorage.getItem("customerTheaterId") || "");
+
 const formatCurrency = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
 const CHART_RANGES = [
@@ -163,8 +168,7 @@ const Analytics = () => {
     const fromState = location.state?.theaterId     || "";
     if (fromUrl)   return fromUrl;
     if (fromState) return fromState;
-    if (role === "worker") return localStorage.getItem("assignedTheaterId") || "";
-    return localStorage.getItem("activeOwnerTheaterId") || localStorage.getItem("theaterId") || "";
+    return getTheaterId(role);
   }, [searchParams, location.state, role]);
 
   const [orders,      setOrders]      = useState([]);
@@ -185,32 +189,59 @@ const Analytics = () => {
     }
 
     try {
-      const results = await Promise.allSettled(
+      const responses = await Promise.allSettled(
         ALL_STATUSES.map((s) =>
           fetch(`${API_BASE}/worker/orders?status=${s}`, {
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          }).then((r) => {
-            if (!r.ok) return { success: false };
-            return r.json();
           })
         )
       );
 
-      const seen = new Set(), merged = [];
-      results.forEach((r) => {
-        if (r.status === "fulfilled" && r.value?.success)
-          (r.value.orders || []).forEach((o) => {
+      // Detect 403 — show error banner (do NOT treat as session expiry)
+      const has403 = responses.some(
+        (r) => r.status === "fulfilled" && r.value.status === 403
+      );
+      if (has403) {
+        setError(
+          "⚠️ Backend is blocking access to order data (403 Forbidden). " +
+          "Ask your backend developer to allow this token on GET /api/worker/orders."
+        );
+        setLoading(false);
+        return;
+      }
+
+      const jsonResponses = await Promise.allSettled(
+        responses.map((r) =>
+          r.status === "fulfilled" && r.value.ok
+            ? r.value.json()
+            : Promise.resolve({ orders: [] })
+        )
+      );
+
+      const seen = new Set();
+      const merged = [];
+
+      jsonResponses.forEach((res) => {
+        // ✅ Check for orders array directly — backend may NOT return success:true
+        if (res.status === "fulfilled" && res.value?.orders) {
+          res.value.orders.forEach((o) => {
             if (
               !seen.has(o._id) &&
-              (role === "worker" || o.cinemaId === cinemaId || o.theaterId === cinemaId || !o.cinemaId)
+              (
+                role === "worker" ||
+                o.theaterId === cinemaId ||
+                o.cinemaId === cinemaId ||
+                !o.theaterId          // fallback: backend may not save theaterId
+              )
             ) {
               seen.add(o._id);
               merged.push(o);
             }
           });
+        }
       });
 
-      setOrders(merged);
+      setOrders(merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
     } catch {
       setError("Failed to load analytics data. Please try again.");
     } finally {
@@ -222,11 +253,12 @@ const Analytics = () => {
 
   /* ── Derived stats ── */
   const stats = useMemo(() => {
-    const delivered = orders.filter((o) => o.orderStatus === "delivered");
-    const revenue   = delivered.reduce((s, o) => s + (o.totalAmount || 0), 0);
-    const avgOrder  = delivered.length ? Math.round(revenue / delivered.length) : 0;
-    const pending   = orders.filter((o) => ["placed", "preparing", "ready"].includes(o.orderStatus)).length;
-    const convRate  = orders.length ? Math.round((delivered.length / orders.length) * 100) : 0;
+    const delivered  = orders.filter((o) => o.orderStatus === "delivered");
+    // Revenue = all orders (not just delivered) so it reflects actual business income
+    const revenue    = orders.reduce((s, o) => s + (o.totalAmount || 0), 0);
+    const avgOrder   = orders.length ? Math.round(revenue / orders.length) : 0;
+    const pending    = orders.filter((o) => ["placed", "preparing", "ready"].includes(o.orderStatus)).length;
+    const convRate   = orders.length ? Math.round((delivered.length / orders.length) * 100) : 0;
 
     return {
       total:     orders.length,
@@ -300,7 +332,7 @@ const Analytics = () => {
         <div className="analytics-card accent-green">
           <p className="card-label">Revenue</p>
           <p className="card-value">{formatCurrency(stats.revenue)}</p>
-          <p className="card-sub">from delivered orders</p>
+          <p className="card-sub">from all orders</p>
         </div>
         <div className="analytics-card accent-blue">
           <p className="card-label">Delivered</p>
@@ -310,7 +342,7 @@ const Analytics = () => {
         <div className="analytics-card accent-amber">
           <p className="card-label">Avg Order Value</p>
           <p className="card-value">{formatCurrency(stats.avgOrder)}</p>
-          <p className="card-sub">per delivered order</p>
+          <p className="card-sub">per all orders</p>
         </div>
       </div>
 

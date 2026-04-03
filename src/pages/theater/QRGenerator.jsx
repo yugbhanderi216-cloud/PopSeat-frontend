@@ -397,7 +397,6 @@ const QRGenerator = () => {
       {/* ── Header ── */}
       <header className="qr-header">
         <div className="qr-header-left">
-          <button className="btn-back-sm" onClick={() => navigate(-1)}>←</button>
           <div>
             <h1 className="qr-title">QR Generator</h1>
             <p className="qr-subtitle">

@@ -12,107 +12,77 @@
   color: var(--text);
 }
 
-/* ───────────────────── BANNER ───────────────────── */
-.dashboard-banner {
-  height: 360px;
-  background-size: cover;
-  background-position: center;
-  border-radius: 0 0 48px 48px;
-  overflow: hidden;
-  box-shadow:
-    0 8px 40px rgba(108, 99, 255, 0.22),
-    0 2px 8px rgba(108, 99, 255, 0.10);
-  position: relative;
-}
-
-/* Glassmorphism overlay */
-.banner-overlay {
-  background: rgba(242, 240, 255, 0.78);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  height: 100%;
+/* ───────────────────── HEADER ───────────────────── */
+.dashboard-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 0 24px;
-  position: relative;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 36px 32px;
+  max-width: 1240px;
+  margin: 0 auto;
+  border-bottom: 1px solid var(--border-soft);
+  flex-wrap: wrap;
 }
 
-/* Animated gradient shimmer strip at bottom of banner */
-.banner-overlay::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(
-    90deg,
-    var(--violet-deep),
-    var(--violet),
-    #a78bfa,
-    var(--violet),
-    var(--violet-deep)
-  );
-  background-size: 200% 100%;
-  animation: shimmer-bar 3s linear infinite;
+.dashboard-header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
-@keyframes shimmer-bar {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* Logo */
 .dashboard-logo {
-  width: 108px;
-  height: 108px;
-  border-radius: 24px;
+  width: 86px;
+  height: 86px;
+  border-radius: 18px;
   background: var(--surface);
-  padding: 6px;
-  margin-bottom: 20px;
+  padding: 4px;
   object-fit: cover;
-  box-shadow:
-    0 8px 32px var(--violet-glow),
-    0 0 0 1px var(--border-soft);
-  border: none;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 16px rgba(108, 99, 255, 0.12), 0 0 0 1px var(--border-soft);
+  flex-shrink: 0;
 }
 
-.dashboard-logo:hover {
-  transform: scale(1.06) rotate(-2deg);
-  box-shadow:
-    0 16px 48px var(--violet-glow),
-    0 0 0 2px var(--violet);
-}
-
-/* Title */
-.banner-overlay h1 {
+.header-text h1 {
   font-family: 'Outfit', sans-serif;
-  font-size: 38px;
-  margin-bottom: 10px;
+  font-size: 32px;
   font-weight: 800;
   color: var(--text);
+  margin: 0 0 6px 0;
   letter-spacing: -0.5px;
-  text-shadow: 0 2px 12px rgba(108, 99, 255, 0.12);
-  animation: fade-up 0.5s ease both;
 }
 
-/* Sub text */
-.banner-overlay p {
-  color: var(--violet);
-  font-size: 15px;
+.header-text p {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ───────────────────── REFRESH ───────────────────── */
+.dashboard-refresh-btn {
+  background: var(--surface, #fff);
+  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12.5px;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  animation: fade-up 0.6s ease both;
+  color: var(--text-muted, #6B6891);
+  cursor: pointer;
+  transition: all 0.22s ease;
+  box-shadow: 0 1px 4px rgba(108,99,255,0.07);
+  flex-shrink: 0;
 }
 
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: translateY(0); }
+.dashboard-refresh-btn:hover {
+  background: var(--violet-soft, rgba(108,99,255,0.08));
+  border-color: var(--violet, #6C63FF);
+  color: var(--violet, #6C63FF);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108,99,255,0.15);
 }
+
+.dashboard-refresh-btn:active { transform: translateY(0); }
 
 /* ───────────────────── STATS ───────────────────── */
 .dashboard-stats {
@@ -353,12 +323,9 @@
 /* ───────────────────── RESPONSIVE ───────────────────── */
 @media (max-width: 768px) {
   .dashboard-container { padding-bottom: 90px; }
-  .dashboard-banner {
-    height: 290px;
-    border-radius: 0 0 28px 28px;
-  }
-  .banner-overlay h1  { font-size: 26px; }
-  .banner-overlay p   { font-size: 13.5px; }
+  .dashboard-header { padding: 24px 20px; flex-direction: column; text-align: center; gap: 14px; }
+  .header-text h1  { font-size: 24px; }
+  .header-text p   { font-size: 13.5px; }
   .dashboard-logo     { width: 84px; height: 84px; border-radius: 18px; }
   .dashboard-stats    { grid-template-columns: repeat(2, 1fr); padding: 28px 20px 12px; }
   .stat-box strong    { font-size: 32px; }
