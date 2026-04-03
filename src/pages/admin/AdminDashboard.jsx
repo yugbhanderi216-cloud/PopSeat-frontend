@@ -504,7 +504,7 @@ const AdminDashboard = () => {
                 </div>
                 <div style={{ padding: "12px 8px 4px" }}>
                   <ResponsiveContainer width="100%" height={180}>
-                    <AreaChart data={MOCK_REVENUE.monthly.slice(-6)}>
+                    <AreaChart data={realRevenueData.monthly}>
                       <defs>
                         <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.2} />
@@ -563,7 +563,7 @@ const AdminDashboard = () => {
               </div>
               <div style={{ padding: "12px 8px 4px" }}>
                 <ResponsiveContainer width="100%" height={260}>
-                  <AreaChart data={MOCK_REVENUE[revenueRange]}>
+                  <AreaChart data={realRevenueData[revenueRange]}>
                     <defs>
                       <linearGradient id="subRevGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.2} />
