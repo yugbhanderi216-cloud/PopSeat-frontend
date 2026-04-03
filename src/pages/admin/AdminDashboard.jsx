@@ -27,30 +27,7 @@ const formatTime = (t) => {
 const fmt = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
 // ── Mock subscription revenue ──
-const MOCK_REVENUE = {
-  daily: [
-    { label: "Mon", revenue: 2400, subs: 3 }, { label: "Tue", revenue: 1800, subs: 2 },
-    { label: "Wed", revenue: 3200, subs: 4 }, { label: "Thu", revenue: 2900, subs: 3 },
-    { label: "Fri", revenue: 4100, subs: 5 }, { label: "Sat", revenue: 5200, subs: 6 },
-    { label: "Sun", revenue: 3800, subs: 4 },
-  ],
-  weekly: [
-    { label: "Week 1", revenue: 18400, subs: 22 }, { label: "Week 2", revenue: 22100, subs: 27 },
-    { label: "Week 3", revenue: 19800, subs: 24 }, { label: "Week 4", revenue: 28500, subs: 34 },
-  ],
-  monthly: [
-    { label: "Jan", revenue: 45000, subs: 54 },  { label: "Feb", revenue: 52000, subs: 62 },
-    { label: "Mar", revenue: 48000, subs: 58 },  { label: "Apr", revenue: 61000, subs: 73 },
-    { label: "May", revenue: 55000, subs: 66 },  { label: "Jun", revenue: 72000, subs: 86 },
-    { label: "Jul", revenue: 68000, subs: 81 },  { label: "Aug", revenue: 79000, subs: 94 },
-    { label: "Sep", revenue: 83000, subs: 99 },  { label: "Oct", revenue: 91000, subs: 108 },
-    { label: "Nov", revenue: 88000, subs: 105 }, { label: "Dec", revenue: 105000, subs: 125 },
-  ],
-  yearly: [
-    { label: "2022", revenue: 380000, subs: 456 }, { label: "2023", revenue: 620000, subs: 744 },
-    { label: "2024", revenue: 890000, subs: 1068 }, { label: "2025", revenue: 1120000, subs: 1344 },
-  ],
-};
+
 
 const PLAN_COLOR = {
   Basic: "#6366f1", Standard: "#8b5cf6",
@@ -340,6 +317,67 @@ const AdminDashboard = () => {
       return isStatusMatch && mq;
     }), [transactions, txFilter, txSearch]);
 
+  /* ── Real Revenue Graph Data ── */
+  const realRevenueData = useMemo(() => {
+    const data = { daily: [], weekly: [], monthly: [], yearly: [] };
+    const now = new Date();
+    
+    // Helper: Daily (Last 7 Days)
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(now.getDate() - i);
+      const label = days[d.getDay()];
+      const dStr = d.toISOString().split("T")[0];
+      const items = paidTx.filter(t => t.date?.startsWith(dStr));
+      data.daily.push({ 
+        label, 
+        revenue: items.reduce((s, t) => s + Number(t.amount || 0), 0),
+        subs: items.length 
+      });
+    }
+
+    // Helper: Monthly (Current Year)
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const curYear = now.getFullYear();
+    months.forEach((m, idx) => {
+      const prefix = `${curYear}-${String(idx + 1).padStart(2, "0")}`;
+      const items = paidTx.filter(t => t.date?.startsWith(prefix));
+      data.monthly.push({ 
+        label: m, 
+        revenue: items.reduce((s, t) => s + Number(t.amount || 0), 0),
+        subs: items.length 
+      });
+    });
+
+    // Helper: Weekly (Last 4 Weeks)
+    for (let i = 3; i >= 0; i--) {
+      const start = new Date(); start.setDate(now.getDate() - (i * 7 + 7));
+      const end = new Date(); end.setDate(now.getDate() - (i * 7));
+      const items = paidTx.filter(t => {
+        const td = new Date(t.date);
+        return td >= start && td <= end;
+      });
+      data.weekly.push({ 
+        label: `Week ${4 - i}`, 
+        revenue: items.reduce((s, t) => s + Number(t.amount || 0), 0),
+        subs: items.length 
+      });
+    }
+
+    // Helper: Yearly (Last 3 Years)
+    for (let i = 2; i >= 0; i--) {
+      const yr = curYear - i;
+      const items = paidTx.filter(t => t.date?.startsWith(String(yr)));
+      data.yearly.push({ 
+        label: String(yr), 
+        revenue: items.reduce((s, t) => s + Number(t.amount || 0), 0),
+        subs: items.length 
+      });
+    }
+
+    return data;
+  }, [paidTx]);
+
   /* ── Filtered theaters ── */
   const filteredTheaters = useMemo(() =>
     theaters.filter((t) => {
@@ -478,7 +516,8 @@ const AdminDashboard = () => {
                       <YAxis hide />
                       <Tooltip content={<CustomTooltip />} />
                       <Area type="monotone" dataKey="revenue" name="revenue"
-                        stroke="#6366f1" strokeWidth={2} fill="url(#revGrad)" dot={false} />
+                        stroke="#6366f1" strokeWidth={2} fill="url(#revGrad)" dot={false} 
+                        data={realRevenueData.monthly.filter(d => d.revenue > 0 || d.subs > 0).length > 0 ? realRevenueData.monthly : realRevenueData.monthly.slice(-6)} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -542,9 +581,11 @@ const AdminDashboard = () => {
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
                     <Area yAxisId="left"  type="monotone" dataKey="revenue" name="revenue"
-                      stroke="#6366f1" strokeWidth={2} fill="url(#subRevGrad)" dot={false} />
+                      stroke="#6366f1" strokeWidth={2} fill="url(#subRevGrad)" dot={false} 
+                      data={realRevenueData[revenueRange]} />
                     <Area yAxisId="right" type="monotone" dataKey="subs" name="subscriptions"
-                      stroke="#8b5cf6" strokeWidth={2} fill="url(#subCntGrad)" dot={false} />
+                      stroke="#8b5cf6" strokeWidth={2} fill="url(#subCntGrad)" dot={false} 
+                      data={realRevenueData[revenueRange]} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
