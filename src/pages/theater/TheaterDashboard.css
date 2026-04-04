@@ -307,21 +307,21 @@
 
 /* ═══════════════════════════════════════════
    LOADING / ERROR STATES
-   Standardized "Owner Home" style
+   Stays in content column — sidebar NOT covered
 ═══════════════════════════════════════════ */
 .dashboard-state {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  min-height: 100vh !important;
+  min-height: 60vh !important;
   background: var(--bg) !important;
   gap: 14px !important;
   color: var(--muted) !important;
   font-size: 13px !important;
-  position: fixed !important;
-  top: 0; left: 0; width: 100%;
-  z-index: 9999;
+  /* ✅ NOT fixed — stays in content flow */
+  position: relative !important;
+  padding: 60px 24px !important;
 }
 
 .dashboard-state::before {

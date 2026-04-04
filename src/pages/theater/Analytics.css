@@ -161,16 +161,14 @@
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  min-height: 100vh !important;
+  min-height: 60vh !important;
   background: var(--bg) !important;
   gap: 14px !important;
   color: var(--muted) !important;
   font-size: 13px !important;
-  position: fixed !important;
-  top: 0; left: 0; width: 100%;
-  z-index: 9999;
-  margin: 0 !important;
-  padding: 0 !important;
+  /* ✅ NOT fixed — stays in content flow, sidebar stays visible */
+  position: relative !important;
+  padding: 60px 24px !important;
 }
 
 .analytics-loading::before {

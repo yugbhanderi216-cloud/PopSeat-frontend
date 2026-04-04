@@ -282,33 +282,33 @@ input[type="file"] {
 }
 
 /* ═══════════════════════════════════════════
-   LOADING & EMPTY
-   Standardized "Owner Home" style
+   LOADING STATE
+   Stays in content column — sidebar is NOT covered
 ═══════════════════════════════════════════ */
 .edit-container--loading {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  min-height: 100vh !important;
+  min-height: 60vh !important;
   background: var(--bg) !important;
-  gap: 14px !important;
+  gap: 16px !important;
   color: var(--muted) !important;
   font-size: 13px !important;
-  position: fixed !important;
-  top: 0; left: 0; width: 100%;
-  z-index: 9999;
-  margin: 0 !important;
-  padding: 0 !important;
+  /* ✅ NOT fixed — stays inside .edit-page flex column */
+  position: relative !important;
   border: none !important;
   box-shadow: none !important;
+  padding: 60px 24px !important;
+  margin: 0 !important;
 }
 
+/* Animated PopSeat logo via ::before pseudo */
 .edit-container--loading::before {
   content: "" !important;
   display: block !important;
-  width: 80px !important;
-  height: 80px !important;
+  width: 72px !important;
+  height: 72px !important;
   background: url('../PopSeat_Logo.png') no-repeat center !important;
   background-size: contain !important;
   margin-bottom: 8px !important;
@@ -316,6 +316,7 @@ input[type="file"] {
   animation: logoPulse 2s ease-in-out infinite !important;
 }
 
+/* Hide the JSX spinner — we use the CSS pseudo logo instead */
 .edit-spinner {
   display: none !important;
 }
@@ -328,8 +329,8 @@ input[type="file"] {
 }
 
 @keyframes logoPulse {
-  0%, 100% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.05); opacity: 1; }
+  0%, 100% { transform: scale(1);    opacity: 0.8; }
+  50%       { transform: scale(1.07); opacity: 1;   }
 }
 
 /* ═══════════════════════════════════════════
