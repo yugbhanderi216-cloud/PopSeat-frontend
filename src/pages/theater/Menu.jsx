@@ -578,15 +578,15 @@ const Menu = () => {
                       </p>
                     )}
                     <div className="menu-card-actions">
-                      <button className="edit-btn"   onClick={() => handleEdit(item)}>✏ Edit</button>
+                      <button className="menu-edit-btn"   onClick={() => handleEdit(item)}>✏ Edit</button>
                       <button
-                        className="delete-btn"
+                        className="menu-delete-btn"
                         onClick={() => setConfirmDel({ id: item.id, name: item.name })}
                       >
                         🗑 Delete
                       </button>
                       <button
-                        className={`toggle-btn ${item.isAvailable ? "toggle-disable" : "toggle-enable"}`}
+                        className={`menu-toggle-btn ${item.isAvailable ? "toggle-disable" : "toggle-enable"}`}
                         onClick={() => toggleAvailability(item.id)}
                       >
                         {item.isAvailable ? "Disable" : "Enable"}

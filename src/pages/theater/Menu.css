@@ -10,9 +10,9 @@
   --text-2: #334155;
   --muted: #64748b;
   --dim: #94a3b8;
-  --accent: #6366f1;
-  --accent-dk: #4f46e5;
-  --accent-lt: #eef2ff;
+  --accent: #79334D;
+  --accent-dk: #5d1e37;
+  --accent-lt: #f5eaef;
   --green: #16a34a;
   --green-lt: #f0fdf4;
   --amber: #d97706;
@@ -381,7 +381,7 @@
   padding-top: 6px;
 }
 
-.edit-btn, .delete-btn, .toggle-btn {
+.menu-edit-btn, .menu-delete-btn, .menu-toggle-btn {
   padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -392,21 +392,21 @@
   white-space: nowrap;
 }
 
-.edit-btn { background: rgba(255, 255, 255, 0.05); color: #ccc; }
-.edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+.menu-edit-btn { background: rgba(255, 255, 255, 0.05); color: #ccc; }
+.menu-edit-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-.delete-btn { background: var(--red-lt); color: var(--red); border-color: transparent; }
-.delete-btn:hover { background: var(--red); color: #fff; }
+.menu-delete-btn { background: var(--red-lt); color: var(--red); border-color: transparent; }
+.menu-delete-btn:hover { background: var(--red); color: #fff; }
 
-.toggle-btn { background: rgba(255, 255, 255, 0.05); color: #ccc; }
-.toggle-btn.toggle-disable:hover { border-color: var(--amber); color: var(--amber); }
+.menu-toggle-btn { background: rgba(255, 255, 255, 0.05); color: #ccc; }
+.menu-toggle-btn.toggle-disable:hover { border-color: var(--amber); color: var(--amber); }
 
-.toggle-btn.toggle-enable {
+.menu-toggle-btn.toggle-enable {
   background: var(--green-lt);
   color: var(--green);
   border-color: transparent;
 }
-.toggle-btn.toggle-enable:hover {
+.menu-toggle-btn.toggle-enable:hover {
   background: var(--green);
   color: #fff;
 }

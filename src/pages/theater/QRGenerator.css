@@ -10,9 +10,9 @@
   --text-2: #334155;
   --muted: #64748b;
   --dim: #94a3b8;
-  --accent: #6366f1;
-  --accent-dk: #4f46e5;
-  --accent-lt: #eef2ff;
+  --accent: #79334D;
+  --accent-dk: #5d1e37;
+  --accent-lt: #f5eaef;
   --green: #16a34a;
   --green-lt: #f0fdf4;
   --amber: #d97706;
@@ -401,13 +401,7 @@
 }
 
 .qr-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 4px;
-  background: var(--accent);
-  opacity: 0;
-  transition: opacity 0.2s;
+  display: none;
 }
 
 .qr-card:hover {
