@@ -59,6 +59,49 @@
   z-index: 10;
 }
 
+.cart-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 16px; /* Squircle style */
+  border: 1px solid #e2e8f0; 
+  background: white;
+  font-size: 22px;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cart-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(121, 51, 77, 0.15);
+  border-color: var(--sw-primary);
+  color: var(--sw-primary);
+}
+
+.cart-btn:active { transform: scale(0.95); }
+
+.cart-count-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--sw-primary);
+  color: white;
+  border-radius: 50%;
+  min-width: 20px;
+  height: 20px;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center; 
+  justify-content: center;
+  border: 2.5px solid white;
+  padding: 0 4px;
+}
+
 .header-info {
   flex: 1;
   text-align: center; /* Center the text in the middle */
@@ -193,12 +236,17 @@
     line-clamp: 2 !important;
   }
   
-  .all-prices { display: flex !important; flex-direction: column !important; gap: 4px !important; margin-bottom: 12px !important; }
-  .variant-tag { font-size: 13px !important; font-weight: 700 !important; color: var(--sw-primary) !important; background: transparent !important; padding: 0 !important; }
+  .all-prices { 
+    display: flex !important; flex-flow: row wrap !important; gap: 6px !important; margin-bottom: 12px !important; 
+  }
+  .variant-tag { 
+    font-size: 11px !important; font-weight: 700 !important; color: var(--sw-primary) !important; 
+    background: var(--sw-primary-lt) !important; padding: 4px 10px !important; border-radius: 8px !important;
+  }
   
   .featured-card .item-cta-btn, .standard-card .item-cta-btn { 
-    display: inline-block !important; font-size: 12px !important; color: var(--sw-text-dim) !important; 
-    background: transparent !important; padding: 0 !important; font-weight: 600 !important; text-align: left !important; 
+    display: inline-block !important; font-size: 12px !important; color: var(--sw-primary) !important; 
+    background: transparent !important; padding: 0 !important; font-weight: 700 !important; text-align: left !important; 
   }
 }
 
@@ -265,8 +313,11 @@
 
   .featured-card { flex-direction: column; text-align: center; padding: 24px 20px; gap: 16px; align-items: center; }
   .featured-card .item-image-wrap { width: 100%; height: 160px; order: -1; }
-  .featured-card .item-name { font-size: 24px; }
-  .featured-card .item-cta-btn { width: 100%; justify-content: center; }
+  .featured-card .item-name { font-size: 24px; margin-bottom: 8px; }
+  .featured-card .item-cta-btn { 
+    display: inline-flex; width: auto; min-width: 160px; justify-content: center; 
+    margin: 0 auto; /* Ensure centering in middle */
+  }
   
   .standard-card .item-image-wrap { height: 160px; padding: 0; overflow: hidden; }
   .standard-card .food-img { width: 100%; height: 100%; object-fit: cover; }
