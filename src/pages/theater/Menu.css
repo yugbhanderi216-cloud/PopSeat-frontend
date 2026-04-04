@@ -269,15 +269,7 @@
 }
 
 .menu-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 5px;
-  height: 100%;
-  background: var(--accent);
-  opacity: 1;
-  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 2;
+  display: none;
 }
 
 .menu-card:hover {
