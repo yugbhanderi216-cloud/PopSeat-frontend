@@ -130,17 +130,7 @@ const CustomerWelcome = () => {
   };
 
 
-  /* ── Loading View ── */
-  if (loading) {
-    return (
-      <div className="welcome-container" style={{ justifyContent: 'center' }}>
-        <div className="welcome-glass">
-          <div className="logo-placeholder">🍿</div>
-          <h1 className="welcome-theater-name" style={{ marginTop: 16 }}>Loading…</h1>
-        </div>
-      </div>
-    );
-  }
+  /* ── Error View ── */
 
   /* ── Error View ── */
   if (error) {
