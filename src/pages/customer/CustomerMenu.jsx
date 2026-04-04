@@ -149,27 +149,19 @@ const CustomerMenu = () => {
       <div className="menu-wrapper">
 
         {/* ─── HEADER ─── */}
-        <div className="customer-header">
+        <header className="customer-header">
 
-          {/* Back */}
           <button className="back-btn" onClick={goBack} aria-label="Go back">
             ←
           </button>
 
-          {/* Center info */}
           <div className="header-info">
-            <div className="header-logo-row">
-              <div className="header-icon-wrap">🍿</div>
-              <h2>Order Food</h2>
-            </div>
-            <p>
-              Screen {screen}
-              <span className="dot" />
-              Seat {seat}
+            <h1 className="header-title">Order Food</h1>
+            <p className="header-details">
+              Screen {screen} <span className="dot" /> Seat {seat}
             </p>
           </div>
 
-          {/* Cart */}
           <button
             className="cart-btn"
             onClick={() =>
@@ -183,20 +175,14 @@ const CustomerMenu = () => {
             <span className="cart-count-badge">{cartTotalQty}</span>
           </button>
 
-        </div>
-
-        <div className="header-divider" />
+        </header>
 
         {/* ─── CATEGORY TABS ─── */}
-        {categoryLoading ? (
-          <div className="category-tabs">
-            <span style={{ padding: "8px 0", color: "var(--text-muted)", fontSize: 13 }}>
-              Loading categories…
-            </span>
-          </div>
-        ) : (
-          <div className="category-tabs">
-            {categories.map((cat) => (
+        <nav className="category-tabs">
+          {categoryLoading ? (
+            <span className="loading-txt">Loading categories…</span>
+          ) : (
+            categories.map((cat) => (
               <button
                 key={cat}
                 className={activeCategory === cat ? "active-tab" : ""}
@@ -204,96 +190,80 @@ const CustomerMenu = () => {
               >
                 {cat}
               </button>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </nav>
 
-        {/* ─── SECTION LABEL ─── */}
-        {!isLoading && filteredItems.length > 0 && (
-          <p className="menu-section-label">
-            {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""} available
-          </p>
-        )}
+        {/* ─── FOOD DISPLAY ─── */}
+        <section className="food-section">
+          {menuLoading ? (
+            <div className="menu-loading-state">
+              <div className="loading-dot" />
+              <div className="loading-dot" />
+              <div className="loading-dot" />
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="menu-empty-state">
+              <div className="empty-icon">🍽️</div>
+              <p>No items available in this category</p>
+            </div>
+          ) : (
+            <div className="customer-grid">
+              {filteredItems.map((item, index) => {
+                const isFeatured = index === 0;
+                return (
+                  <article
+                    key={item._id}
+                    className={`customer-card ${isFeatured ? "featured-card" : "standard-card"}`}
+                    onClick={() =>
+                      navigate("/customer/item", {
+                        state: { item, theaterId, screen, seat },
+                      })
+                    }
+                  >
+                    
+                    {/* Content Section */}
+                    <div className="card-content">
+                      <h2 className="item-name">{item.name}</h2>
+                      
+                      {isFeatured && item.description && (
+                         <p className="item-desc">{item.description}</p>
+                      )}
 
-        {/* ─── FOOD GRID ─── */}
-        {menuLoading ? (
+                      <div className="item-price-variants">
+                        {ensureArray(item.variants).length > 0 ? (
+                          <span className="price-tag">
+                            ₹{item.variants[0].price} {item.variants.length > 1 ? "• "+item.variants.length+" sizes" : ""}
+                          </span>
+                        ) : (
+                          <span className="price-tag">₹{item.price}</span>
+                        )}
+                      </div>
 
-          <div className="menu-loading-state">
-            <div className="loading-dot" />
-            <div className="loading-dot" />
-            <div className="loading-dot" />
-          </div>
+                      <div className="item-cta-btn">
+                         {isFeatured ? "Order now" : "Tap to customize →"}
+                      </div>
+                    </div>
 
-        ) : filteredItems.length === 0 ? (
-
-          <div className="menu-empty-state">
-            <div className="empty-icon">🍽️</div>
-            <p>No items available in this category</p>
-          </div>
-
-        ) : (
-
-          <div className="customer-grid">
-            {filteredItems.map((item) => (
-
-              <div
-                key={item._id}
-                className="customer-card"
-                onClick={() =>
-                  navigate("/customer/item", {
-                    state: { item, theaterId, screen, seat },
-                  })
-                }
-              >
-
-                {/* Image */}
-                {item.image && (
-                  <div className="img-wrap">
-                    <img
-                      src={getImageUrl(item.image)}
-                      alt={item.name}
-                      className="customer-food-img"
-                      onError={(e) => { e.target.style.display = "none"; }}
-                    />
-                    <div className="veg-dot" />
-                  </div>
-                )}
-
-                {/* Body */}
-                <div className="card-body">
-
-                  <h3>{item.name}</h3>
-
-                  {item.description && (
-                    <p className="desc">{item.description}</p>
-                  )}
-
-                  {/* Size Chips */}
-                  <div className="card-variants-container">
-                    {ensureArray(item.variants).length > 0 ? (
-                      item.variants.map((v, i) => (
-                        <span key={i} className="card-size-chip">
-                          {v.size} · ₹{v.price}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="card-size-chip">₹ {item.price}</span>
+                    {/* Image Section */}
+                    {item.image && (
+                      <div className="item-image-wrap">
+                        <img
+                          src={getImageUrl(item.image)}
+                          alt={item.name}
+                          className="food-img"
+                          onError={(e) => { e.target.style.display = "none"; }}
+                        />
+                        {isFeatured && <div className="veg-badge" />}
+                      </div>
                     )}
-                  </div>
 
-                  {/* CTA */}
-                  <p className="tap-note">
-                    Tap to customize ➜
-                  </p>
-
-                </div>
-
-              </div>
-
-            ))}
-          </div>
-
-        )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
       </div>
 
@@ -309,7 +279,7 @@ const CustomerMenu = () => {
         >
           <div className="cart-bar-left">
             <span className="cart-bar-amount">₹ {cartTotalPrice}</span>
-            <span className="cart-bar-items">{cartTotalQty} item{cartTotalQty !== 1 ? "s" : ""} in cart</span>
+            <span className="cart-bar-items">{cartTotalQty} item{cartTotalQty !== 1 ? "s" : ""}</span>
           </div>
           <div className="cart-bar-right">
             View Cart ➜
