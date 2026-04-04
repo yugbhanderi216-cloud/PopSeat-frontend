@@ -255,7 +255,7 @@
    MENU CARD
 ═══════════════════════════════════════════ */
 .menu-card {
-  background: var(--surface);
+  background: #242424;
   border-radius: var(--radius-lg);
   overflow: hidden;
   transition: all 0.2s ease;
@@ -265,6 +265,7 @@
   flex-direction: column;
   animation: fadeUp 0.35s ease both;
   position: relative;
+  color: #ffffff;
 }
 
 .menu-card::before {
@@ -340,14 +341,14 @@
   font-family: 'Outfit', sans-serif;
   font-size: 17px;
   font-weight: 800;
-  color: var(--text, #1A1740);
+  color: #ffffff;
   margin: 0 0 5px;
   letter-spacing: -0.01em;
 }
 
 .menu-card-desc {
   font-size: 12.5px;
-  color: var(--text-muted, #6B6891);
+  color: #a4a4a4;
   font-weight: 500;
   line-height: 1.4;
   margin: 0 0 10px;
@@ -355,7 +356,7 @@
 
 .menu-extras-note {
   font-size: 11px;
-  color: var(--text-dim, #ABA8CC);
+  color: #a4a4a4;
   font-weight: 600;
   margin: 2px 0 10px;
 }
@@ -368,9 +369,9 @@
 }
 
 .card-sizes span {
-  background: var(--surface2);
-  color: var(--muted);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 11px;
   font-weight: 600;
   padding: 3px 10px;
@@ -391,7 +392,7 @@
 .edit-btn, .delete-btn, .toggle-btn {
   padding: 6px 12px;
   border-radius: 8px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
   font-size: 11px;
   font-weight: 600;
@@ -399,13 +400,13 @@
   white-space: nowrap;
 }
 
-.edit-btn { background: var(--surface); color: var(--muted); }
+.edit-btn { background: rgba(255, 255, 255, 0.05); color: #ccc; }
 .edit-btn:hover { border-color: var(--accent); color: var(--accent); }
 
 .delete-btn { background: var(--red-lt); color: var(--red); border-color: transparent; }
 .delete-btn:hover { background: var(--red); color: #fff; }
 
-.toggle-btn { background: var(--surface); color: var(--muted); }
+.toggle-btn { background: rgba(255, 255, 255, 0.05); color: #ccc; }
 .toggle-btn.toggle-disable:hover { border-color: var(--amber); color: var(--amber); }
 
 .toggle-btn.toggle-enable {
