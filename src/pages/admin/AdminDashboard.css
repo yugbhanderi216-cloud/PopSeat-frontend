@@ -16,12 +16,6 @@
   --accent    : #6366f1;
   --accent-dk : #4f46e5;
   --accent-lt : #eef2ff;
-  --green     : #16a34a;
-  --green-lt  : #f0fdf4;
-  --amber     : #d97706;
-  --amber-lt  : #fffbeb;
-  --red       : #dc2626;
-  --red-lt    : #fef2f2;
   --blue      : #2563eb;
   --blue-lt   : #eff6ff;
   --purple    : #7c3aed;
@@ -40,6 +34,14 @@
   display: flex; min-height: 100vh; background: var(--bg);
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
   font-size: 14px; color: var(--text); line-height: 1.5;
+
+  /* Decisive Overrides */
+  --green: #6C63FF;
+  --green-lt: rgba(108, 99, 255, 0.08);
+  --amber: #d97706;
+  --amber-lt: #fffbeb;
+  --red: #dc2626;
+  --red-lt: #fef2f2;
 }
 
 /* ── LOADING ── */
@@ -49,7 +51,20 @@
   min-height: 100vh; background: var(--bg);
   gap: 14px; color: var(--muted); font-size: 13px;
 }
-.adm-loading-logo { width: 44px; opacity: .65; }
+.adm-loading-logo {
+  width: 90px;
+  height: 90px;
+  background: url('../PopSeat_Logo.png') no-repeat center;
+  background-size: contain;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 4px 12px rgba(108, 99, 255, 0.25));
+  animation: logoPulse 2s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
 
 /* ═══════════════════════════════════════════════════
    SIDEBAR — with collapsed state support

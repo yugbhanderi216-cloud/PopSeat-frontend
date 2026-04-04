@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./OwnerHome.css";
+/* SYNC - V10 */
 import logo from "../PopSeat_Logo.png";
 
 // APIs USED:
@@ -375,6 +376,7 @@ const OwnerHome = () => {
 
   return (
     <div className="owner-container">
+      <button className="back-btn-v2" onClick={() => navigate(-1)} title="Go back">←</button>
 
       <ConfirmModal
         confirmDelete={confirmDelete}

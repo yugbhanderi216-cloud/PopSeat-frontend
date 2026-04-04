@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+/* SYNC - V10 */
 import "./OwnerPlan.css";
 
 // APIs USED:
@@ -124,6 +125,7 @@ const OwnerPlan = () => {
 
   return (
     <div className="plan-page">
+      <button className="back-btn-v2" onClick={() => navigate(-1)} title="Go back">←</button>
 
       {/* HEADER */}
       <div className="plan-header">
