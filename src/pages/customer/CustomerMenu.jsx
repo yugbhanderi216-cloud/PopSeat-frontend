@@ -226,18 +226,35 @@ const CustomerMenu = () => {
                     <div className="card-content">
                       <h2 className="item-name">{item.name}</h2>
                       
-                      {isFeatured && item.description && (
-                         <p className="item-desc">{item.description}</p>
-                      )}
-
-                      <div className="item-price-variants">
-                        {ensureArray(item.variants).length > 0 ? (
-                          <span className="price-tag">
-                            ₹{item.variants[0].price} {item.variants.length > 1 ? "• "+item.variants.length+" sizes" : ""}
-                          </span>
-                        ) : (
-                          <span className="price-tag">₹{item.price}</span>
+                      {/* Full Info (Desktop) */}
+                      <div className="full-info">
+                        {item.description && (
+                          <p className="item-desc">{item.description}</p>
                         )}
+                        <div className="all-prices">
+                          {ensureArray(item.variants).length > 0 ? (
+                            item.variants.map((v, i) => (
+                              <span key={i} className="variant-tag">
+                                {v.size} · ₹{v.price}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="variant-tag">₹{item.price}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Compact Info (Mobile) */}
+                      <div className="compact-info">
+                        <div className="item-price-variants">
+                          {ensureArray(item.variants).length > 0 ? (
+                            <span className="price-tag">
+                              ₹{item.variants[0].price} {item.variants.length > 1 ? "• "+item.variants.length+" sizes" : ""}
+                            </span>
+                          ) : (
+                            <span className="price-tag">₹{item.price}</span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="item-cta-btn">

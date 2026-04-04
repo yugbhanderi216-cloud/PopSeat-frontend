@@ -149,8 +149,20 @@
   cursor: pointer;
 }
 
-/* On desktop, make the featured card identical to others */
+/* Featured card styles */
+.featured-card .item-name { 
+  font-family: 'Outfit', sans-serif; 
+  font-size: 28px; font-weight: 800; margin-bottom: 8px; 
+}
+
+.featured-card .all-prices { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.featured-card .variant-tag { font-size: 14px; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 20px; }
+
+/* Desktop standard & featured card override */
 @media (min-width: 900px) {
+  .compact-info { display: none !important; }
+  .full-info { display: block !important; }
+
   .featured-card {
     grid-column: span 1 !important;
     background: white !important;
@@ -173,9 +185,21 @@
   
   .featured-card .food-img { width: 100% !important; height: 100% !important; object-fit: cover !important; filter: none !important; }
   .featured-card .item-name { font-size: 16px !important; color: var(--sw-text) !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; margin: 0 !important; }
-  .featured-card .item-desc { display: none !important; }
-  .featured-card .price-tag { font-size: 15px !important; font-weight: 700 !important; color: var(--sw-primary) !important; margin: 0 !important; }
-  .featured-card .item-cta-btn { display: inline-block !important; font-size: 13px !important; color: var(--sw-text-dim) !important; background: transparent !important; padding: 0 !important; font-weight: 600 !important; text-align: left !important; }
+  
+  /* Desktop Full Info Styling */
+  .item-desc {
+    font-size: 12px !important; color: var(--sw-text-dim) !important; margin: 4px 0 12px !important; line-height: 1.4 !important;
+    display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important;
+    line-clamp: 2 !important;
+  }
+  
+  .all-prices { display: flex !important; flex-direction: column !important; gap: 4px !important; margin-bottom: 12px !important; }
+  .variant-tag { font-size: 13px !important; font-weight: 700 !important; color: var(--sw-primary) !important; background: transparent !important; padding: 0 !important; }
+  
+  .featured-card .item-cta-btn, .standard-card .item-cta-btn { 
+    display: inline-block !important; font-size: 12px !important; color: var(--sw-text-dim) !important; 
+    background: transparent !important; padding: 0 !important; font-weight: 600 !important; text-align: left !important; 
+  }
 }
 
 .featured-card .card-content { flex: 1; }
@@ -234,7 +258,11 @@
 /* ═══════════════════════════════════════════
    MOBILE REFINEMENTS
 ═══════════════════════════════════════════ */
+/* Mobile refinements */
 @media (max-width: 650px) {
+  .full-info { display: none !important; }
+  .compact-info .item-price-variants { display: none !important; } /* Remove price and no. of sizes in mobile */
+
   .featured-card { flex-direction: column; text-align: center; padding: 24px 20px; gap: 16px; align-items: center; }
   .featured-card .item-image-wrap { width: 100%; height: 160px; order: -1; }
   .featured-card .item-name { font-size: 24px; }
