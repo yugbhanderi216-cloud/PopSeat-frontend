@@ -471,7 +471,7 @@ const TheaterRegister = () => {
 
         <label>
           Theater Logo
-          <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}>(optional)</span>
+          <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}></span>
         </label>
         <input
           name="theaterLogo"
@@ -482,7 +482,7 @@ const TheaterRegister = () => {
 
         <label>
           Banner Image
-          <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}>(optional)</span>
+          <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}></span>
         </label>
         <input
           name="banner"
@@ -494,7 +494,7 @@ const TheaterRegister = () => {
         {/* ── Bank Details ── */}
         <h3 style={{ marginTop: 20 }}>Bank Details
           <span style={{ fontSize: 12, color: "#aaa", fontWeight: 400, marginLeft: 8 }}>
-            (optional)
+
           </span>
         </h3>
 
