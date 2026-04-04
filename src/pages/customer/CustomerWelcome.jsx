@@ -130,26 +130,26 @@ const CustomerWelcome = () => {
   };
 
 
-  /* ── Loading ── */
+  /* ── Loading View ── */
   if (loading) {
     return (
-      <div className="welcome-container">
+      <div className="welcome-container" style={{ justifyContent: 'center' }}>
         <div className="welcome-glass">
-          <div className="logo-placeholder">🎬</div>
-          <h1 className="welcome-title" style={{ marginTop: 8 }}>Loading…</h1>
+          <div className="logo-placeholder">🍿</div>
+          <h1 className="welcome-theater-name" style={{ marginTop: 16 }}>Loading…</h1>
         </div>
       </div>
     );
   }
 
-  /* ── Error ── */
+  /* ── Error View ── */
   if (error) {
     return (
-      <div className="welcome-container">
+      <div className="welcome-container" style={{ justifyContent: 'center' }}>
         <div className="welcome-glass">
           <div className="logo-placeholder">⚠️</div>
-          <h1 className="welcome-title" style={{ marginTop: 8 }}>Oops!</h1>
-          <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 10, lineHeight: 1.6 }}>
+          <h1 className="welcome-theater-name" style={{ marginTop: 16 }}>Oops!</h1>
+          <p style={{ color: "var(--text-dim)", fontSize: 14, marginTop: 10, lineHeight: 1.6 }}>
             {error}
           </p>
         </div>
@@ -157,74 +157,71 @@ const CustomerWelcome = () => {
     );
   }
 
-  /* ── Main ── */
+  /* ── Main View ── */
   return (
     <div className="welcome-container">
-      <div className="welcome-glass">
+      
+      {/* Header with Curve */}
+      <header className="welcome-header-card">
+        <div className="welcome-logo-container">
+          {theater?.logo ? (
+            <img
+              src={getImageUrl(theater.logo)}
+              alt="Theater Logo"
+              className="welcome-logo-modern"
+              onError={(e) => { e.target.style.display = "none"; }}
+            />
+          ) : (
+            <div className="logo-placeholder">🎬</div>
+          )}
+        </div>
+      </header>
 
-        {/* Logo */}
-        {theater?.logo ? (
-          <img
-            src={getImageUrl(theater.logo)}
-            alt="Theater Logo"
-            className="welcome-logo-modern"
-            onError={(e) => { e.target.style.display = "none"; }}
-          />
-        ) : (
-          <div className="logo-placeholder">🎬</div>
-        )}
-
-        {/* Title */}
-        <h1 className="welcome-title">
-          Welcome to {theater?.theaterName || "Cinema"}
+      {/* Main Content */}
+      <main className="welcome-content-section">
+        
+        <h1 className="welcome-theater-name">
+          {theater?.theaterName || "Welcome"}
         </h1>
 
-        {/* Branch + City */}
-        {theater?.branch && theater.branch !== theater.theaterName && (
-          <p className="welcome-branch">
-            {theater.branch}
-            <span className="dot" />
-            {theater.city}
-          </p>
-        )}
+        <div className="welcome-location">
+          {theater?.branch}
+          <span className="dot" />
+          {theater?.city}
+        </div>
 
-        {/* Info box */}
+        {/* Info Box (Screen & Seat) */}
         <div className="welcome-info-box">
-
-          <div className="info-row">
-            <span className="info-label">
-              <span className="info-icon">🎞</span>
-              Screen
-            </span>
-            <span className="info-value">{screen || "Unknown"}</span>
-          </div>
-
-          <div className="info-divider" />
-
-          <div className="info-row">
-            <span className="info-label">
-              <span className="info-icon">💺</span>
-              Seat
-            </span>
-            <span className="info-value">{seat || "Unknown"}</span>
-          </div>
-
-          {type && (
-            <div style={{ textAlign: "center", paddingTop: 4 }}>
-              <span className={`seat-badge ${type.toLowerCase()}`}>
-                {type} Class
-              </span>
+          
+          <div className="info-item">
+            <div className="info-label-group">
+              <div className="info-icon">🎞️</div>
+              <span className="info-label">Screen</span>
             </div>
-          )}
+            <span className="info-value">{screen || "---"}</span>
+          </div>
+
+          <div className="info-item">
+            <div className="info-label-group">
+              <div className="info-icon">💺</div>
+              <span className="info-label">Seat</span>
+            </div>
+            <span className="info-value">{seat || "---"}</span>
+          </div>
 
         </div>
 
-        {/* CTA */}
-        <button className="order-btn-modern" onClick={handleOrderNow}>
-          🍿 Start Ordering
+        {/* Circular Action Button */}
+        <button 
+          className="welcome-arrow-button" 
+          onClick={handleOrderNow}
+          aria-label="Start Ordering"
+        >
+          <div className="arrow-icon">→</div>
         </button>
 
-      </div>
+      </main>
+
     </div>
   );
 };

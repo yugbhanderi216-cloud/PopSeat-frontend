@@ -1,11 +1,8 @@
 /* ═══════════════════════════════════════════
-   DESIGN TOKENS (Shared System)
+   DESIGN TOKENS
+   A premium, food-inspired palette
 ═══════════════════════════════════════════ */
 :root {
-  --bg: #f6f7f9;
-  --surface: #ffffff;
-  --surface2: #f9fafb;
-  --border: #e4e7ec;
   --border-soft: rgba(0, 0, 0, 0.05);
   --text: #0f172a;
   --text-muted: #64748b;
