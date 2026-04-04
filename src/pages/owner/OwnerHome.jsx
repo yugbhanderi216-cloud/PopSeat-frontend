@@ -376,7 +376,7 @@ const OwnerHome = () => {
 
   return (
     <div className="owner-container">
-      <button className="back-btn-v2" onClick={() => navigate(-1)} title="Go back">←</button>
+      <button className="back-btn-v2" onClick={() => navigate("/login")} title="Go back">←</button>
 
       <ConfirmModal
         confirmDelete={confirmDelete}
