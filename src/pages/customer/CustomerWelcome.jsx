@@ -164,11 +164,6 @@ const CustomerWelcome = () => {
       {/* Central Card */}
       <div className="welcome-main-card">
         
-        {/* Back Button */}
-        <button className="back-nav-btn" onClick={() => navigate(-1)} aria-label="Go back">
-          <span className="back-icon">←</span>
-        </button>
-
         {/* Header with Concave Curve */}
         <header className="welcome-header-card">
           <div className="welcome-logo-container">
