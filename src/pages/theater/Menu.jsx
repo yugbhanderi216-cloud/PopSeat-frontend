@@ -548,6 +548,7 @@ const Menu = () => {
                     ) : (
                       <div className="menu-card-img-placeholder">🍽️</div>
                     )}
+                    <div className="veg-dot" />
                     {!item.isAvailable && (
                       <span className="menu-unavailable-badge">Unavailable</span>
                     )}
@@ -580,16 +581,16 @@ const Menu = () => {
                     <div className="menu-card-actions">
                       <button className="edit-btn"   onClick={() => handleEdit(item)}>✏ Edit</button>
                       <button
-                        className="delete-btn"
-                        onClick={() => setConfirmDel({ id: item.id, name: item.name })}
-                      >
-                        🗑 Delete
-                      </button>
-                      <button
                         className={`toggle-btn ${item.isAvailable ? "toggle-disable" : "toggle-enable"}`}
                         onClick={() => toggleAvailability(item.id)}
                       >
                         {item.isAvailable ? "Disable" : "Enable"}
+                      </button>
+                      <button
+                        className="delete-btn"
+                        onClick={() => setConfirmDel({ id: item.id, name: item.name })}
+                      >
+                        🗑 Delete
                       </button>
                     </div>
                   </div>
