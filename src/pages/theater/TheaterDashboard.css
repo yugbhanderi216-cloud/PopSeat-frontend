@@ -307,25 +307,55 @@
 
 /* ═══════════════════════════════════════════
    LOADING / ERROR STATES
+   Standardized "Owner Home" style
 ═══════════════════════════════════════════ */
 .dashboard-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  gap: 12px;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 100vh !important;
+  background: var(--bg) !important;
+  gap: 14px !important;
+  color: var(--muted) !important;
+  font-size: 13px !important;
+  position: fixed !important;
+  top: 0; left: 0; width: 100%;
+  z-index: 9999;
+}
+
+.dashboard-state::before {
+  content: "" !important;
+  display: block !important;
+  width: 80px !important;
+  height: 80px !important;
+  background: url('../PopSeat_Logo.png') no-repeat center !important;
+  background-size: contain !important;
+  margin-bottom: 8px !important;
+  filter: drop-shadow(0 4px 12px rgba(108, 99, 255, 0.25)) !important;
+  animation: logoPulse 2s ease-in-out infinite !important;
+}
+
+/* Hide logo specifically on error state if needed, or keep it */
+.dashboard-state.error::before {
+  display: none !important;
 }
 
 .dashboard-state p {
-  font-size: 13px;
-  color: var(--muted);
-  font-weight: 500;
+  font-size: 13px !important;
+  color: var(--muted) !important;
+  margin: 0 !important;
+  font-weight: 500 !important;
 }
 
 .dashboard-state.error p {
-  color: var(--red);
+  color: var(--red) !important;
+  font-weight: 600 !important;
+}
+
+@keyframes logoPulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
 }
 
 .state-icon {
