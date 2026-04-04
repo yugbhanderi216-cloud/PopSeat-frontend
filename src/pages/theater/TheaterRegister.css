@@ -1,322 +1,371 @@
-/* ===== GLOBAL FIX ===== */
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; overflow-x: hidden; font-family: 'Plus Jakarta Sans', sans-serif; }
+/* ═══════════════════════════════════════════
+   THEATER REGISTER — matches OwnerHome style
+   Same Stripe/Linear tokens · Same violet palette
+   ═══════════════════════════════════════════ */
 
-/* ===== PAGE BACKGROUND ===== */
-.owner-container {
-  padding: 30px 24px;
-  min-height: 100vh;
-  background: var(--bg);
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@700;800&display=swap');
+
+:root {
+  --bg          : #f6f7f9;
+  --surface     : #ffffff;
+  --surface2    : #f9fafb;
+  --border      : #e4e7ec;
+  --text        : #0f172a;
+  --text-2      : #334155;
+  --muted       : #64748b;
+  --dim         : #94a3b8;
+  --accent      : #6366f1;
+  --accent-dk   : #4f46e5;
+  --accent-lt   : #eef2ff;
+  --violet      : #6C63FF;
+  --violet-deep : #4F46E5;
+  --violet-soft : rgba(108, 99, 255, 0.08);
+  --violet-glow : rgba(108, 99, 255, 0.14);
+  --red         : #dc2626;
+  --red-lt      : #fef2f2;
+  --green       : #6C63FF;
+  --sh          : 0 1px 2px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
+  --sh-md       : 0 4px 12px rgba(0,0,0,.07);
+  --sh-lg       : 0 8px 28px rgba(0,0,0,.09);
+  --radius      : 10px;
+  --radius-lg   : 14px;
 }
 
-/* ===== HEADER ===== */
-.owner-header {
-  background: var(--surface);
-  padding: 20px 24px;
-  border-radius: 20px;
-  margin-bottom: 30px;
-  border: 1.5px solid var(--border-soft);
-  box-shadow: var(--shadow);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.owner-header h1 {
-  font-family: Outfit, sans-serif;
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--text);
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
   margin: 0;
-}
-
-/* Add Theater Button */
-.owner-header button {
-  background: var(--violet);
-  color: white;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 10px;
-  font-weight: 700;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13.5px;
-  cursor: pointer;
-  transition: 0.18s ease;
-  box-shadow: 0 3px 10px rgba(108, 99, 255, 0.3);
-}
-
-.owner-header button:hover {
-  transform: translateY(-2px);
-  background: var(--violet-deep);
-  box-shadow: 0 4px 14px rgba(108, 99, 255, 0.4);
-}
-
-/* ===== GRID ===== */
-.theater-grid {
-  background: transparent;
   padding: 0;
-  border: none;
-  box-shadow: none;
-  display: grid;
-  justify-content: center;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
 }
 
-/* ===== THEATER CARD ===== */
-.theater-card {
-  background: var(--surface);
-  border-radius: 20px;
-  padding: 24px;
-  border: 1.5px solid var(--border-soft);
-  transition: all 0.2s ease;
-  width: 100%;
-  box-shadow: var(--shadow);
+html, body {
+  overflow-x: hidden;
 }
 
-.theater-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--violet);
-}
-
-/* ===== STAFF BOX ===== */
-.staff-manage-box {
-  margin-top: 20px;
-  padding: 16px;
-  background: var(--surface2);
-  border-radius: 12px;
-  border: 1.5px solid var(--border-soft);
-}
-
-.staff-manage-box input {
-  width: 100%;
-  padding: 10px 12px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  border: 1.5px solid var(--border-soft);
-  background: var(--surface);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13px;
-  outline: none;
-  transition: 0.2s ease;
-}
-.staff-manage-box input:focus {
-  border-color: var(--violet);
-  box-shadow: 0 0 0 3px var(--violet-glow);
-}
-
-/* ===== WORKER ROW ===== */
-.worker-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-/* ===== DELETE WORKER BUTTON ===== */
-.delete-worker-btn {
-  height: 28px;
-  padding: 0 10px;
-  font-size: 12px;
-  font-weight: 600;
-  background: var(--red-bg);
-  color: var(--red);
-  border: 1.5px solid rgba(239, 68, 68, 0.2);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.delete-worker-btn:hover {
-  background: rgba(239, 68, 68, 0.18);
-}
-
-/* ===== ADDRESS TEXTAREA ===== */
-.theater-page textarea {
-  width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 16px;
-  border-radius: 10px;
-  border: 1.5px solid var(--border-soft);
-  background: var(--surface2);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13.5px;
-  resize: none;
-  height: 90px;
-  transition: 0.2s ease;
-  outline: none;
-}
-
-.theater-page textarea:focus {
-  border-color: var(--violet);
-  background: var(--surface);
-  box-shadow: 0 0 0 3px var(--violet-glow);
-}
-
-/* ===== ACTION BUTTONS ===== */
-.theater-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.delete-theater-btn {
-  background: var(--red-bg);
-  color: var(--red);
-  border: 1.5px solid rgba(239, 68, 68, 0.2);
-  padding: 8px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 12.5px;
-  transition: 0.2s ease;
-}
-
-.delete-theater-btn:hover {
-  background: rgba(239, 68, 68, 0.18);
-}
-
-/* ===== THEATER FORM PAGE ===== */
+/* ═══════════════════════════════════════════
+   PAGE WRAPPER
+   ═══════════════════════════════════════════ */
 .theater-page {
-  padding: 30px 24px;
   min-height: 100vh;
   background: var(--bg);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  padding: 60px 24px 60px;
+  position: relative;
 }
 
-/* ===== FORM CARD ===== */
-.theater-page .theater-card {
-  width: 100%;
-  max-width: 520px;
-  background: var(--surface);
-  border-radius: 20px;
-  padding: 35px 30px;
-  border: 1.5px solid var(--border-soft);
-  box-shadow: var(--shadow-md);
-}
-
-/* Inputs */
-.theater-page input {
-  width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 16px;
-  border-radius: 10px;
-  border: 1.5px solid var(--border-soft);
-  background: var(--surface2);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13.5px;
-  transition: 0.2s ease;
-  outline: none;
-}
-.theater-page input:focus {
-  border-color: var(--violet);
-  background: var(--surface);
-  box-shadow: 0 0 0 3px var(--violet-glow);
-}
-
-/* Labels */
-.theater-page label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-  display: block;
-}
-
-/* Button */
-.theater-page button {
-  width: 100%;
-  margin-top: 16px;
-  padding: 14px;
-  background: var(--violet);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-weight: 700;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 14px;
-  cursor: pointer;
-  transition: 0.18s ease;
-  box-shadow: 0 3px 10px rgba(108, 99, 255, 0.3);
-}
-
-.theater-page button:hover {
-  transform: translateY(-2px);
-  background: var(--violet-deep);
-  box-shadow: 0 4px 14px rgba(108, 99, 255, 0.4);
-}
-
-/* ===== BACK BUTTON ===== */
+/* ═══════════════════════════════════════════
+   BACK BUTTON — matches OwnerHome back-btn-v2
+   ═══════════════════════════════════════════ */
 .back-btn {
-  position: absolute;
-  top: 24px;
-  left: 24px;
+  position: fixed;
+  top: 28px;
+  left: 28px;
   width: 44px !important;
   height: 44px !important;
   padding: 0 !important;
-  border-radius: 10px;
-  border: 1.5px solid var(--border-soft);
-  background: var(--surface2);
-  color: var(--text-muted);
-  font-size: 20px;
-  font-weight: 700;
-  display: flex;
+  margin: 0 !important;
+  display: flex !important;
   align-items: center;
   justify-content: center;
+  border-radius: 50% !important;
+  border: 2px solid var(--violet) !important;
+  background: #ffffff !important;
+  color: var(--violet) !important;
+  font-size: 20px;
+  font-weight: 700;
   cursor: pointer;
-  z-index: 99;
-  box-shadow: none;
-  transition: 0.2s ease;
+  transition: all 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(108, 99, 255, 0.15);
+  z-index: 200;
 }
 
 .back-btn:hover {
-  background: var(--violet-soft);
-  border-color: var(--violet);
-  color: var(--violet);
+  background: var(--violet-soft) !important;
+  color: var(--violet-deep) !important;
+  border-color: var(--violet-deep) !important;
+  transform: translateX(-4px) scale(1.05) !important;
+  box-shadow: 0 8px 24px rgba(108, 99, 255, 0.22);
 }
 
-/* ===== TABLET ===== */
 @media (max-width: 1024px) {
-  .owner-container { padding: 24px 16px; }
+  .back-btn {
+    top: 20px;
+    left: 20px;
+    width: 38px !important;
+    height: 38px !important;
+  }
 }
 
-/* ===== MOBILE ===== */
-@media (max-width: 768px) {
-  .owner-container { padding: 20px 16px; }
-  .owner-header { flex-direction: column; align-items: stretch; gap: 16px; margin-bottom: 24px; }
-  .owner-header button { width: 100%; }
-  .theater-grid { grid-template-columns: 1fr; gap: 20px; }
-  .theater-card { padding: 20px; }
-  .theater-page .theater-card { padding: 24px; }
+@media (max-width: 640px) {
+  .back-btn {
+    top: 14px;
+    left: 14px;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 16px;
+  }
 }
 
-/* ================= BANK DETAILS SECTION ================= */
-.theater-card h3 {
-  margin-top: 24px;
-  margin-bottom: 16px;
-  font-family: Outfit, sans-serif;
-  font-size: 18px;
+/* ═══════════════════════════════════════════
+   FORM CARD
+   ═══════════════════════════════════════════ */
+.theater-page .theater-card {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px 40px;
+  box-shadow: var(--sh-md);
+  animation: fadeInUp 0.22s ease both;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════
+   HEADINGS
+   ═══════════════════════════════════════════ */
+.theater-page .theater-card h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 24px;
   font-weight: 800;
-  color: var(--text);
-  border-bottom: 1.5px solid var(--border-soft);
-  padding-bottom: 10px;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+  background: linear-gradient(to right, var(--text), var(--violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-/* Bank inputs spacing */
+/* Subtext below h2 (optional p tag) */
+.theater-page .theater-card > p.form-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+/* Divider before bank section */
+.theater-page .theater-card h3 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-2);
+  letter-spacing: -0.2px;
+  margin-top: 28px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theater-page .theater-card h3 span {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--dim);
+  letter-spacing: 0;
+}
+
+/* ═══════════════════════════════════════════
+   SECTION DIVIDER LABEL
+   ═══════════════════════════════════════════ */
+.form-section-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  margin-bottom: 12px;
+  margin-top: 20px;
+  display: block;
+}
+
+/* ═══════════════════════════════════════════
+   LABELS
+   ═══════════════════════════════════════════ */
+.theater-page label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 5px;
+  display: block;
+}
+
+.theater-page label span {
+  font-size: 11px;
+  color: var(--dim);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+/* ═══════════════════════════════════════════
+   INPUTS & TEXTAREA
+   ═══════════════════════════════════════════ */
+.theater-page input,
+.theater-page textarea {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 13.5px;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  outline: none;
+  box-shadow: var(--sh);
+}
+
+.theater-page input::placeholder,
+.theater-page textarea::placeholder {
+  color: var(--dim);
+}
+
+.theater-page input:focus,
+.theater-page textarea:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.09);
+}
+
+/* Read-only email field */
+.theater-page input[readonly] {
+  background: var(--bg);
+  color: var(--muted);
+  cursor: default;
+  border-style: dashed;
+}
+
+/* Textarea specific */
+.theater-page textarea {
+  resize: none;
+  height: 90px;
+  line-height: 1.5;
+}
+
+/* File inputs */
+.theater-page input[type="file"] {
+  padding: 8px 12px;
+  background: var(--bg);
+  border-style: dashed;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.theater-page input[type="file"]:hover {
+  border-color: var(--accent);
+  background: var(--accent-lt);
+}
+
+/* Time inputs */
+.theater-page input[type="time"] {
+  cursor: pointer;
+  color: var(--text-2);
+}
+
+/* Number input spinner hide */
+.theater-page input[type="number"]::-webkit-inner-spin-button,
+.theater-page input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.5;
+}
+
+/* ═══════════════════════════════════════════
+   PRIMARY SUBMIT BUTTON — matches OwnerHome
+   ═══════════════════════════════════════════ */
+.theater-page button:not(.back-btn) {
+  width: 100%;
+  padding: 13px 14px;
+  background: var(--violet);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 3px 10px rgba(108, 99, 255, 0.28);
+  letter-spacing: -0.1px;
+  margin-top: 4px;
+}
+
+.theater-page button:not(.back-btn):hover:not(:disabled) {
+  background: var(--violet-deep);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 16px rgba(108, 99, 255, 0.38);
+}
+
+.theater-page button:not(.back-btn):active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.theater-page button:not(.back-btn):disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* "View Plans" button in blocked state */
+.theater-page .theater-card button {
+  margin-top: 0;
+}
+
+/* ═══════════════════════════════════════════
+   ERROR BOXES
+   ═══════════════════════════════════════════ */
+.error-box {
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.field-error {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+.api-error {
+  background: var(--red-lt);
+  border: 1px solid #fca5a5;
+  color: var(--red);
+}
+
+/* ═══════════════════════════════════════════
+   BLOCKED / LOADING STATE CARDS
+   ═══════════════════════════════════════════ */
+.theater-page .theater-card[style*="text-align: center"] h3 {
+  -webkit-text-fill-color: var(--text);
+  background: none;
+  font-size: 18px;
+  border-bottom: none;
+  margin-top: 4px;
+  padding-bottom: 0;
+  justify-content: center;
+}
+
+/* ═══════════════════════════════════════════
+   BANK SECTION
+   ═══════════════════════════════════════════ */
 .theater-card input[name="accountHolder"],
 .theater-card input[name="bankName"],
 .theater-card input[name="accountNumber"],
@@ -325,11 +374,27 @@ html, body { margin: 0; padding: 0; overflow-x: hidden; font-family: 'Plus Jakar
   margin-bottom: 12px;
 }
 
-/* Optional: highlight bank section */
-.bank-section {
-  background: var(--surface2);
-  padding: 16px;
-  border-radius: 12px;
-  border: 1.5px solid var(--border-soft);
-  margin-top: 20px;
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .theater-page {
+    padding: 54px 14px 48px;
+    align-items: flex-start;
+  }
+
+  .theater-page .theater-card {
+    padding: 24px 20px 28px;
+    border-radius: var(--radius-lg);
+  }
+
+  .theater-page .theater-card h2 {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 400px) {
+  .theater-page .theater-card {
+    padding: 20px 16px 24px;
+  }
 }
