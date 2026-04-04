@@ -76,6 +76,9 @@ const Orders = () => {
   const [error,        setError]        = useState("");
   const [authError,    setAuthError]    = useState(false);
   const [updating,     setUpdating]     = useState({});
+  const [selectedDate, setSelectedDate] = useState("");
+  const [currentPage,  setCurrentPage]  = useState(1);
+  const ORDERS_PER_PAGE = 10;
   // Ticker increments every 30s to force timeAgo re-render
   const [tick,         setTick]         = useState(0);
   const intervalRef = useRef(null);
@@ -374,14 +377,41 @@ const Orders = () => {
     }
   };
 
-  const filteredOrders = orders.filter((o) =>
-    statusFilter === "" ? true : o.orderStatus === statusFilter
-  );
+  // Date parsing utility
+  const formatOrderDate = (isoString) => {
+    if (!isoString) return "";
+    return new Date(isoString).toISOString().split("T")[0]; // YYYY-MM-DD
+  };
 
+  const filteredOrders = orders.filter((o) => {
+    // 1. Status Filter
+    if (statusFilter !== "" && o.orderStatus !== statusFilter) return false;
+    // 2. Date Filter
+    if (selectedDate !== "" && formatOrderDate(o.createdAt) !== selectedDate) return false;
+    return true;
+  });
+
+  // Calculate totals by status *after* date filtering so tabs reflect accurate counts for that day
+  const ordersByDate = selectedDate 
+    ? orders.filter(o => formatOrderDate(o.createdAt) === selectedDate) 
+    : orders;
+    
   const countByStatus = STATUSES.reduce((acc, s) => {
-    acc[s] = orders.filter((o) => o.orderStatus === s).length;
+    acc[s] = ordersByDate.filter((o) => o.orderStatus === s).length;
     return acc;
   }, {});
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredOrders.length / ORDERS_PER_PAGE) || 1;
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * ORDERS_PER_PAGE,
+    currentPage * ORDERS_PER_PAGE
+  );
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, selectedDate]);
 
   /* ── Auth error screen ── */
   if (authError) {
@@ -434,7 +464,26 @@ const Orders = () => {
           <h2 className="orders-title">📦 Orders</h2>
           <div className="orders-live-dot" title="Live updates every 5s" />
         </div>
-        <button className="orders-refresh-btn" onClick={() => fetchOrders(true)}>↻ Refresh</button>
+        <div className="orders-topbar-right">
+          <div className="orders-date-picker-wrap">
+            <span className="orders-date-icon">📅</span>
+            <input 
+              type="date" 
+              className="orders-date-input"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              title="Filter by Date"
+            />
+            {selectedDate && (
+              <button 
+                className="orders-date-clear" 
+                onClick={() => setSelectedDate("")}
+                title="Clear date filter"
+              >✕</button>
+            )}
+          </div>
+          <button className="orders-refresh-btn" onClick={() => fetchOrders(true)}>↻ Refresh</button>
+        </div>
       </div>
 
       {/* ERROR */}
@@ -486,12 +535,13 @@ const Orders = () => {
           <span className="orders-empty-icon">📋</span>
           <p>{statusFilter
             ? `No ${STATUS_META[statusFilter]?.label || statusFilter} orders`
-            : "No orders yet"}
+            : "No orders found"}
+            {selectedDate && ` on ${selectedDate}`}
           </p>
         </div>
       ) : (
         <div className="orders-list">
-          {filteredOrders.map((order) => {
+          {paginatedOrders.map((order) => {
             const currentStatus = order.orderStatus || "placed";
             const meta          = STATUS_META[currentStatus] || STATUS_META.placed;
             const nextStatus    = NEXT_STATUS[currentStatus];
@@ -592,6 +642,29 @@ const Orders = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* PAGINATION FOOTER */}
+      {filteredOrders.length > 0 && (
+        <div className="orders-pagination">
+          <button 
+            className="pagination-btn" 
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            ← Prev
+          </button>
+          <span className="pagination-info">
+            Page <strong>{currentPage}</strong> of {totalPages}
+          </span>
+          <button 
+            className="pagination-btn" 
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next →
+          </button>
         </div>
       )}
 
