@@ -345,8 +345,8 @@ const EditTheater = () => {
   if (loading) {
     return (
       <div className="edit-page">
-        <div className="edit-container edit-container--loading">
-          <div className="edit-spinner" />
+        <div className="edit-loading-wrap">
+          <div className="edit-loading-logo" />
           <p className="edit-loading-text">Loading theater details...</p>
         </div>
       </div>

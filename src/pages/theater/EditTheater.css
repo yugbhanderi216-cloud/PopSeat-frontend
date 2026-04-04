@@ -282,50 +282,44 @@ input[type="file"] {
 }
 
 /* ═══════════════════════════════════════════
-   LOADING STATE
-   Stays in content column — sidebar is NOT covered
+   LOADING STATE — clean, no ::before conflict
+   Stays in content column · sidebar NOT covered
 ═══════════════════════════════════════════ */
-.edit-container--loading {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-height: 60vh !important;
-  background: var(--bg) !important;
-  gap: 16px !important;
-  color: var(--muted) !important;
-  font-size: 13px !important;
-  /* ✅ NOT fixed — stays inside .edit-page flex column */
-  position: relative !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 60px 24px !important;
-  margin: 0 !important;
+.edit-loading-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  width: 100%;
+  max-width: 800px;
+  gap: 14px;
+  padding: 60px 24px;
+  color: var(--muted);
+  font-size: 13px;
 }
 
-/* Animated PopSeat logo via ::before pseudo */
-.edit-container--loading::before {
-  content: "" !important;
-  display: block !important;
-  width: 72px !important;
-  height: 72px !important;
-  background: url('../PopSeat_Logo.png') no-repeat center !important;
-  background-size: contain !important;
-  margin-bottom: 8px !important;
-  filter: drop-shadow(0 4px 12px rgba(108, 99, 255, 0.25)) !important;
-  animation: logoPulse 2s ease-in-out infinite !important;
+.edit-loading-logo {
+  width: 72px;
+  height: 72px;
+  background: url('../PopSeat_Logo.png') no-repeat center;
+  background-size: contain;
+  filter: drop-shadow(0 4px 12px rgba(108, 99, 255, 0.25));
+  animation: logoPulse 2s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
-/* Hide the JSX spinner — we use the CSS pseudo logo instead */
+.edit-loading-text {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Keep old classes for compatibility but hide them */
+.edit-container--loading,
 .edit-spinner {
   display: none !important;
-}
-
-.edit-container--loading p {
-  font-size: 13px !important;
-  color: var(--muted) !important;
-  margin: 0 !important;
-  font-weight: 500 !important;
 }
 
 @keyframes logoPulse {
