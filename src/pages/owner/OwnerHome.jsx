@@ -23,6 +23,13 @@ const formatTime = (time) => {
   return `${hours}:${minutes} ${ampm}`;
 };
 
+const getImageUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("blob:")) return url;
+  // Use the same mapping logic as TheaterDashboard.jsx
+  return `${API_BASE}/api/${url.replace(/^\//, '')}`;
+};
+
 const authHeaders = () => ({
   "Content-Type": "application/json",
   Authorization: `Bearer ${localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
@@ -490,7 +497,16 @@ const OwnerHome = () => {
               <div key={t._id} className="theater-card">
 
                 <div className="card-header">
-                  <h2 className="card-title">{t.name}</h2>
+                  <div className="card-header-left">
+                    {t.theaterLogo && (
+                      <img
+                        src={getImageUrl(t.theaterLogo)}
+                        alt="Logo"
+                        className="card-logo"
+                      />
+                    )}
+                    <h2 className="card-title">{t.name}</h2>
+                  </div>
                   <span className={`status-badge ${t.isActive ? "active" : "pending"}`}>
                     {t.isActive ? "● Active" : "● Pending"}
                   </span>

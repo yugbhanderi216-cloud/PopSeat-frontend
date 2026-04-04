@@ -59,16 +59,16 @@
 ═══════════════════════════════════════════ */
 .dashboard-header {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 16px;
-  padding: 28px 24px;
+  padding: 24px 28px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--sh);
   margin-bottom: 24px;
-  text-align: center;
+  text-align: left;
   position: relative;
 }
 

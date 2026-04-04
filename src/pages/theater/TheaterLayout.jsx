@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import "./TheaterLayout.css";
 import logo from "../PopSeat_Logo.png";
@@ -44,6 +44,18 @@ const TheaterLayout = () => {
 
   const [sidebarCollapsed,  setSidebarCollapsed]  = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [userMenuOpen,      setUserMenuOpen]      = useState(false);
+  const userMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const toggleSidebar = () => {
     if (isMobile()) {
@@ -73,20 +85,20 @@ const TheaterLayout = () => {
 
   /* ── Nav items (same rules as before) ── */
   const ownerLinks = [
-    { to: "overview",  icon: "📊", label: "Overview"           },
-    { to: "orders",    icon: "🧾", label: "Orders"             },
-    { to: "analytics", icon: "📈", label: "Analytics"          },
-    { to: "menu",      icon: "🍔", label: "Food Menu"          },
-    { to: "qr",        icon: "🔲", label: "QR Generator"       },
-    { to: "settings",  icon: "⚙️", label: "Settings"           },
+    { to: "overview",  icon: "⬡", label: "Overview"           },
+    { to: "orders",    icon: "◎", label: "Orders"             },
+    { to: "analytics", icon: "◈", label: "Analytics"          },
+    { to: "menu",      icon: "☷", label: "Food Menu"          },
+    { to: "qr",        icon: "▣", label: "QR Generator"       },
+    { to: "settings",  icon: "⬢", label: "Settings"           },
   ];
 
   const workerLinks = [
-    { to: "overview",  icon: "📊", label: "Overview"  },
-    { to: "orders",    icon: "🧾", label: "Orders"    },
-    { to: "analytics", icon: "📈", label: "Analytics" },
-    { to: "menu",      icon: "🍔", label: "Food Menu" },
-    { to: "qr",        icon: "🔲", label: "QR Code"   },
+    { to: "overview",  icon: "⬡", label: "Overview"  },
+    { to: "orders",    icon: "◎", label: "Orders"    },
+    { to: "analytics", icon: "◈", label: "Analytics" },
+    { to: "menu",      icon: "☷", label: "Food Menu" },
+    { to: "qr",        icon: "▣", label: "QR Code"   },
   ];
 
   const navLinks = isWorker ? workerLinks : ownerLinks;
@@ -171,11 +183,30 @@ const TheaterLayout = () => {
               <span>PopSeat</span>
             </div>
           </div>
-          <div className="tl-topbar-right">
+          <div className="tl-topbar-right" ref={userMenuRef}>
             <span className="tl-role-chip">
-              {isWorker ? "👷 Worker" : "👑 Owner"}
+              {isOwner ? "👑 Owner" : "👷 Worker"}
             </span>
-            <div className="tl-avatar-sm">{getInitial()}</div>
+
+            <div
+              className="tl-avatar-sm"
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              title="User menu"
+            >
+              {getInitial()}
+            </div>
+
+            {userMenuOpen && (
+              <div className="tl-user-dropdown">
+                <div className="tl-dropdown-info">
+                  <span className="tl-header-email">{email}</span>
+                </div>
+                <div className="tl-dropdown-divider" />
+                <button className="tl-dropdown-logout" onClick={handleLogout}>
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

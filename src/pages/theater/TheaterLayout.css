@@ -44,7 +44,7 @@
   --blue-bg: rgba(59, 130, 246, 0.10);
 
   --sidebar-w: 230px;
-  --topbar-h: 60px;
+  --topbar-h: 72px;
 }
 
 
@@ -393,9 +393,34 @@
 }
 
 .tl-topbar-right {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+}
+
+.tl-avatar-sm {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--violet);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(121, 51, 77, 0.25);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+}
+
+.tl-avatar-sm:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(121, 51, 77, 0.35);
+  border-color: var(--violet-light);
 }
 
 .tl-role-chip {
@@ -406,29 +431,77 @@
   background: var(--violet-soft);
   color: var(--violet);
   border: 1px solid var(--border-soft);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
-.tl-avatar-sm {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--violet);
-  color: #fff;
+.tl-user-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  animation: dropdownFade 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes dropdownFade {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tl-dropdown-info {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tl-header-email {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.tl-dropdown-divider {
+  height: 1px;
+  background: var(--border-soft);
+  margin: 4px 8px;
+}
+
+.tl-dropdown-logout {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--text-muted);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-family: 'Outfit', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  box-shadow: 0 3px 10px rgba(121, 51, 77, 0.3);
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  gap: 10px;
 }
 
-.tl-avatar-sm:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 16px rgba(121, 51, 77, 0.4);
+.tl-dropdown-logout:hover {
+  background: var(--red-bg);
+  color: var(--red);
+}
+
+.tl-dropdown-logout::before {
+  content: '🚪';
+  font-size: 14px;
 }
 
 /* ── Page content area ── */
