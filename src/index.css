@@ -2,11 +2,11 @@
 
 :root {
   /* Brand */
-  --violet:       #6C63FF;
+  --violet:       #79334D;
   --violet-deep:  #4F46E5;
   --violet-light: #8B84FF;
-  --violet-glow:  rgba(108, 99, 255, 0.14);
-  --violet-soft:  rgba(108, 99, 255, 0.08);
+  --violet-glow:  rgba(121, 51, 77, 0.14);
+  --violet-soft:  rgba(121, 51, 77, 0.08);
 
   /* Backgrounds */
   --bg:           #F2F0FF;
@@ -16,10 +16,10 @@
   --surface3:     #EFEDFF;
 
   /* Borders & Shadows */
-  --border:       rgba(108, 99, 255, 0.18);
-  --border-soft:  rgba(108, 99, 255, 0.09);
-  --shadow:       0 2px 16px rgba(108, 99, 255, 0.10);
-  --shadow-md:    0 6px 32px rgba(108, 99, 255, 0.15);
+  --border:       rgba(121, 51, 77, 0.18);
+  --border-soft:  rgba(121, 51, 77, 0.09);
+  --shadow:       0 2px 16px rgba(121, 51, 77, 0.10);
+  --shadow-md:    0 6px 32px rgba(121, 51, 77, 0.15);
 
   /* Text */
   --text:         #1A1740;
@@ -27,8 +27,8 @@
   --text-dim:     #ABA8CC;
 
   /* Semantic */
-  --green:        #6C63FF;
-  --green-bg:     rgba(108, 99, 255, 0.08);
+  --green:        #79334D;
+  --green-bg:     rgba(121, 51, 77, 0.08);
   --red:          #EF4444;
   --red-bg:       rgba(239, 68, 68, 0.09);
   --amber:        #F59E0B;

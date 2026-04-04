@@ -141,7 +141,7 @@
   background: url('../PopSeat_Logo.png') no-repeat center !important;
   background-size: contain !important;
   margin-bottom: 8px !important;
-  filter: drop-shadow(0 4px 12px rgba(108, 99, 255, 0.25)) !important;
+  filter: drop-shadow(0 4px 12px rgba(121, 51, 77, 0.25)) !important;
   animation: logoPulse 2s ease-in-out infinite !important;
 }
 
@@ -200,7 +200,7 @@
   text-align: center;
   padding: 60px 20px;
   background: var(--surface, #fff);
-  border: 1.5px dashed var(--border, rgba(108,99,255,0.18));
+  border: 1.5px dashed var(--border, rgba(121, 51, 77,0.18));
   border-radius: 20px;
   margin-top: 8px;
 }
@@ -209,7 +209,7 @@
   font-size: 52px;
   display: block;
   margin-bottom: 16px;
-  filter: drop-shadow(0 4px 12px rgba(108,99,255,0.18));
+  filter: drop-shadow(0 4px 12px rgba(121, 51, 77,0.18));
 }
 
 .menu-empty p {
@@ -495,7 +495,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 22px 24px 16px;
-  border-bottom: 1px solid var(--border-soft, rgba(108,99,255,0.09));
+  border-bottom: 1px solid var(--border-soft, rgba(121, 51, 77,0.09));
   position: sticky;
   top: 0;
   background: var(--surface, #fff);
@@ -513,7 +513,7 @@
 .modal-close-btn {
   width: 30px; height: 30px;
   border-radius: 8px;
-  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
+  border: 1.5px solid var(--border-soft, rgba(121, 51, 77,0.09));
   background: var(--surface2, #F7F6FF);
   color: var(--text-dim, #ABA8CC);
   font-size: 13px;
@@ -589,7 +589,7 @@
 
 /* Dropzone */
 .img-dropzone {
-  border: 2px dashed var(--border, rgba(108,99,255,0.22));
+  border: 2px dashed var(--border, rgba(121, 51, 77,0.22));
   border-radius: 12px;
   padding: 28px 20px;
   text-align: center;
@@ -604,8 +604,8 @@
 }
 
 .img-dropzone:hover {
-  border-color: var(--violet, #6C63FF);
-  background: var(--violet-soft, rgba(108,99,255,0.06));
+  border-color: var(--violet, #79334D);
+  background: var(--violet-soft, rgba(121, 51, 77,0.06));
 }
 
 .img-dropzone--loading {
@@ -635,7 +635,7 @@
   gap: 14px;
   padding: 12px;
   background: var(--surface2, #F7F6FF);
-  border: 1.5px solid var(--border, rgba(108,99,255,0.18));
+  border: 1.5px solid var(--border, rgba(121, 51, 77,0.18));
   border-radius: 12px;
   margin-bottom: 10px;
 }
@@ -645,7 +645,7 @@
   height: 72px;
   object-fit: cover;
   border-radius: 10px;
-  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
+  border: 1.5px solid var(--border-soft, rgba(121, 51, 77,0.09));
   flex-shrink: 0;
 }
 
@@ -685,9 +685,9 @@
   width: 100%;
   padding: 9px;
   border-radius: 9px;
-  border: 1.5px dashed var(--border, rgba(108,99,255,0.22));
+  border: 1.5px dashed var(--border, rgba(121, 51, 77,0.22));
   background: transparent;
-  color: var(--violet, #6C63FF);
+  color: var(--violet, #79334D);
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 12.5px;
   font-weight: 700;
@@ -697,8 +697,8 @@
 }
 
 .img-change-btn:hover {
-  background: var(--violet-soft, rgba(108,99,255,0.06));
-  border-color: var(--violet, #6C63FF);
+  background: var(--violet-soft, rgba(121, 51, 77,0.06));
+  border-color: var(--violet, #79334D);
 }
 
 .img-error {

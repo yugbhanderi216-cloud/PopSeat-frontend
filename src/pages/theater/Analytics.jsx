@@ -42,7 +42,7 @@ const CHART_METRICS = [
 ];
 
 const STATUS_CONFIG = [
-  { key: "placed",    label: "Placed",    color: "#6C63FF" },
+  { key: "placed",    label: "Placed",    color: "#79334D" },
   { key: "preparing", label: "Preparing", color: "#f59e0b" },
   { key: "ready",     label: "Ready",     color: "#0891b2" },
   { key: "delivered", label: "Delivered", color: "#16a34a" },
@@ -427,7 +427,7 @@ const Analytics = () => {
                     </linearGradient>
                   </defs>
 
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(108,99,255,0.07)" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(121, 51, 77,0.07)" />
                   <XAxis
                     dataKey="label"
                     tickLine={false}

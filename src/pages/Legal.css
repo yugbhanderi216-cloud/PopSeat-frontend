@@ -34,14 +34,14 @@
   object-fit: contain;
   background: #ffffff;
   padding: 5px;
-  border: 2px solid rgba(108, 99, 255, 0.22);
+  border: 2px solid rgba(121, 51, 77, 0.22);
 }
 
 .legal-logo span {
   font-family: 'Outfit', sans-serif;
   font-weight: 800;
   font-size: 19px;
-  background: linear-gradient(to right, #0f172a, #6C63FF);
+  background: linear-gradient(to right, #0f172a, #79334D);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

@@ -47,7 +47,7 @@
   content: '';
   position: fixed;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(108,99,255,0.05) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(121, 51, 77,0.05) 1px, transparent 1px);
   background-size: 28px 28px;
   pointer-events: none;
   z-index: 0;
@@ -88,9 +88,9 @@
   align-items: center;
   padding: 3px 10px;
   border-radius: 999px;
-  background: var(--violet-soft, rgba(108,99,255,0.09));
-  border: 1px solid rgba(108,99,255,0.18);
-  color: var(--violet, #6C63FF);
+  background: var(--violet-soft, rgba(121, 51, 77,0.09));
+  border: 1px solid rgba(121, 51, 77,0.18);
+  color: var(--violet, #79334D);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -179,7 +179,7 @@
   background: url('../PopSeat_Logo.png') no-repeat center !important;
   background-size: contain !important;
   margin-bottom: 8px !important;
-  filter: drop-shadow(0 4px 12px rgba(108, 99, 255, 0.25)) !important;
+  filter: drop-shadow(0 4px 12px rgba(121, 51, 77, 0.25)) !important;
   animation: logoPulse 2s ease-in-out infinite !important;
 }
 
@@ -564,7 +564,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 11px 0;
-  border-bottom: 1px solid var(--border-soft, rgba(108,99,255,0.07));
+  border-bottom: 1px solid var(--border-soft, rgba(121, 51, 77,0.07));
 }
 
 .top-item:last-child  { border-bottom: none; padding-bottom: 0; }

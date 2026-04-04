@@ -59,8 +59,8 @@ body {
   min-height: 100vh;
 
   /* Decisive Overrides */
-  --green: #6C63FF;
-  --green-lt: rgba(108, 99, 255, 0.08);
+  --green: #79334D;
+  --green-lt: rgba(121, 51, 77, 0.08);
   --amber: #d97706;
   --amber-lt: #fffbeb;
   --red: #dc2626;
@@ -97,7 +97,7 @@ body {
   margin-bottom: 8px;
   font-size: 0;
   /* Hides the emoji without JSX change */
-  filter: drop-shadow(0 4px 12px rgba(108, 99, 255, 0.25));
+  filter: drop-shadow(0 4px 12px rgba(121, 51, 77, 0.25));
   animation: logoPulse 2s ease-in-out infinite;
 }
 
@@ -209,22 +209,22 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  border: 2px solid var(--violet, #6C63FF);
+  border: 2px solid var(--violet, #79334D);
   background: #ffffff;
-  color: var(--violet, #6C63FF);
+  color: var(--violet, #79334D);
   font-size: 20px;
   cursor: pointer;
   transition: all 0.24s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 14px rgba(108, 99, 255, 0.15);
+  box-shadow: 0 4px 14px rgba(121, 51, 77, 0.15);
   z-index: 100;
 }
 
 .back-btn-v2:hover {
-  background: var(--violet-soft, rgba(108, 99, 255, 0.08));
+  background: var(--violet-soft, rgba(121, 51, 77, 0.08));
   color: var(--violet-deep, #4F46E5);
   border-color: var(--violet-deep, #4F46E5);
   transform: translateX(-4px) scale(1.05);
-  box-shadow: 0 8px 24px rgba(108, 99, 255, 0.22);
+  box-shadow: 0 8px 24px rgba(121, 51, 77, 0.22);
 }
 
 @media (max-width: 1024px) {

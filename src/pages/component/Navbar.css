@@ -10,7 +10,7 @@
   position: sticky;
   top: 0;
   z-index: 300;
-  box-shadow: 0 1px 12px rgba(108, 99, 255, 0.06);
+  box-shadow: 0 1px 12px rgba(121, 51, 77, 0.06);
 }
 
 /* LEFT */
@@ -103,13 +103,13 @@
   font-family: Outfit, sans-serif;
   font-size: 14px;
   font-weight: 800;
-  box-shadow: 0 3px 10px rgba(108, 99, 255, 0.3);
+  box-shadow: 0 3px 10px rgba(121, 51, 77, 0.3);
   transition: all 0.2s ease;
 }
 
 .avatar:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(108, 99, 255, 0.4);
+  box-shadow: 0 4px 14px rgba(121, 51, 77, 0.4);
 }
 
 /* DROPDOWN */

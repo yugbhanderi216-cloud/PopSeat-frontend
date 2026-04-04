@@ -22,7 +22,7 @@
   content: '';
   position: fixed;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(108,99,255,0.06) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(121, 51, 77,0.06) 1px, transparent 1px);
   background-size: 28px 28px;
   pointer-events: none;
   z-index: 0;
@@ -37,7 +37,7 @@
   width: 420px;
   height: 420px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(121, 51, 77,0.12) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -54,9 +54,9 @@
   width: 100%;
   max-width: 460px;
   text-align: center;
-  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
+  border: 1.5px solid var(--border-soft, rgba(121, 51, 77,0.09));
   box-shadow:
-    0 2px 16px rgba(108,99,255,0.10),
+    0 2px 16px rgba(121, 51, 77,0.10),
     inset 0 1px 0 rgba(255,255,255,0.9);
   animation: cardReveal 0.5s cubic-bezier(0.22,1,0.36,1) both;
   overflow: hidden;
@@ -88,7 +88,7 @@
   width: 280px;
   height: 120px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(108,99,255,0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(121, 51, 77,0.08) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -142,7 +142,7 @@
   font-family: 'Outfit', sans-serif;
   font-size: 22px;
   font-weight: 800;
-  color: var(--violet, #6C63FF);
+  color: var(--violet, #79334D);
   margin-top: 8px;
   opacity: 0.7;
 }
@@ -151,7 +151,7 @@
   font-family: 'Outfit', sans-serif;
   font-size: 52px;
   font-weight: 900;
-  color: var(--violet, #6C63FF);
+  color: var(--violet, #79334D);
   letter-spacing: -0.04em;
   background: linear-gradient(
     135deg,
@@ -183,7 +183,7 @@
   background: linear-gradient(
     90deg,
     transparent,
-    var(--border, rgba(108,99,255,0.18)),
+    var(--border, rgba(121, 51, 77,0.18)),
     transparent
   );
   margin: 0 0 20px;
@@ -212,14 +212,14 @@
   color: var(--text-muted, #6B6891);
   padding: 9px 13px;
   background: var(--surface2, #F7F6FF);
-  border: 1px solid var(--border-soft, rgba(108,99,255,0.09));
+  border: 1px solid var(--border-soft, rgba(121, 51, 77,0.09));
   border-radius: 10px;
   transition: all 0.18s ease;
 }
 
 .payment-features li:hover {
   background: var(--surface3, #EFEDFF);
-  border-color: var(--border, rgba(108,99,255,0.18));
+  border-color: var(--border, rgba(121, 51, 77,0.18));
   color: var(--text, #1A1740);
 }
 
@@ -264,12 +264,12 @@
   letter-spacing: 0.01em;
   background: linear-gradient(
     135deg,
-    var(--violet, #6C63FF) 0%,
+    var(--violet, #79334D) 0%,
     var(--violet-deep, #4F46E5) 100%
   );
   color: white;
   box-shadow:
-    0 4px 18px rgba(108,99,255,0.38),
+    0 4px 18px rgba(121, 51, 77,0.38),
     inset 0 1px 0 rgba(255,255,255,0.14);
   transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
   position: relative;
@@ -288,13 +288,13 @@
 .payment-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow:
-    0 8px 28px rgba(108,99,255,0.46),
+    0 8px 28px rgba(121, 51, 77,0.46),
     inset 0 1px 0 rgba(255,255,255,0.14);
 }
 
 .payment-btn:active:not(:disabled) {
   transform: translateY(0) scale(0.99);
-  box-shadow: 0 3px 10px rgba(108,99,255,0.28);
+  box-shadow: 0 3px 10px rgba(121, 51, 77,0.28);
 }
 
 .payment-btn:disabled {
@@ -333,7 +333,7 @@
   width: 100%;
   padding: 11px 20px;
   border-radius: 10px;
-  border: 1.5px solid var(--border-soft, rgba(108,99,255,0.09));
+  border: 1.5px solid var(--border-soft, rgba(121, 51, 77,0.09));
   background: var(--surface2, #F7F6FF);
   color: var(--text-muted, #6B6891);
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -345,9 +345,9 @@
 }
 
 .payment-btn-ghost:hover:not(:disabled) {
-  background: var(--violet-soft, rgba(108,99,255,0.08));
-  border-color: var(--violet, #6C63FF);
-  color: var(--violet, #6C63FF);
+  background: var(--violet-soft, rgba(121, 51, 77,0.08));
+  border-color: var(--violet, #79334D);
+  color: var(--violet, #79334D);
 }
 
 .payment-btn-ghost:disabled {
@@ -447,7 +447,7 @@
   font-size: 52px;
   margin-bottom: 20px;
   display: block;
-  filter: drop-shadow(0 4px 12px rgba(108,99,255,0.2));
+  filter: drop-shadow(0 4px 12px rgba(121, 51, 77,0.2));
   animation: floatPulse 3s ease-in-out infinite;
 }
 

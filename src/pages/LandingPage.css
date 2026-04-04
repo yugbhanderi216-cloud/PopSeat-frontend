@@ -7,13 +7,13 @@
 
 /* ─── TOKENS ─── */
 :root {
-  --violet: #6C63FF;
+  --violet: #79334D;
   --violet-deep: #4F46E5;
   --violet-light: #8B84FF;
   --violet-xlight: #A8A4FF;
-  --violet-glow: rgba(108, 99, 255, 0.14);
-  --violet-soft: rgba(108, 99, 255, 0.08);
-  --violet-dim: rgba(108, 99, 255, 0.12);
+  --violet-glow: rgba(121, 51, 77, 0.14);
+  --violet-soft: rgba(121, 51, 77, 0.08);
+  --violet-dim: rgba(121, 51, 77, 0.12);
 
   --bg: #f6f7f9;
   --bg2: #e4e7ec;
@@ -315,7 +315,7 @@ body {
   animation: progressShine 2s linear infinite;
   z-index: 9999;
   border-radius: 0 3px 3px 0;
-  box-shadow: 0 0 10px rgba(108, 99, 255, 0.5);
+  box-shadow: 0 0 10px rgba(121, 51, 77, 0.5);
   transition: width 0.1s linear;
 }
 
@@ -578,11 +578,11 @@ body {
   padding: 16px 44px;
   font-size: 17px;
   border-radius: var(--r-md);
-  box-shadow: 0 4px 24px rgba(108, 99, 255, 0.25);
+  box-shadow: 0 4px 24px rgba(121, 51, 77, 0.25);
 }
 
 .btn-xl:hover {
-  box-shadow: 0 8px 32px rgba(108, 99, 255, 0.35);
+  box-shadow: 0 8px 32px rgba(121, 51, 77, 0.35);
 }
 
 /* ═══════════════════════════════════
@@ -646,15 +646,15 @@ body {
   object-fit: contain;
   background: #ffffff;
   padding: 6px;
-  border: 2px solid rgba(108, 99, 255, 0.22);
-  box-shadow: 0 1px 4px rgba(108, 99, 255, 0.14), 0 0 0 1px rgba(108, 99, 255, 0.08);
+  border: 2px solid rgba(121, 51, 77, 0.22);
+  box-shadow: 0 1px 4px rgba(121, 51, 77, 0.14), 0 0 0 1px rgba(121, 51, 77, 0.08);
   flex-shrink: 0;
   transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
 }
 
 .lp-logo:hover .lp-logo-img {
   transform: rotate(-6deg) scale(1.07);
-  box-shadow: 0 4px 16px rgba(108, 99, 255, 0.24), 0 0 0 1px rgba(108, 99, 255, 0.14);
+  box-shadow: 0 4px 16px rgba(121, 51, 77, 0.24), 0 0 0 1px rgba(121, 51, 77, 0.14);
 }
 
 /* Footer logo — slightly smaller */
@@ -767,8 +767,8 @@ body {
   text-align: center;
   overflow: hidden;
   background:
-    radial-gradient(ellipse 65% 50% at 12% 8%, rgba(108, 99, 255, 0.13) 0%, transparent 62%),
-    radial-gradient(ellipse 55% 60% at 88% 85%, rgba(108, 99, 255, 0.09) 0%, transparent 62%),
+    radial-gradient(ellipse 65% 50% at 12% 8%, rgba(121, 51, 77, 0.13) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 60% at 88% 85%, rgba(121, 51, 77, 0.09) 0%, transparent 62%),
     var(--bg);
 }
 
@@ -784,7 +784,7 @@ body {
   height: 620px;
   top: -200px;
   left: -220px;
-  background: radial-gradient(circle, rgba(108, 99, 255, 0.18) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(121, 51, 77, 0.18) 0%, transparent 65%);
   animation: blobDrift 14s ease-in-out infinite;
 }
 
@@ -803,14 +803,14 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(108, 99, 255, 0.06) 0%, transparent 60%);
+  background: radial-gradient(circle, rgba(121, 51, 77, 0.06) 0%, transparent 60%);
   animation: float 10s ease-in-out infinite;
 }
 
 .hero-grid-bg {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(108, 99, 255, 0.13) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(121, 51, 77, 0.13) 1px, transparent 1px);
   background-size: 36px 36px;
   mask-image: radial-gradient(ellipse 75% 65% at 50% 50%, black 20%, transparent 100%);
   pointer-events: none;
@@ -1912,12 +1912,12 @@ body {
 
 .pricing-highlight {
   border-color: var(--violet);
-  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.13), var(--shadow-md);
+  box-shadow: 0 0 0 3px rgba(121, 51, 77, 0.13), var(--shadow-md);
   z-index: 2;
 }
 
 .pricing-highlight:hover {
-  box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.20), var(--shadow-lg);
+  box-shadow: 0 0 0 4px rgba(121, 51, 77, 0.20), var(--shadow-lg);
 }
 
 .pricing-badge {
@@ -1937,7 +1937,7 @@ body {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
-  box-shadow: 0 4px 16px rgba(108, 99, 255, 0.38);
+  box-shadow: 0 4px 16px rgba(121, 51, 77, 0.38);
 }
 
 .badge-glow {
@@ -2073,7 +2073,7 @@ body {
   background: linear-gradient(108deg, var(--violet-deep), var(--violet));
   color: #fff;
   border-color: transparent;
-  box-shadow: 0 4px 16px rgba(108, 99, 255, 0.35);
+  box-shadow: 0 4px 16px rgba(121, 51, 77, 0.35);
 }
 
 .pricing-cta-highlight:hover {
@@ -2081,7 +2081,7 @@ body {
   color: #fff;
   border-color: transparent;
   transform: translateY(-2px);
-  box-shadow: 0 8px 26px rgba(108, 99, 255, 0.44);
+  box-shadow: 0 8px 26px rgba(121, 51, 77, 0.44);
 }
 
 .pricing-note {
@@ -2144,7 +2144,7 @@ body {
   background: var(--violet);
   color: #fff;
   border-color: var(--violet);
-  box-shadow: 0 4px 14px rgba(108, 99, 255, 0.28);
+  box-shadow: 0 4px 14px rgba(121, 51, 77, 0.28);
 }
 
 .demo-window-bar {
@@ -2308,7 +2308,7 @@ body {
 
 .demo-bar {
   width: 100%;
-  background: linear-gradient(180deg, var(--violet) 0%, rgba(108, 99, 255, 0.45) 100%);
+  background: linear-gradient(180deg, var(--violet) 0%, rgba(121, 51, 77, 0.45) 100%);
   border-radius: 5px 5px 0 0;
   animation: barGrow 0.6s var(--ease-out) both;
   transition: transform 0.25s var(--ease-spring), filter 0.2s;
@@ -2585,7 +2585,7 @@ body {
   border-radius: var(--r-md);
   font-weight: 700;
   color: #fff;
-  box-shadow: 0 4px 18px rgba(108, 99, 255, 0.32);
+  box-shadow: 0 4px 18px rgba(121, 51, 77, 0.32);
 }
 
 .cust-cart-info {
@@ -2720,7 +2720,7 @@ body {
   font-weight: 800;
   font-size: 15px;
   color: #fff;
-  box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(121, 51, 77, 0.3);
   flex-shrink: 0;
 }
 
@@ -2788,7 +2788,7 @@ body {
 
 .faq-item.open {
   border-color: var(--violet);
-  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(121, 51, 77, 0.08);
 }
 
 .faq-item:hover:not(.open) {
@@ -2976,7 +2976,7 @@ body {
   transform: translate(-50%, -50%);
   width: 800px;
   height: 600px;
-  background: radial-gradient(circle, rgba(108, 99, 255, 0.12) 0%, transparent 60%);
+  background: radial-gradient(circle, rgba(121, 51, 77, 0.12) 0%, transparent 60%);
   animation: float 12s ease-in-out infinite;
 }
 
@@ -3375,7 +3375,7 @@ body {
     backdrop-filter: blur(18px);
     border-top: 1px solid var(--border-soft);
     z-index: 999;
-    box-shadow: 0 -4px 24px rgba(108, 99, 255, 0.12);
+    box-shadow: 0 -4px 24px rgba(121, 51, 77, 0.12);
   }
 
   .mobile-sticky-cta .btn-primary-v {
@@ -3481,7 +3481,7 @@ body {
 }
 
 ::selection {
-  background: rgba(108, 99, 255, 0.15);
+  background: rgba(121, 51, 77, 0.15);
   color: var(--violet-deep);
 }
 

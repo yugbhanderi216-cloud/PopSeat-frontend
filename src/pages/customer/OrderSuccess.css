@@ -86,13 +86,13 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.18s ease;
-  box-shadow: 0 3px 10px rgba(108, 99, 255, 0.3);
+  box-shadow: 0 3px 10px rgba(121, 51, 77, 0.3);
 }
 
 .home-btn:hover {
   background: var(--violet-deep);
   transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(108, 99, 255, 0.4);
+  box-shadow: 0 4px 14px rgba(121, 51, 77, 0.4);
 }
 .home-btn:active {
   transform: scale(0.98);

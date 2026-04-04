@@ -36,8 +36,8 @@
   font-size: 14px; color: var(--text); line-height: 1.5;
 
   /* Decisive Overrides */
-  --green: #6C63FF;
-  --green-lt: rgba(108, 99, 255, 0.08);
+  --green: #79334D;
+  --green-lt: rgba(121, 51, 77, 0.08);
   --amber: #d97706;
   --amber-lt: #fffbeb;
   --red: #dc2626;
@@ -57,7 +57,7 @@
   background: url('../PopSeat_Logo.png') no-repeat center;
   background-size: contain;
   margin-bottom: 6px;
-  filter: drop-shadow(0 4px 12px rgba(108, 99, 255, 0.25));
+  filter: drop-shadow(0 4px 12px rgba(121, 51, 77, 0.25));
   animation: logoPulse 2s ease-in-out infinite;
 }
 

@@ -229,7 +229,7 @@ const RenewPlan = () => {
           email: localStorage.getItem("ownerEmail") || localStorage.getItem("email") || "",
         },
 
-        theme: { color: "#6C63FF" },
+        theme: { color: "#79334D" },
 
         modal: {
           ondismiss: () => {

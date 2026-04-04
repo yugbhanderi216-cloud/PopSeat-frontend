@@ -37,7 +37,7 @@ const NEXT_LABEL = {
 };
 
 const STATUS_META = {
-  placed   : { label: "Placed",    color: "#6C63FF", bg: "rgba(108,99,255,0.10)", border: "rgba(108,99,255,0.22)" },
+  placed   : { label: "Placed",    color: "#79334D", bg: "rgba(121, 51, 77,0.10)", border: "rgba(121, 51, 77,0.22)" },
   preparing: { label: "Preparing", color: "#d97706", bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.24)" },
   ready    : { label: "Ready",     color: "#0891b2", bg: "rgba(8,145,178,0.10)",  border: "rgba(8,145,178,0.22)"  },
   delivered: { label: "Delivered", color: "#16a34a", bg: "rgba(34,197,94,0.10)",  border: "rgba(34,197,94,0.22)"  },

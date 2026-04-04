@@ -37,7 +37,7 @@ const STATUS_BADGE = {
   placed    : { bg: "rgba(59,130,246,0.10)",  color: "#3B82F6", label: "Placed"    },
   preparing : { bg: "rgba(245,158,11,0.10)",  color: "#F59E0B", label: "Preparing" },
   ready     : { bg: "rgba(34,197,94,0.10)",   color: "#22C55E", label: "Ready"     },
-  delivered : { bg: "rgba(108,99,255,0.10)",  color: "#6C63FF", label: "Delivered" },
+  delivered : { bg: "rgba(121, 51, 77,0.10)",  color: "#79334D", label: "Delivered" },
 };
 
 // All statuses a worker needs to see

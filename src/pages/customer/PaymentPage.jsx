@@ -124,7 +124,7 @@ const PaymentPage = () => {
             setLoading(false);
           }
         },
-        theme: { color: "#6C63FF" },
+        theme: { color: "#79334D" },
         modal: { ondismiss: () => { setLoading(false); setError("Payment cancelled by user."); } },
       };
 

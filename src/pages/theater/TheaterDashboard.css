@@ -332,7 +332,7 @@
   background: url('../PopSeat_Logo.png') no-repeat center !important;
   background-size: contain !important;
   margin-bottom: 8px !important;
-  filter: drop-shadow(0 4px 12px rgba(108, 99, 255, 0.25)) !important;
+  filter: drop-shadow(0 4px 12px rgba(121, 51, 77, 0.25)) !important;
   animation: logoPulse 2s ease-in-out infinite !important;
 }
 

@@ -212,14 +212,14 @@ body {
   background: var(--adm-surface);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1.5px solid rgba(108, 99, 255, 0.09);
+  border: 1.5px solid rgba(121, 51, 77, 0.09);
   border-radius: 16px;
 
   box-shadow:
-    0 2px 16px rgba(108, 99, 255, 0.10),
+    0 2px 16px rgba(121, 51, 77, 0.10),
     0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 -1px 0 rgba(108, 99, 255, 0.06) inset,
-    0 0 0 1px rgba(108, 99, 255, 0.04);
+    0 -1px 0 rgba(121, 51, 77, 0.06) inset,
+    0 0 0 1px rgba(121, 51, 77, 0.04);
 
   display: flex;
   flex-direction: column;
@@ -235,10 +235,10 @@ body {
 .admin-card:hover {
   transform: translateY(-3px);
   box-shadow:
-    0 6px 32px rgba(108, 99, 255, 0.15),
+    0 6px 32px rgba(121, 51, 77, 0.15),
     0 1px 0 rgba(255, 255, 255, 0.98) inset,
-    0 -1px 0 rgba(108, 99, 255, 0.08) inset,
-    0 0 0 1px rgba(108, 99, 255, 0.06);
+    0 -1px 0 rgba(121, 51, 77, 0.08) inset,
+    0 0 0 1px rgba(121, 51, 77, 0.06);
 }
 
 @keyframes cardInAdmin {
@@ -258,9 +258,9 @@ body {
   background: linear-gradient(to right,
     transparent,
     #4F46E5 10%,
-    #6C63FF 35%,
+    #79334D 35%,
     #8B84FF 50%,
-    #6C63FF 65%,
+    #79334D 65%,
     #4F46E5 90%,
     transparent);
   opacity: 0.70;
@@ -275,7 +275,7 @@ body {
   transform: translateX(-50%);
   width: 350px;
   height: 230px;
-  background: radial-gradient(ellipse, rgba(108,99,255,0.06) 0%, transparent 65%);
+  background: radial-gradient(ellipse, rgba(121, 51, 77,0.06) 0%, transparent 65%);
   pointer-events: none;
   z-index: 0;
 }
