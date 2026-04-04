@@ -536,7 +536,7 @@ const TheaterRegister = () => {
 
         <input
           name="upiId"
-          placeholder="UPI ID (optional)"
+          placeholder="UPI ID"
           value={theaterData.upiId}
           onChange={handleChange}
         />
