@@ -1,0 +1,88 @@
+/* ═══════════════════════════════════════════════════════════════
+   Legal Pages CSS (Terms & Privacy)
+═══════════════════════════════════════════════════════════════ */
+
+.legal-page {
+  min-height: 100vh;
+  background: #f6f7f9;
+  color: #0f172a;
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+.legal-header {
+  padding: 24px 52px;
+  background: #ffffff;
+  border-bottom: 1px solid #e4e7ec;
+  display: flex;
+  align-items: center;
+}
+
+.legal-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.legal-logo-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: contain;
+  background: #ffffff;
+  padding: 5px;
+  border: 2px solid rgba(108, 99, 255, 0.22);
+}
+
+.legal-logo span {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 19px;
+  background: linear-gradient(to right, #0f172a, #6C63FF);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.legal-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 60px 40px;
+  flex: 1;
+}
+
+.legal-content h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 32px;
+  color: #0f172a;
+}
+
+.legal-content h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 32px;
+  margin-bottom: 16px;
+  color: #0f172a;
+}
+
+.legal-content p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+.legal-footer {
+  text-align: center;
+  padding: 32px;
+  font-size: 14px;
+  color: #94a3b8;
+  border-top: 1px solid #e4e7ec;
+  margin-top: auto;
+}

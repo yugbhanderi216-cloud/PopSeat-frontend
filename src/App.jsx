@@ -6,6 +6,8 @@ import Register       from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 
 import LandingPage    from "./pages/LandingPage";
+import Terms          from "./pages/Terms";
+import Privacy        from "./pages/Privacy";
 
 import TheaterRegister from "./pages/theater/TheaterRegister";
 import TheaterLayout   from "./pages/theater/TheaterLayout";
@@ -109,6 +111,8 @@ function App() {
 
       {/* Default */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
 
       {/* Auth — public */}
       <Route path="/login"          element={<Login />} />

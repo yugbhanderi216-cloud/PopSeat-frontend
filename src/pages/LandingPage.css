@@ -470,7 +470,8 @@ body {
   background: var(--violet);
   border: none;
   padding: 12px 26px;
-  border-radius: var(--r-sm); /* Using 8px matching owner forms */
+  border-radius: var(--r-sm);
+  /* Using 8px matching owner forms */
   cursor: pointer;
   white-space: nowrap;
   box-shadow: var(--shadow);
@@ -1623,9 +1624,17 @@ body {
   border-radius: 6px;
 }
 
-.tab-card.st-1 { background: var(--green-dim); }
-.tab-card.st-2 { background: var(--amber-dim); }
-.tab-card.st-3 { background: var(--blue-dim); }
+.tab-card.st-1 {
+  background: var(--green-dim);
+}
+
+.tab-card.st-2 {
+  background: var(--amber-dim);
+}
+
+.tab-card.st-3 {
+  background: var(--blue-dim);
+}
 
 /* Cloud */
 .cloud-ring {
@@ -1691,20 +1700,49 @@ body {
   z-index: 5;
 }
 
-.wf-packet.p1 { animation: packetFly 3.6s linear infinite; }
-.wf-packet.p2 { animation: packetFly 3.6s linear infinite; }
+.wf-packet.p1 {
+  animation: packetFly 3.6s linear infinite;
+}
+
+.wf-packet.p2 {
+  animation: packetFly 3.6s linear infinite;
+}
 
 /* Animations */
 @keyframes radarPulse {
-  0% { transform: scale(0.6); opacity: 0.8; }
-  100% { transform: scale(1.4); opacity: 0; }
+  0% {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
 }
 
 @keyframes packetFly {
-  0% { left: 0%; opacity: 0; transform: scale(0.5); }
-  10% { opacity: 1; transform: scale(1); }
-  90% { opacity: 1; transform: scale(1); }
-  100% { left: 100%; opacity: 0; transform: scale(0.5); }
+  0% {
+    left: 0%;
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  10% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  90% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    left: 100%;
+    opacity: 0;
+    transform: scale(0.5);
+  }
 }
 
 .ph-cta-anim {
@@ -1721,20 +1759,58 @@ body {
 }
 
 @keyframes btnPress {
-  0%, 15% { transform: scale(1); background: var(--violet); }
-  18% { transform: scale(0.92); background: var(--violet-deep); }
-  22%, 100% { transform: scale(1); background: var(--violet); }
+
+  0%,
+  15% {
+    transform: scale(1);
+    background: var(--violet);
+  }
+
+  18% {
+    transform: scale(0.92);
+    background: var(--violet-deep);
+  }
+
+  22%,
+  100% {
+    transform: scale(1);
+    background: var(--violet);
+  }
 }
 
 @keyframes itemAdd {
-  0%, 5% { opacity: 0.3; transform: translateX(-4px); }
-  10%, 100% { opacity: 1; transform: translateX(0); }
+
+  0%,
+  5% {
+    opacity: 0.3;
+    transform: translateX(-4px);
+  }
+
+  10%,
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes cardPop {
-  0%, 82% { opacity: 0; transform: scale(0.8); }
-  88% { opacity: 1; transform: scale(1.05); }
-  92%, 100% { opacity: 1; transform: scale(1); }
+
+  0%,
+  82% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  88% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+
+  92%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media (max-width: 900px) {
@@ -1744,29 +1820,61 @@ body {
     gap: 20px;
     padding: 40px 20px;
   }
+
   .wf-path {
     width: 60px;
     height: 60px;
   }
+
   .wf-line {
-    top: 0; bottom: 0; right: auto; left: 50%;
-    width: 2px; height: 100%;
+    top: 0;
+    bottom: 0;
+    right: auto;
+    left: 50%;
+    width: 2px;
+    height: 100%;
     background: linear-gradient(180deg, transparent, var(--violet-soft), transparent);
     border-top: none;
     border-left: 2px dashed var(--violet-light);
   }
+
   .wf-packet {
-    left: 50%; top: 0;
+    left: 50%;
+    top: 0;
     transform: translateX(-50%) scale(0.5);
   }
+
   @keyframes packetFlyMob {
-    0% { top: 0%; opacity: 0; transform: translateX(-50%) scale(0.5); }
-    10% { opacity: 1; transform: translateX(-50%) scale(1); }
-    90% { opacity: 1; transform: translateX(-50%) scale(1); }
-    100% { top: 100%; opacity: 0; transform: translateX(-50%) scale(0.5); }
+    0% {
+      top: 0%;
+      opacity: 0;
+      transform: translateX(-50%) scale(0.5);
+    }
+
+    10% {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+
+    90% {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+
+    100% {
+      top: 100%;
+      opacity: 0;
+      transform: translateX(-50%) scale(0.5);
+    }
   }
-  .wf-packet.p1 { animation: packetFlyMob 3.6s linear infinite; }
-  .wf-packet.p2 { animation: packetFlyMob 3.6s linear infinite; }
+
+  .wf-packet.p1 {
+    animation: packetFlyMob 3.6s linear infinite;
+  }
+
+  .wf-packet.p2 {
+    animation: packetFlyMob 3.6s linear infinite;
+  }
 }
 
 /* ═══════════════════════════════════
