@@ -161,66 +161,75 @@ const CustomerWelcome = () => {
   return (
     <div className="welcome-container">
       
-      {/* Header with Curve */}
-      <header className="welcome-header-card">
-        <div className="welcome-logo-container">
-          {theater?.logo ? (
-            <img
-              src={getImageUrl(theater.logo)}
-              alt="Theater Logo"
-              className="welcome-logo-modern"
-              onError={(e) => { e.target.style.display = "none"; }}
-            />
-          ) : (
-            <div className="logo-placeholder">🎬</div>
-          )}
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="welcome-content-section">
+      {/* Central Card */}
+      <div className="welcome-main-card">
         
-        <h1 className="welcome-theater-name">
-          {theater?.theaterName || "Welcome"}
-        </h1>
-
-        <div className="welcome-location">
-          {theater?.branch}
-          <span className="dot" />
-          {theater?.city}
-        </div>
-
-        {/* Info Box (Screen & Seat) */}
-        <div className="welcome-info-box">
-          
-          <div className="info-item">
-            <div className="info-label-group">
-              <div className="info-icon">🎞️</div>
-              <span className="info-label">Screen</span>
-            </div>
-            <span className="info-value">{screen || "---"}</span>
-          </div>
-
-          <div className="info-item">
-            <div className="info-label-group">
-              <div className="info-icon">💺</div>
-              <span className="info-label">Seat</span>
-            </div>
-            <span className="info-value">{seat || "---"}</span>
-          </div>
-
-        </div>
-
-        {/* Circular Action Button */}
-        <button 
-          className="welcome-arrow-button" 
-          onClick={handleOrderNow}
-          aria-label="Start Ordering"
-        >
-          <div className="arrow-icon">→</div>
+        {/* Back Button */}
+        <button className="back-nav-btn" onClick={() => navigate(-1)} aria-label="Go back">
+          <span className="back-icon">←</span>
         </button>
 
-      </main>
+        {/* Header with Concave Curve */}
+        <header className="welcome-header-card">
+          <div className="welcome-logo-container">
+            {theater?.logo ? (
+              <img
+                src={getImageUrl(theater.logo)}
+                alt="Theater Logo"
+                className="welcome-logo-modern"
+                onError={(e) => { e.target.style.display = "none"; }}
+              />
+            ) : (
+              <div className="logo-placeholder">🎬</div>
+            )}
+          </div>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="welcome-content-section">
+          
+          <h1 className="welcome-theater-name">
+            {theater?.theaterName || "Welcome"}
+          </h1>
+
+          <div className="welcome-location">
+            {theater?.branch}
+            <span className="dot" />
+            {theater?.city}
+          </div>
+
+          {/* Info Box (Screen & Seat) */}
+          <div className="welcome-info-box">
+            
+            <div className="info-item">
+              <div className="info-label-group">
+                <div className="info-icon">🎞️</div>
+                <span className="info-label">Screen</span>
+              </div>
+              <span className="info-value">{screen || "---"}</span>
+            </div>
+
+            <div className="info-item">
+              <div className="info-label-group">
+                <div className="info-icon">💺</div>
+                <span className="info-label">Seat</span>
+              </div>
+              <span className="info-value">{seat || "---"}</span>
+            </div>
+
+          </div>
+
+          {/* Circular Action Button */}
+          <button 
+            className="welcome-arrow-button" 
+            onClick={handleOrderNow}
+            aria-label="Start Ordering"
+          >
+            <div className="arrow-icon">→</div>
+          </button>
+
+        </main>
+      </div>
 
     </div>
   );
