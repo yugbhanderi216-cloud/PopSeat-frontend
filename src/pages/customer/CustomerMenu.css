@@ -271,6 +271,18 @@
 
 /* Desktop View (min-width: 769px) */
 @media (min-width: 769px) {
+  .customer-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 0;
+    padding: 40px 0;
+  }
+
+  .back-btn { justify-self: start; }
+  .header-info { grid-column: 2; }
+  .cart-btn { justify-self: end; }
+
   .customer-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
