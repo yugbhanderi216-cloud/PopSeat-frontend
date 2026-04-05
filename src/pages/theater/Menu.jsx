@@ -82,6 +82,15 @@ const Menu = () => {
     localStorage.getItem("assignedTheaterId") ||
     "";
 
+  // ── Role: safely read from localStorage, always a string ──
+  const role = localStorage.getItem("role")?.toLowerCase() || "";
+
+  // ── Token helper: tries ownerToken first, falls back to generic token ──
+  const getToken = () =>
+    localStorage.getItem("ownerToken") ||
+    localStorage.getItem("token") ||
+    "";
+
   const [items,       setItems]       = useState([]);
   const [showModal,   setShowModal]   = useState(false);
   const [editId,      setEditId]      = useState(null);
