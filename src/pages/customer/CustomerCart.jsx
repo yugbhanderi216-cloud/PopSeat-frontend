@@ -148,9 +148,6 @@ const CustomerCart = () => {
                 <div className="cart-info">
                   <h3>{item.name}</h3>
                   {item.size && <p className="cart-meta">Size: {item.size}</p>}
-                  <p className="cart-price">
-                    {formatCurrency(item.finalPrice || item.price)} × {item.quantity}
-                  </p>
 
                   {/* Quantity pill — below item info */}
                   <div className="cart-controls">
@@ -159,6 +156,10 @@ const CustomerCart = () => {
                     <button className="plus-btn"  onClick={() => increaseQty(itemId)}>+</button>
                   </div>
                 </div>
+                
+                <p className="cart-price">
+                  {formatCurrency(item.finalPrice || item.price)}
+                </p>
               </div>
             );
           })
