@@ -321,55 +321,81 @@
 }
 
 /* ═══════════════════════════════════════════
-   DESKTOP OPTIMIZATIONS (min-width: 1024px)
+   DESKTOP HYBRID LAYOUT (min-width: 1024px)
 ═══════════════════════════════════════════ */
 @media (min-width: 1024px) {
+
+  /* Remove fixed-bar gap — bar is in-flow on desktop */
+  .item-page {
+    padding-bottom: 0;
+  }
+
   .item-header {
     background: white;
     box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     padding: 20px 40px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
   }
 
-  .item-wrapper {
+  /* ── TOP SECTION: two-column flex ── */
+  .top-section {
     display: flex;
+    gap: 60px;
     max-width: 1200px;
     margin: 0 auto;
-    gap: 60px;
-    padding: 120px 40px 40px;
+    padding: 100px 40px 20px; /* 100px = header height clearance */
     align-items: flex-start;
   }
 
-  /* Large Focus Image — Left Column */
+  /* Left column: large image */
   .item-hero {
     flex: 1.2;
-    height: 520px;
-    position: sticky;
-    top: 120px;
+    height: 500px;
     border-radius: 24px;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    position: relative; /* reset — no sticky needed */
   }
 
-  /* Content stack — Right Column */
-  .item-content-side {
-    flex: 1;
-    max-width: 500px;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-
+  /* Right column: title + price + desc + size */
   .item-details {
+    flex: 1;
     margin-top: 0;
-    padding: 0 0 28px;
-    border-bottom: 1px solid var(--sw-border);
+    padding: 0;
+    border-bottom: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .item-title {
     font-size: 36px;
   }
 
-  .section {
+  /* Size section inside top-section right column */
+  .item-details .section {
+    padding: 24px 0 0;
+    border-bottom: none;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* ── BOTTOM SECTION: full-width ── */
+  .bottom-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px 80px;
+  }
+
+  /* Full-width sections (toppings, dips, quantity) — narrowed for readability */
+  .bottom-section .section {
+    max-width: 800px;
+    margin: 0 auto;
     padding: 28px 0;
     border-bottom: 1px solid var(--sw-border);
     background: transparent;
@@ -377,14 +403,17 @@
     box-shadow: none;
   }
 
+  /* ── ADD TO CART — static, in-flow ── */
   .add-cart-bar {
-    width: 100%;
-    max-width: 1200px;
-    padding: 20px 40px;
-    border-radius: 0;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    position: static;
+    transform: none;
+    left: auto;
+    width: auto;
+    max-width: 800px;
+    margin: 32px auto 0;
+    padding: 24px 0;
     border-top: 1px solid var(--sw-border);
+    border-radius: 0;
+    box-shadow: none;
   }
 }

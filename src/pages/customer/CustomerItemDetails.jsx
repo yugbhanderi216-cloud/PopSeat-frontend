@@ -145,7 +145,9 @@ const CustomerItemDetails = () => {
 
       </div>
 
-      <div className="item-wrapper">
+      {/* TOP SECTION: Image (left) + Title, Price, Size (right) */}
+
+      <div className="top-section">
 
         <div className="item-hero">
 
@@ -159,20 +161,16 @@ const CustomerItemDetails = () => {
 
         </div>
 
-        <div className="item-content-side">
+        <div className="item-details">
 
-          <div className="item-details">
-
-            <div className="title-row">
-              <h1 className="item-title">{item.name}</h1>
-              <div className="dynamic-price">₹ {selectedSize.price}</div>
-            </div>
-
-            <p className="item-desc">{item.description}</p>
-
+          <div className="title-row">
+            <h1 className="item-title">{item.name}</h1>
+            <div className="dynamic-price">₹ {selectedSize.price}</div>
           </div>
 
-          {/* SIZE */}
+          <p className="item-desc">{item.description}</p>
+
+          {/* SIZE — lives in top section (right column on desktop) */}
 
           <div className="section">
 
@@ -198,117 +196,123 @@ const CustomerItemDetails = () => {
 
           </div>
 
-          {/* TOPPINGS */}
+        </div>
 
-          {toppingOptions.length > 0 && (
+      </div>
 
-            <div className="section">
+      {/* BOTTOM SECTION: Full-width toppings, dips, quantity + cart bar */}
 
-              <h3>Add Toppings</h3>
+      <div className="bottom-section">
 
-              {toppingOptions.map((top, i) => (
+        {/* TOPPINGS */}
 
-                <div key={i} className="option-row">
-
-                  <label>
-
-                    {/* FIX: controlled checkbox — checked prop added */}
-                    <input
-                      type="checkbox"
-                      checked={!!toppings.find((t) => t.name === top.name)}
-                      onChange={() => toggleTopping(top)}
-                    />
-
-                    {top.name}
-
-                  </label>
-
-                  <span>+₹{top.price}</span>
-
-                </div>
-
-              ))}
-
-            </div>
-
-          )}
-
-          {/* DIPS */}
-
-          {dipOptions.length > 0 && (
-
-            <div className="section">
-
-              <h3>Add Dips</h3>
-
-              {dipOptions.map((dip, i) => (
-
-                <div key={i} className="option-row">
-
-                  <label>
-
-                    {/* FIX: controlled checkbox — checked prop added */}
-                    <input
-                      type="checkbox"
-                      checked={!!dips.find((d) => d.name === dip.name)}
-                      onChange={() => toggleDip(dip)}
-                    />
-
-                    {dip.name}
-
-                  </label>
-
-                  <span>+₹{dip.price}</span>
-
-                </div>
-
-              ))}
-
-            </div>
-
-          )}
-
-          {/* QUANTITY */}
+        {toppingOptions.length > 0 && (
 
           <div className="section">
 
-            <h3>Quantity</h3>
+            <h3>Add Toppings</h3>
 
-            <div className="qty-box">
+            {toppingOptions.map((top, i) => (
 
-              <button
-                className="qty-btn"
-                onClick={() => setQty(Math.max(1, qty - 1))}
-              >
-                -
-              </button>
+              <div key={i} className="option-row">
 
-              <span className="qty-number">{qty}</span>
+                <label>
 
-              <button
-                className="qty-btn"
-                onClick={() => setQty(qty + 1)}
-              >
-                +
-              </button>
+                  {/* FIX: controlled checkbox — checked prop added */}
+                  <input
+                    type="checkbox"
+                    checked={!!toppings.find((t) => t.name === top.name)}
+                    onChange={() => toggleTopping(top)}
+                  />
 
-            </div>
+                  {top.name}
+
+                </label>
+
+                <span>+₹{top.price}</span>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        )}
+
+        {/* DIPS */}
+
+        {dipOptions.length > 0 && (
+
+          <div className="section">
+
+            <h3>Add Dips</h3>
+
+            {dipOptions.map((dip, i) => (
+
+              <div key={i} className="option-row">
+
+                <label>
+
+                  {/* FIX: controlled checkbox — checked prop added */}
+                  <input
+                    type="checkbox"
+                    checked={!!dips.find((d) => d.name === dip.name)}
+                    onChange={() => toggleDip(dip)}
+                  />
+
+                  {dip.name}
+
+                </label>
+
+                <span>+₹{dip.price}</span>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        )}
+
+        {/* QUANTITY */}
+
+        <div className="section">
+
+          <h3>Quantity</h3>
+
+          <div className="qty-box">
+
+            <button
+              className="qty-btn"
+              onClick={() => setQty(Math.max(1, qty - 1))}
+            >
+              -
+            </button>
+
+            <span className="qty-number">{qty}</span>
+
+            <button
+              className="qty-btn"
+              onClick={() => setQty(qty + 1)}
+            >
+              +
+            </button>
 
           </div>
 
         </div>
 
-      </div>
+        {/* ADD TO CART — static inside bottom-section on desktop */}
 
-      {/* FOOTER */}
+        <div className="add-cart-bar">
 
-      <div className="add-cart-bar">
+          <div className="total-price">₹ {totalPrice}</div>
 
-        <div className="total-price">₹ {totalPrice}</div>
+          <button className="add-btn" onClick={addToCart}>
+            Add To Cart
+          </button>
 
-        <button className="add-btn" onClick={addToCart}>
-          Add To Cart
-        </button>
+        </div>
 
       </div>
 
