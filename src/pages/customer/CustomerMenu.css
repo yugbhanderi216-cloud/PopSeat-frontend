@@ -188,13 +188,13 @@
   background: var(--sw-dark);
   color: white;
   border-radius: var(--sw-radius-lg);
-  padding: 32px;
+  padding: 0 0 32px; /* Padding for text only, image is flush */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 20px;
+  gap: 0;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(255,255,255,0.05);
@@ -214,6 +214,7 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
+  padding: 20px 24px 0;
 }
 
 .item-name { 
@@ -231,20 +232,37 @@
   margin-bottom: 20px;
   display: -webkit-box; 
   -webkit-line-clamp: 2; 
+  line-clamp: 2; 
   -webkit-box-orient: vertical; 
   overflow: hidden;
 }
 
-/* Pricing */
-.price-tag, .variant-tag {
-  font-size: 14px;
+/* Variants in one line */
+.all-prices {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  width: 100%;
+  justify-content: center;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+}
+.all-prices::-webkit-scrollbar { display: none; }
+
+.variant-tag {
+  font-size: 13px;
   font-weight: 700;
   background: rgba(255,255,255,0.1);
   color: white;
-  padding: 6px 14px;
+  padding: 6px 16px;
   border-radius: 20px;
-  display: inline-block;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
+
+/* Price removal */
+.price-tag { display: none !important; }
 
 /* Action Button */
 .item-cta-btn {
@@ -254,7 +272,7 @@
   border-radius: 40px;
   font-weight: 800;
   font-size: 14px;
-  margin-top: 10px;
+  margin-top: 12px;
   transition: all 0.2s;
   box-shadow: 0 4px 12px rgba(121, 51, 77, 0.3);
 }
@@ -264,27 +282,26 @@
   background: #95415f;
 }
 
-/* Image Section */
+/* Image Section - Full Width */
 .item-image-wrap { 
   width: 100%; 
-  height: 180px; 
+  height: 220px; 
   display: flex; 
   align-items: center; 
   justify-content: center; 
   position: relative;
-  order: -1; /* Always image on top */
+  order: -1; 
 }
 
 .food-img { 
-  max-width: 90%; 
-  max-height: 90%; 
-  object-fit: contain; 
-  filter: drop-shadow(0 15px 30px rgba(0,0,0,0.5));
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
   transition: transform 0.4s ease;
 }
 
 .customer-card:hover .food-img {
-  transform: scale(1.1) rotate(2deg);
+  transform: scale(1.08);
 }
 
 /* ═══════════════════════════════════════════
@@ -292,24 +309,22 @@
 ═══════════════════════════════════════════ */
 .featured-card {
   grid-column: 1 / -1;
-  padding: 40px;
 }
 
 .featured-card .item-name { font-size: 32px; }
-.featured-card .item-image-wrap { height: 260px; }
+.featured-card .item-image-wrap { height: 320px; }
 
 @media (min-width: 900px) {
-  .customer-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; }
-  .featured-card { grid-column: span 1; } /* On desktop, featured is same size as others */
+  /* Increase width by using 2 columns instead of 3 */
+  .customer-grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
+  .featured-card { grid-column: span 1; }
 }
 
 /* Mobile adjustments */
 @media (max-width: 650px) {
-  .customer-card { padding: 24px; gap: 16px; }
-  .item-image-wrap { height: 160px; }
-  .item-name { font-size: 18px; }
-  .featured-card .item-name { font-size: 24px; }
-  .full-info { display: none !important; }
+  .item-image-wrap { height: 180px; }
+  .item-name { font-size: 20px; }
+  .card-content { padding: 16px 20px 0; }
 }
 
 /* Bottom Cart Bar */

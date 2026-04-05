@@ -235,26 +235,17 @@ const CustomerMenu = () => {
                           {ensureArray(item.variants).length > 0 ? (
                             item.variants.map((v, i) => (
                               <span key={i} className="variant-tag">
-                                {v.size} · ₹{v.price}
+                                {v.size}
                               </span>
                             ))
                           ) : (
-                            <span className="variant-tag">₹{item.price}</span>
+                            null
                           )}
                         </div>
                       </div>
 
-                      {/* Compact Info (Mobile) */}
                       <div className="compact-info">
-                        <div className="item-price-variants">
-                          {ensureArray(item.variants).length > 0 ? (
-                            <span className="price-tag">
-                              ₹{item.variants[0].price} {item.variants.length > 1 ? "• "+item.variants.length+" sizes" : ""}
-                            </span>
-                          ) : (
-                            <span className="price-tag">₹{item.price}</span>
-                          )}
-                        </div>
+                        {/* Price hidden as requested */}
                       </div>
 
                       <div className="item-cta-btn">
