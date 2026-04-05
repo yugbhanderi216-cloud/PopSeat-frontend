@@ -261,6 +261,10 @@ const CustomerMenu = () => {
                         {/* Price hidden as requested */}
                       </div>
 
+                      <div className="item-price">
+                        ₹{ensureArray(item.variants).length > 0 ? item.variants[0].price : item.price}
+                      </div>
+
                       <div className="item-cta-btn">
                          Order now
                       </div>
