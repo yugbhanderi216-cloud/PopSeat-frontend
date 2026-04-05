@@ -60,6 +60,8 @@ const TheaterDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isPrimary, setIsPrimary] = useState(false);
+  const [theaterList, setTheaterList] = useState([]);
 
   useEffect(() => {
     if (!email || !role) navigate("/login", { replace: true });
@@ -69,6 +71,30 @@ const TheaterDashboard = () => {
     if (role === "owner" && theaterId) {
       localStorage.setItem("activeOwnerTheaterId", theaterId);
     }
+  }, [role, theaterId]);
+
+  /* ── 📝 SMART ISOLATION: Fetch owner's theaters to identify the primary one ── */
+  useEffect(() => {
+    if (role !== "owner" || !theaterId) return;
+    const checkPrimaryStatus = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/cinema`, { headers: authHeaders() });
+        const data = await res.json();
+        const list = data.cinemas || data.data || [];
+        if (data.success && Array.isArray(list) && list.length > 0) {
+          setTheaterList(list);
+          // Rule: Stable Primary = smallest _id string (usually oldest)
+          const sorted = [...list].sort((a, b) => a._id.localeCompare(b._id));
+          const primaryId = sorted[0]._id;
+          const status = theaterId === primaryId;
+          console.log("[Smart Isolation] theaterId:", theaterId, "primaryId:", primaryId, "isPrimary:", status);
+          setIsPrimary(status);
+        }
+      } catch (err) {
+        console.warn("Smart Isolation: Could not fetch owner list.", err);
+      }
+    };
+    checkPrimaryStatus();
   }, [role, theaterId]);
 
   const fetchTheater = useCallback(async () => {
@@ -111,10 +137,25 @@ const TheaterDashboard = () => {
       const merged = [];
 
       responses.forEach((result) => {
-        if (result.status === "fulfilled" && result.value?.success) {
-          (result.value.orders || []).forEach((order) => {
-            // Frontend manual filter to ensure data isolation while backend query is being fixed
-            if (!seen.has(order._id) && (order.theaterId === theaterId || order.cinemaId === theaterId || !order.theaterId)) {
+        // ✅ CORRECTION: result.value might contain orders even if success is undefined
+        if (result.status === "fulfilled" && (result.value?.orders || Array.isArray(result.value))) {
+          const ordersArr = result.value?.orders || (Array.isArray(result.value) ? result.value : []);
+          ordersArr.forEach((order) => {
+            /* ═══════════════════════════════════════════════════════
+               📝 SMARTER ISOLATION FILTER
+               - Primary Theater: Owns its ID + all 'Unknown/Legacy' data.
+               - Regular Theater: Owns ONLY its ID.
+            ═══════════════════════════════════════════════════════ */
+            const matchesId = (order.theaterId === theaterId || order.cinemaId === theaterId);
+            
+            // Is this order tied to a theater that IS NOT in our current account's theater list?
+            // If it's unknown/legacy, and we are the Primary theater, we show it.
+            const isKnownTheater = theaterList.some(t => (t._id === order.theaterId || t._id === order.cinemaId));
+            const isLegacy = !isKnownTheater;
+
+            const shouldInclude = matchesId || (isPrimary && isLegacy);
+
+            if (!seen.has(order._id) && shouldInclude) {
               seen.add(order._id);
               merged.push(order);
             }
@@ -125,7 +166,7 @@ const TheaterDashboard = () => {
     } catch (err) {
       console.error("Orders fetch error:", err);
     }
-  }, [theaterId]);
+  }, [theaterId, isPrimary, theaterList]);
 
   useEffect(() => {
     if (!theater) return;
@@ -160,16 +201,30 @@ const TheaterDashboard = () => {
   }, {});
 
   return (
-    <div className="dashboard-container">
+    <div className="theater-dashboard">
       <div className="dashboard-header">
         <div className="dashboard-header-left">
-          {theater.theaterLogo && <img src={getImageUrl(theater.theaterLogo)} alt="Logo" className="dashboard-logo" />}
-          <div className="header-text">
-            <h1>{theater.name}</h1>
-            <p>{theater.branchName} • {theater.city}</p>
+          {theater?.image && (
+            <img src={getImageUrl(theater.image)} alt="Theater" className="theater-thumb" />
+          )}
+          <div className="theater-titles">
+            <h1 className="theater-name">{theater?.name || "Loading..."}</h1>
+            <p className="theater-location">
+              {theater?.location} • {theater?.city}
+            </p>
           </div>
         </div>
-        <button className="dashboard-refresh-btn" onClick={handleRefresh}>↻ Refresh</button>
+
+        <div className="dashboard-header-right">
+          {/* ── 🔍 DIAGNOSTIC BADGE ── */}
+          <div style={{ marginRight: "1rem", "textAlign": "right", "opacity": 0.6, "fontSize": "10px", "fontFamily": "monospace" }}>
+            ID: {theaterId?.slice(-6)}<br />
+            PRIMARY: {isPrimary ? "YES" : "NO"}
+          </div>
+          <button className="refresh-btn" onClick={() => { setLoading(true); fetchOrders(); }}>
+            ↻ Refresh
+          </button>
+        </div>
       </div>
 
       <div className="dashboard-stats">

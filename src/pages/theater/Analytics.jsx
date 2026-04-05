@@ -176,64 +176,75 @@ const Analytics = () => {
   const [chartMetric, setChartMetric] = useState("orders");
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState("");
+  const [isPrimary,   setIsPrimary]   = useState(false);
+  const [theaterList, setTheaterList] = useState([]);
+
+  /* ── 📝 SMART ISOLATION: Fetch owner's theaters ── */
+  useEffect(() => {
+    if (getRole() !== "owner" || !cinemaId) return;
+    const checkPrimary = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/cinema`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        const d = await res.json();
+        const list = d.cinemas || d.data || [];
+        if (d.success && Array.isArray(list) && list.length > 0) {
+          setTheaterList(list);
+          // Rule: Stable Primary = smallest _id string (usually oldest)
+          const sorted = [...list].sort((a, b) => a._id.localeCompare(b._id));
+          const primaryId = sorted[0]._id;
+          setIsPrimary(cinemaId === primaryId);
+        }
+      } catch (e) {
+        console.warn("Smart Isolation (Analytics): Fetch failed.");
+      }
+    };
+    checkPrimary();
+  }, [cinemaId]);
 
   /* ── Fetch all orders across statuses ── */
   const fetchOrders = useCallback(async () => {
+    if (!cinemaId) return;
     setLoading(true);
     setError("");
     const token = getToken();
-    if (!token) {
-      setError("No auth token. Please log in again.");
-      setLoading(false);
-      return;
-    }
 
     try {
+      const statusList = ["placed", "preparing", "ready", "delivered"];
       const responses = await Promise.allSettled(
-        ALL_STATUSES.map((s) =>
+        statusList.map(s =>
           fetch(`${API_BASE}/worker/orders?status=${s}`, {
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           })
         )
       );
 
-      // Detect 403 — show error banner (do NOT treat as session expiry)
-      const has403 = responses.some(
-        (r) => r.status === "fulfilled" && r.value.status === 403
-      );
-      if (has403) {
-        setError(
-          "⚠️ Backend is blocking access to order data (403 Forbidden). " +
-          "Ask your backend developer to allow this token on GET /api/worker/orders."
-        );
-        setLoading(false);
-        return;
-      }
+      const jsonPromises = responses
+        .filter(r => r.status === "fulfilled" && r.value.ok)
+        .map(r => r.value.json());
 
-      const jsonResponses = await Promise.allSettled(
-        responses.map((r) =>
-          r.status === "fulfilled" && r.value.ok
-            ? r.value.json()
-            : Promise.resolve({ orders: [] })
-        )
-      );
+      const jsonResponses = await Promise.all(jsonPromises);
 
       const seen = new Set();
       const merged = [];
 
-      jsonResponses.forEach((res) => {
-        // ✅ Check for orders array directly — backend may NOT return success:true
-        if (res.status === "fulfilled" && res.value?.orders) {
-          res.value.orders.forEach((o) => {
-            if (
-              !seen.has(o._id) &&
-              (
-                role === "worker" ||
-                o.theaterId === cinemaId ||
-                o.cinemaId === cinemaId ||
-                !o.theaterId          // fallback: backend may not save theaterId
-              )
-            ) {
+      jsonResponses.forEach((data) => {
+        if (data.orders || Array.isArray(data)) {
+          const ordersArr = data.orders || (Array.isArray(data) ? data : []);
+          ordersArr.forEach((o) => {
+            /* ═══════════════════════════════════════════════════════
+               📝 SMARTER ISOLATION FILTER
+            ═══════════════════════════════════════════════════════ */
+            const matchesId = (o.theaterId === cinemaId || o.cinemaId === cinemaId);
+            
+            // Unknown = Legacy = Primary
+            const isKnown = theaterList.some(t => (t._id === o.theaterId || t._id === o.cinemaId));
+            const isLegacy = !isKnown;
+
+            const shouldInclude = matchesId || (isPrimary && isLegacy);
+
+            if (!seen.has(o._id) && shouldInclude) {
               seen.add(o._id);
               merged.push(o);
             }
@@ -247,7 +258,7 @@ const Analytics = () => {
     } finally {
       setLoading(false);
     }
-  }, [cinemaId, role]);
+  }, [cinemaId, isPrimary]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
@@ -302,16 +313,21 @@ const Analytics = () => {
 
   return (
     <div className="analytics-container">
-
-      {/* ── TOPBAR ── */}
-      <div className="analytics-topbar">
-        <div className="analytics-topbar-left">
-          <h2 className="analytics-title">📊 Analytics</h2>
-          {orders.length > 0 && (
-            <span className="analytics-badge">{orders.length} orders total</span>
-          )}
+      <div className="analytics-header">
+        <div className="analytics-header-left">
+          <h1 className="analytics-title">Business Analytics</h1>
+          <p className="analytics-subtitle">Real-time performance and revenue tracking</p>
         </div>
-        <button className="analytics-refresh-btn" onClick={fetchOrders}>↻ Refresh</button>
+        <div className="analytics-header-right">
+          {/* 🔍 DIAGNOSTIC BADGE */}
+          <div style={{ marginRight: "1rem", "textAlign": "right", "opacity": 0.5, "fontSize": "9px", "fontFamily": "monospace" }}>
+            ID: {cinemaId?.slice(-6)}<br />
+            PRIMARY: {isPrimary ? "YES" : "NO"}
+          </div>
+          <button className="analytics-refresh-btn" onClick={() => fetchOrders()}>
+            ↻ Refresh
+          </button>
+        </div>
       </div>
 
       {/* ── ERROR ── */}

@@ -98,7 +98,33 @@ const Menu = () => {
   const [error,       setError]       = useState("");
   const [imgError,    setImgError]    = useState("");
   const [confirmDel,  setConfirmDel]  = useState(null);
+  const [isPrimary, setIsPrimary] = useState(false);
+  const [theaterList, setTheaterList] = useState([]);
   const fileInputRef = useRef(null);
+
+  /* ── 📝 SMART ISOLATION: Fetch owner's theaters ── */
+  useEffect(() => {
+    if (role !== "owner" || !activeTheaterId) return;
+    const checkPrimary = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/cinema`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        const d = await res.json();
+        const list = d.cinemas || d.data || [];
+        if (d.success && Array.isArray(list) && list.length > 0) {
+          setTheaterList(list);
+          // Rule: Stable Primary = smallest _id string (usually oldest)
+          const sorted = [...list].sort((a, b) => a._id.localeCompare(b._id));
+          const primaryId = sorted[0]._id;
+          setIsPrimary(activeTheaterId === primaryId);
+        }
+      } catch (e) {
+        console.warn("Smart Isolation (Menu): Fetch failed.");
+      }
+    };
+    checkPrimary();
+  }, [role, activeTheaterId]);
 
   /* ═══════════════════════════════════════════════════════
      GET /api/menu
@@ -107,11 +133,15 @@ const Menu = () => {
              and doesn't stale-close over an empty string.
   ═══════════════════════════════════════════════════════ */
   const loadMenu = useCallback(async () => {
+    if (!activeTheaterId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
-      const url = activeTheaterId
-        ? `${API_BASE}/menu?cinemaId=${activeTheaterId}`
+      const url = role === "worker"
+        ? `${API_BASE}/worker/menu`
         : `${API_BASE}/menu`;
 
       const res = await fetch(url, { headers: authHeaders() });
@@ -129,7 +159,20 @@ const Menu = () => {
 
       if (data.success) {
         const cleaned = (data.menu || [])
-          .filter((item) => !item.isDeleted)
+          .filter((item) => {
+            /* ═══════════════════════════════════════════════════════
+               📝 SMARTER ISOLATION FILTER
+            ═══════════════════════════════════════════════════════ */
+            const matchesId = (item.theaterId === activeTheaterId || item.cinemaId === activeTheaterId);
+            
+            // Unknown = Legacy = Primary
+            const isKnown = theaterList.some(t => (t._id === item.theaterId || t._id === item.cinemaId));
+            const isLegacy = !isKnown;
+
+            const shouldInclude = matchesId || (isPrimary && isLegacy);
+
+            return !item.isDeleted && shouldInclude;
+          })
           .map((item) => ({
             id               : item._id,
             _id              : item._id,
