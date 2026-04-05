@@ -28,7 +28,8 @@
 /* ─── HEADER ─── */
 .item-header {
   padding: 20px;
-  position: absolute; /* Float over hero */
+  position: absolute;
+  /* Float over hero */
   top: 0;
   width: 100%;
   z-index: 100;
@@ -42,7 +43,7 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   color: var(--sw-dark);
   font-size: 18px;
   font-weight: 800;
@@ -51,7 +52,7 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .back-btn:hover {
@@ -69,7 +70,8 @@
 /* ─── HERO SECTION ─── */
 .item-hero {
   width: 100%;
-  height: 380px; /* Large immersive height */
+  height: 380px;
+  /* Large immersive height */
   position: relative;
   overflow: hidden;
 }
@@ -91,14 +93,15 @@
   left: 0;
   right: 0;
   height: 120px;
-  background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
 }
 
 /* ─── DETAILS ─── */
 .item-details {
   padding: 28px 24px;
   background: white;
-  margin-top: -24px; /* Pull content up over hero */
+  margin-top: -24px;
+  /* Pull content up over hero */
   position: relative;
   z-index: 2;
   border-radius: var(--sw-radius-lg) var(--sw-radius-lg) 0 0;
@@ -261,16 +264,18 @@
 .add-cart-bar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
   width: 100%;
   max-width: 500px;
+  margin: 0 auto;
   background: white;
   padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 -6px 20px rgba(0,0,0,0.05);
+  gap: 12px;
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.05);
   z-index: 1000;
   border-top: 1px solid var(--sw-border);
 }
@@ -280,19 +285,21 @@
   font-size: 20px;
   font-weight: 900;
   color: var(--sw-dark);
+  min-width: 80px;
 }
 
 .add-btn {
   background: var(--sw-primary);
   color: white;
   border: none;
-  padding: 9px 18px;
-  border-radius: 20px;
+  padding: 10px 18px;
+  border-radius: 30px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
-  width: fit-content;
+  min-width: 120px;
   white-space: nowrap;
+  text-align: center;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 12px rgba(121, 51, 77, 0.25);
 }
@@ -319,7 +326,7 @@
 
   .item-header {
     background: white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
     padding: 20px 40px;
     position: fixed;
     top: 0;
@@ -334,7 +341,8 @@
     gap: 60px;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 100px 40px 20px; /* 100px = header height clearance */
+    padding: 100px 40px 20px;
+    /* 100px = header height clearance */
     align-items: flex-start;
   }
 
@@ -344,8 +352,9 @@
     height: 500px;
     border-radius: 24px;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    position: relative; /* reset — no sticky needed */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    position: relative;
+    /* reset — no sticky needed */
   }
 
   /* Right column: title + price + desc + size */
@@ -390,11 +399,12 @@
     box-shadow: none;
   }
 
-  /* ── ADD TO CART — static, in-flow ── */
+  /* ── ADD TO CART — static, in-flow on desktop ── */
   .add-cart-bar {
     position: static;
     transform: none;
     left: auto;
+    right: auto;
     width: auto;
     max-width: 800px;
     margin: 32px auto 0;
@@ -402,6 +412,7 @@
     border-top: 1px solid var(--sw-border);
     border-radius: 0;
     box-shadow: none;
+    gap: 0;
   }
 
   /* Scale up button + price for desktop */
@@ -410,10 +421,12 @@
     font-size: 16px;
     font-weight: 800;
     border-radius: 40px;
+    min-width: 0;
     box-shadow: 0 8px 24px rgba(121, 51, 77, 0.3);
   }
 
   .total-price {
     font-size: 28px;
+    min-width: 0;
   }
 }
