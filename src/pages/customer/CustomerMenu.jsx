@@ -258,7 +258,7 @@ const CustomerMenu = () => {
                       </div>
 
                       <div className="item-cta-btn">
-                         {isFeatured ? "Order now" : "Tap to customize →"}
+                         Order now
                       </div>
                     </div>
 
