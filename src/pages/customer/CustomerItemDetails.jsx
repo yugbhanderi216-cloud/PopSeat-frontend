@@ -163,11 +163,12 @@ const CustomerItemDetails = () => {
 
           <div className="item-details">
 
-            <h1 className="item-title">{item.name}</h1>
+            <div className="title-row">
+              <h1 className="item-title">{item.name}</h1>
+              <div className="dynamic-price">₹ {selectedSize.price}</div>
+            </div>
 
             <p className="item-desc">{item.description}</p>
-
-            <div className="base-price">₹ {selectedSize.price}</div>
 
           </div>
 
@@ -188,7 +189,7 @@ const CustomerItemDetails = () => {
                   }`}
                   onClick={() => setSelectedSize(s)}
                 >
-                  {s.name} — ₹{s.price}
+                  {s.name}
                 </button>
 
               ))}

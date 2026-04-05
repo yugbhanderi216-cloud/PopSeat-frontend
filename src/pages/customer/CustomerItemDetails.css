@@ -120,11 +120,20 @@
   margin-bottom: 20px;
 }
 
-.base-price {
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.dynamic-price {
   font-family: 'Outfit', sans-serif;
-  font-size: 28px;
-  font-weight: 800;
+  font-size: 22px;
+  font-weight: 900;
   color: var(--sw-primary);
+  white-space: nowrap;
+  transition: all 0.3s ease;
 }
 
 /* ─── SECTIONS ─── */
@@ -162,23 +171,22 @@
 }
 
 .size-btn {
-  padding: 12px 24px;
-  border-radius: 40px;
+  padding: 10px 20px;
+  border-radius: 30px;
   border: 2px solid var(--sw-border);
-  background: white;
-  color: var(--sw-text-muted);
+  background: #fafafa;
+  color: var(--sw-text);
   font-weight: 700;
   font-size: 14px;
-  white-space: nowrap;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
 }
 
 .size-btn.active {
   background: var(--sw-primary);
   color: white;
   border-color: var(--sw-primary);
-  box-shadow: 0 4px 12px rgba(121, 51, 77, 0.2);
+  box-shadow: 0 6px 16px rgba(121, 51, 77, 0.25);
 }
 
 /* ─── OPTOIN DATA ─── */
