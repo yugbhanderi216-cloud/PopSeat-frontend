@@ -294,7 +294,7 @@
 
   .item-image-wrap {
     width: 100%;
-    height: 200px;
+    height: 180px; /* Reduced from 200px for better balance */
     position: relative;
     overflow: hidden;
   }
@@ -303,6 +303,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.5s ease;
   }
 
   .customer-card:hover .food-img {
@@ -310,7 +311,7 @@
   }
 
   .card-content {
-    padding: 24px;
+    padding: 20px 24px; /* Slightly tighter padding */
     display: flex;
     flex-direction: column;
     flex-grow: 1;
@@ -318,30 +319,30 @@
   }
 
   .item-name {
-    font-size: 22px;
+    font-size: 26px; /* Increased from 22px for impact */
     font-weight: 800;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     color: white;
-    line-height: 1.3;
+    line-height: 1.25;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    min-height: 2.6em;
+    min-height: 2.5em; /* Optimized for 2 lines at 26px */
   }
 
   .item-desc {
     color: #94a3b8;
     font-size: 14px;
-    line-height: 1.6;
-    margin-bottom: 24px;
+    line-height: 1.5;
+    margin-bottom: 20px;
     display: -webkit-box;
     -webkit-line-clamp: 3;
     line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    min-height: 4.8em;
+    min-height: 4.5em; /* Tightened from 4.8em */
   }
 
   .all-prices {
