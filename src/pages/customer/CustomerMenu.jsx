@@ -221,6 +221,19 @@ const CustomerMenu = () => {
                       })
                     }
                   >
+
+                    {/* Image Section */}
+                    {item.image && (
+                      <div className="item-image-wrap">
+                        <img
+                          src={getImageUrl(item.image)}
+                          alt={item.name}
+                          className="food-img"
+                          onError={(e) => { e.target.style.display = "none"; }}
+                        />
+                        {isFeatured && <div className="veg-badge" />}
+                      </div>
+                    )}
                     
                     {/* Content Section */}
                     <div className="card-content">
@@ -252,19 +265,6 @@ const CustomerMenu = () => {
                          Order now
                       </div>
                     </div>
-
-                    {/* Image Section */}
-                    {item.image && (
-                      <div className="item-image-wrap">
-                        <img
-                          src={getImageUrl(item.image)}
-                          alt={item.name}
-                          className="food-img"
-                          onError={(e) => { e.target.style.display = "none"; }}
-                        />
-                        {isFeatured && <div className="veg-badge" />}
-                      </div>
-                    )}
 
                   </article>
                 );
