@@ -159,135 +159,139 @@ const CustomerItemDetails = () => {
 
         </div>
 
-        <div className="item-details">
+        <div className="item-content-side">
 
-          <h1 className="item-title">{item.name}</h1>
+          <div className="item-details">
 
-          <p className="item-desc">{item.description}</p>
+            <h1 className="item-title">{item.name}</h1>
 
-          <div className="base-price">₹ {selectedSize.price}</div>
+            <p className="item-desc">{item.description}</p>
 
-        </div>
+            <div className="base-price">₹ {selectedSize.price}</div>
 
-        {/* SIZE */}
+          </div>
 
-        <div className="section">
+          {/* SIZE */}
 
-          <h3>Select Size</h3>
+          <div className="section">
 
-          <div className="size-options">
+            <h3>Select Size</h3>
 
-            {sizeOptions.map((s, i) => (
+            <div className="size-options">
+
+              {sizeOptions.map((s, i) => (
+
+                <button
+                  key={i}
+                  className={`size-btn ${
+                    selectedSize.name === s.name ? "active" : ""
+                  }`}
+                  onClick={() => setSelectedSize(s)}
+                >
+                  {s.name} — ₹{s.price}
+                </button>
+
+              ))}
+
+            </div>
+
+          </div>
+
+          {/* TOPPINGS */}
+
+          {toppingOptions.length > 0 && (
+
+            <div className="section">
+
+              <h3>Add Toppings</h3>
+
+              {toppingOptions.map((top, i) => (
+
+                <div key={i} className="option-row">
+
+                  <label>
+
+                    {/* FIX: controlled checkbox — checked prop added */}
+                    <input
+                      type="checkbox"
+                      checked={!!toppings.find((t) => t.name === top.name)}
+                      onChange={() => toggleTopping(top)}
+                    />
+
+                    {top.name}
+
+                  </label>
+
+                  <span>+₹{top.price}</span>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          )}
+
+          {/* DIPS */}
+
+          {dipOptions.length > 0 && (
+
+            <div className="section">
+
+              <h3>Add Dips</h3>
+
+              {dipOptions.map((dip, i) => (
+
+                <div key={i} className="option-row">
+
+                  <label>
+
+                    {/* FIX: controlled checkbox — checked prop added */}
+                    <input
+                      type="checkbox"
+                      checked={!!dips.find((d) => d.name === dip.name)}
+                      onChange={() => toggleDip(dip)}
+                    />
+
+                    {dip.name}
+
+                  </label>
+
+                  <span>+₹{dip.price}</span>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          )}
+
+          {/* QUANTITY */}
+
+          <div className="section">
+
+            <h3>Quantity</h3>
+
+            <div className="qty-box">
 
               <button
-                key={i}
-                className={`size-btn ${
-                  selectedSize.name === s.name ? "active" : ""
-                }`}
-                onClick={() => setSelectedSize(s)}
+                className="qty-btn"
+                onClick={() => setQty(Math.max(1, qty - 1))}
               >
-                {s.name} — ₹{s.price}
+                -
               </button>
 
-            ))}
+              <span className="qty-number">{qty}</span>
 
-          </div>
+              <button
+                className="qty-btn"
+                onClick={() => setQty(qty + 1)}
+              >
+                +
+              </button>
 
-        </div>
-
-        {/* TOPPINGS */}
-
-        {toppingOptions.length > 0 && (
-
-          <div className="section">
-
-            <h3>Add Toppings</h3>
-
-            {toppingOptions.map((top, i) => (
-
-              <div key={i} className="option-row">
-
-                <label>
-
-                  {/* FIX: controlled checkbox — checked prop added */}
-                  <input
-                    type="checkbox"
-                    checked={!!toppings.find((t) => t.name === top.name)}
-                    onChange={() => toggleTopping(top)}
-                  />
-
-                  {top.name}
-
-                </label>
-
-                <span>+₹{top.price}</span>
-
-              </div>
-
-            ))}
-
-          </div>
-
-        )}
-
-        {/* DIPS */}
-
-        {dipOptions.length > 0 && (
-
-          <div className="section">
-
-            <h3>Add Dips</h3>
-
-            {dipOptions.map((dip, i) => (
-
-              <div key={i} className="option-row">
-
-                <label>
-
-                  {/* FIX: controlled checkbox — checked prop added */}
-                  <input
-                    type="checkbox"
-                    checked={!!dips.find((d) => d.name === dip.name)}
-                    onChange={() => toggleDip(dip)}
-                  />
-
-                  {dip.name}
-
-                </label>
-
-                <span>+₹{dip.price}</span>
-
-              </div>
-
-            ))}
-
-          </div>
-
-        )}
-
-        {/* QUANTITY */}
-
-        <div className="section">
-
-          <h3>Quantity</h3>
-
-          <div className="qty-box">
-
-            <button
-              className="qty-btn"
-              onClick={() => setQty(Math.max(1, qty - 1))}
-            >
-              -
-            </button>
-
-            <span className="qty-number">{qty}</span>
-
-            <button
-              className="qty-btn"
-              onClick={() => setQty(qty + 1)}
-            >
-              +
-            </button>
+            </div>
 
           </div>
 
