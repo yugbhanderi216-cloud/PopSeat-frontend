@@ -201,10 +201,6 @@
     margin-bottom: 4px;
   }
 
-  .featured-card .item-price {
-    display: block; /* ONLY show price on mobile featured card */
-  }
-
   /* 🧩 Small Cards (Standard Mobile Items) */
   .standard-card {
     grid-column: span 1;
@@ -221,15 +217,19 @@
     /* Limit to 2 lines for grid stability */
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     min-height: 2.6em;
   }
 
+  .featured-card .item-desc,
+  .featured-card .all-prices,
+  .featured-card .item-price,
   .standard-card .item-desc,
   .standard-card .all-prices,
   .standard-card .item-price {
-    display: none !important; /* Strictly minimal small cards */
+    display: none !important; /* Strictly hidden on mobile */
   }
 
   /* Shared Mobile Content styles */
