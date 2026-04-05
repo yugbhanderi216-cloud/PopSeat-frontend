@@ -147,7 +147,7 @@ const CustomerItemDetails = () => {
 
       <div className="item-wrapper">
 
-        <div className="item-top">
+        <div className="item-hero">
 
           <img
             src={getImageUrl(item.image)}
@@ -155,16 +155,17 @@ const CustomerItemDetails = () => {
             className="item-image"
             onError={(e) => { e.target.style.display = "none"; }}
           />
+          <div className="item-overlay" />
 
-          <div className="item-details">
+        </div>
 
-            <h1 className="item-title">{item.name}</h1>
+        <div className="item-details">
 
-            <p className="item-desc">{item.description}</p>
+          <h1 className="item-title">{item.name}</h1>
 
-            <div className="base-price">₹ {singleItemPrice}</div>
+          <p className="item-desc">{item.description}</p>
 
-          </div>
+          <div className="base-price">₹ {selectedSize.price}</div>
 
         </div>
 
