@@ -32,6 +32,9 @@ const CustomerCart = () => {
 
   const goBack = () => navigate(-1);
 
+  /* ── Currency formatter ── */
+  const formatCurrency = (amount) => `₹ ${Number(amount).toFixed(2)}`;
+
   /* ── Load cart from localStorage ── */
   useEffect(() => {
     try {
@@ -136,6 +139,9 @@ const CustomerCart = () => {
             const itemId = item.id || item._id;
             return (
               <div key={itemId} className="cart-card">
+                {/* Delete — top-right floating */}
+                <button className="delete-btn" onClick={() => removeItem(itemId)}>🗑</button>
+
                 {item.image && (
                   <img src={item.image} alt={item.name} className="cart-img" />
                 )}
@@ -143,14 +149,15 @@ const CustomerCart = () => {
                   <h3>{item.name}</h3>
                   {item.size && <p className="cart-meta">Size: {item.size}</p>}
                   <p className="cart-price">
-                    ₹ {item.finalPrice || item.price} × {item.quantity}
+                    {formatCurrency(item.finalPrice || item.price)} × {item.quantity}
                   </p>
-                </div>
-                <div className="cart-controls">
-                  <button className="minus-btn"  onClick={() => decreaseQty(itemId)}>-</button>
-                  <span>{item.quantity}</span>
-                  <button className="plus-btn"   onClick={() => increaseQty(itemId)}>+</button>
-                  <button className="delete-btn" onClick={() => removeItem(itemId)}>🗑</button>
+
+                  {/* Quantity pill — below item info */}
+                  <div className="cart-controls">
+                    <button className="minus-btn" onClick={() => decreaseQty(itemId)}>−</button>
+                    <span>{item.quantity}</span>
+                    <button className="plus-btn"  onClick={() => increaseQty(itemId)}>+</button>
+                  </div>
                 </div>
               </div>
             );
@@ -160,7 +167,10 @@ const CustomerCart = () => {
 
       {/* Footer */}
       <div className="cart-footer">
-        <h3>Total: ₹ {total}</h3>
+        <h3>
+          Total Bill
+          <span>{formatCurrency(total)}</span>
+        </h3>
         <button
           className="checkout-btn"
           onClick={handleCheckout}
