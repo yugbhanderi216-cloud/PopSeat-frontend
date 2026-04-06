@@ -339,7 +339,7 @@ const QRGenerator = () => {
 
   // ── Build QR URL ──────────────────────────────────────────
   const buildQRUrl = (seat) =>
-    `${CUSTOMER_BASE}?theaterId=${theaterId}&hallId=${seat.hallId}&seatId=${seat._id}&seat=${seat.seatNumber}`;
+    `${CUSTOMER_BASE}?cinemaId=${theaterId}&hallId=${seat.hallId}&seatId=${seat._id}&seat=${seat.seatNumber}`;
 
   // ── Loading / guard screens ───────────────────────────────
   if (theaterLoading) {

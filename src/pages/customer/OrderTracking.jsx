@@ -47,10 +47,12 @@ const OrderTracking = () => {
 
     try {
 
+      const sessionId = localStorage.getItem("sessionId");
       const res  = await fetch(`${API_BASE}/order/${orderId}`, {
         headers: {
           "Content-Type" : "application/json",
           ...(token && { Authorization: `Bearer ${token}` }),
+          ...(sessionId && { "session-id": sessionId }),
         },
       });
 

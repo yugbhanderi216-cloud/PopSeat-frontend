@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SessionExpiredUI from "../component/SessionExpiredUI";
 
@@ -9,97 +9,95 @@ const CustomerWelcome = () => {
   const navigate = useNavigate();
   const [error, setError] = useState(false);
 
-  const params = new URLSearchParams(location.search);
-  const theaterId = params.get("theaterId");
+  const params = useMemo(() => {
+    const searchParams = new URLSearchParams(location.search);
+
+    // Handle both normal and hash routing
+    if (searchParams.has("seatId") || searchParams.has("cinemaId") || searchParams.has("theaterId")) {
+      return searchParams;
+    }
+
+    const hash = location.hash || "";
+    const queryIndex = hash.indexOf("?");
+    const queryString = queryIndex !== -1 ? hash.slice(queryIndex + 1) : "";
+
+    return new URLSearchParams(queryString);
+  }, [location]);
+
+  const theaterId =
+    params.get("theaterId") ||
+    params.get("cinemaId") ||
+    localStorage.getItem("customerTheaterId");
+
   const hallId = params.get("hallId");
   const seatId = params.get("seatId");
   const seat = params.get("seat");
 
   useEffect(() => {
-    const initSession = async () => {
-      // Always create session on first page load from QR
-      if (theaterId && hallId && seatId && seat) {
-        try {
-          const res = await fetch(`${API_BASE}/session/create`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              theaterId,
-              hallId,
-              seatId,
-              seatNumber: seat
-            })
-          });
+    if (theaterId) localStorage.setItem("customerTheaterId", theaterId);
+    if (hallId) localStorage.setItem("customerHallId", hallId);
+    if (seatId) localStorage.setItem("customerSeatId", seatId);
+    if (seat) localStorage.setItem("seatNo", seat);
+  }, [theaterId, hallId, seatId, seat]);
 
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          
-          const data = await res.json();
-          if (res.status === 201 && data.success) {
-            localStorage.setItem("sessionId", data.sessionId);
-            localStorage.setItem("theaterId", theaterId);
-            localStorage.setItem("hallId", hallId);
-            localStorage.setItem("seatId", seatId);
-            localStorage.setItem("seatNo", seat);
-            
-            setTimeout(() => {
-              navigate("/customer/menu");
-            }, 1000);
-          } else {
-            console.error("Session creation failed", data);
-            setError(true);
-          }
-        } catch (err) {
-          console.error("API Error:", err);
-          setError(true);
-        }
+  const createSession = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/session/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          theaterId,
+          hallId,
+          seatId,
+          seatNumber: seat
+        })
+      });
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Invalid JSON response");
+      }
+
+      if (res.status === 201 && data.success) {
+        localStorage.setItem("sessionId", data.sessionId);
+        return true;
+      }
+
+      throw new Error(data.message || "Session failed");
+    } catch (err) {
+      console.error("Session error:", err);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      if (!theaterId || !hallId || !seatId || !seat) {
+        setError(true);
+        return;
+      }
+
+      const existingSession = localStorage.getItem("sessionId");
+
+      if (existingSession) {
+        navigate("/customer/menu");
+        return;
+      }
+
+      const success = await createSession();
+
+      if (success) {
+        navigate("/customer/menu");
       } else {
-        // Missing URL parameters
-        // Check if session already exists
-        const existingSession = localStorage.getItem("sessionId");
-        if (!existingSession) {
-          // If no sessionId in localStorage but we have raw params in localStorage, automatically call /session/create again
-          const tId = localStorage.getItem("theaterId");
-          const hId = localStorage.getItem("hallId");
-          const sId = localStorage.getItem("seatId");
-          const sNo = localStorage.getItem("seatNo");
-          if (tId && hId && sId && sNo) {
-             try {
-               const res = await fetch(`${API_BASE}/session/create`, {
-                 method: "POST",
-                 headers: { "Content-Type": "application/json" },
-                 body: JSON.stringify({ theaterId: tId, hallId: hId, seatId: sId, seatNumber: sNo })
-               });
-               
-               if (!res.ok) {
-                   throw new Error(`HTTP error! status: ${res.status}`);
-               }
-               const data = await res.json();
-               if (res.status === 201 && data.success) {
-                 localStorage.setItem("sessionId", data.sessionId);
-                 setTimeout(() => navigate("/customer/menu"), 1000);
-               } else {
-                 setError(true);
-               }
-             } catch (e) {
-               console.error("Session reinit error:", e);
-               setError(true);
-             }
-          } else {
-            setError(true);
-          }
-        } else {
-          setTimeout(() => {
-            navigate("/customer/menu");
-          }, 1000);
-        }
+        setError(true);
       }
     };
-    
-    initSession();
+
+    init();
   }, [theaterId, hallId, seatId, seat, navigate]);
 
   if (error) {

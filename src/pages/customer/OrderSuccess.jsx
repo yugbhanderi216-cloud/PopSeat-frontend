@@ -50,7 +50,9 @@ const OrderSuccess = () => {
       return;
     }
 
-    if (!token) {
+    const sessionId = localStorage.getItem("sessionId");
+    
+    if (!token && !sessionId) {
       setError("Session expired. Please scan your seat QR to continue.");
       setLoading(false);
       return;
@@ -60,7 +62,8 @@ const OrderSuccess = () => {
       const res = await fetch(`${API_BASE}/order/${orderId}`, {
         headers: {
           "Content-Type":  "application/json",
-          "Authorization": `Bearer ${token}`,
+          ...(token && { "Authorization": `Bearer ${token}` }),
+          ...(sessionId && { "session-id": sessionId }),
         },
       });
 
