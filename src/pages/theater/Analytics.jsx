@@ -23,8 +23,8 @@ const getRole = () =>
 
 const getTheaterId = (role) =>
   role === "worker"
-    ? (localStorage.getItem("assignedTheaterId") || localStorage.getItem("customerTheaterId") || "")
-    : (localStorage.getItem("activeOwnerTheaterId") || localStorage.getItem("customerTheaterId") || "");
+    ? (localStorage.getItem("assignedTheaterId") || localStorage.getItem("customerSeatId") || "") // Worker context
+    : (localStorage.getItem("activeTheaterId") || localStorage.getItem("activeOwnerTheaterId") || localStorage.getItem("customerTheaterId") || ""); // Owner context
 
 const formatCurrency = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 

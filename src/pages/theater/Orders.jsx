@@ -82,7 +82,7 @@ const Orders = () => {
 
   const theaterId = role === "worker"
     ? (localStorage.getItem("assignedTheaterId") || "")
-    : (localStorage.getItem("activeOwnerTheaterId") || "");
+    : (localStorage.getItem("activeTheaterId") || localStorage.getItem("activeOwnerTheaterId") || "");
 
   useEffect(() => {
     isMounted.current = true;

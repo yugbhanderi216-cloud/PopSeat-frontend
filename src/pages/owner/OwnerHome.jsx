@@ -341,6 +341,10 @@ const OwnerHome = () => {
       setError("This theater is pending Super Admin approval. ⏳");
       return;
     }
+    // Set activeTheaterId for switching logic and persistent context
+    localStorage.setItem("activeTheaterId", theater._id);
+    localStorage.setItem("activeOwnerTheaterId", theater._id); // Backward compatibility
+    
     navigate(`/theater/overview?theaterId=${theater._id}`, {
       state: { theaterId: theater._id },
     });

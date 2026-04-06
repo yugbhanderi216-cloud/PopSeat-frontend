@@ -76,6 +76,7 @@ const EMPTY_FORM = {
 const Menu = () => {
   // ── FIX 1: Read theaterId once at component level (stable reference) ──
   const activeTheaterId =
+    localStorage.getItem("activeTheaterId") ||
     localStorage.getItem("activeOwnerTheaterId") ||
     localStorage.getItem("assignedTheaterId") ||
     "";

@@ -46,6 +46,7 @@ const QRGenerator = () => {
   ).toLowerCase();
 
   const theaterId =
+    localStorage.getItem("activeTheaterId") ||
     state?.theaterId ||
     localStorage.getItem("activeOwnerTheaterId") ||
     localStorage.getItem("assignedTheaterId") ||

@@ -45,12 +45,18 @@ const TheaterLayout = () => {
   const [sidebarCollapsed,  setSidebarCollapsed]  = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [userMenuOpen,      setUserMenuOpen]      = useState(false);
+  const [switcherOpen,      setSwitcherOpen]      = useState(false);
+  
   const userMenuRef = useRef(null);
+  const switcherRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setUserMenuOpen(false);
+      }
+      if (switcherRef.current && !switcherRef.current.contains(event.target)) {
+        setSwitcherOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -76,11 +82,51 @@ const TheaterLayout = () => {
   const handleLogout = () => {
     [
       "ownerToken", "ownerEmail", "ownerRole",
-      "ownerPlans", "selectedPlan", "activeOwnerTheaterId",
+      "ownerPlans", "selectedPlan", "activeOwnerTheaterId", "activeTheaterId",
       "workerToken", "workerEmail", "workerRole", "assignedTheaterId",
       "token", "email", "role",
     ].forEach((k) => localStorage.removeItem(k));
     navigate("/login");
+  };
+
+  /* ── Theater Switching (Owner only) ── */
+  const [theaters, setTheaters] = useState([]);
+  const activeTheaterId = localStorage.getItem("activeTheaterId") || localStorage.getItem("activeOwnerTheaterId") || "";
+
+  useEffect(() => {
+    if (!isOwner) return;
+    const fetchTheaters = async () => {
+      try {
+        const res = await fetch("https://popseat.onrender.com/api/cinema", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""}`
+          }
+        });
+        const data = await res.json();
+        if (data.success) {
+          setTheaters(data.cinemas || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch theaters for switcher", err);
+      }
+    };
+    fetchTheaters();
+  }, [isOwner]);
+
+  const handleTheaterSwitch = (e) => {
+    const newId = e.target.value;
+    if (!newId || newId === activeTheaterId) return;
+
+    // 1. Clear old data
+    localStorage.removeItem("cart");
+    localStorage.removeItem("ordersCache");
+
+    // 2. Set new session
+    localStorage.setItem("activeTheaterId", newId);
+    localStorage.setItem("activeOwnerTheaterId", newId); 
+
+    // 3. Reload dashboard
+    window.location.reload();
   };
 
   /* ── Nav items (same rules as before) ── */
@@ -182,6 +228,54 @@ const TheaterLayout = () => {
               <img src={logo} alt="PopSeat" />
               <span>PopSeat</span>
             </div>
+
+            {/* Theater Switcher (Owner Only) */}
+            {isOwner && theaters.length > 1 && (
+              <div className="tl-switcher-wrap" ref={switcherRef}>
+                <button
+                  className="tl-switcher-btn"
+                  onClick={() => setSwitcherOpen(!switcherOpen)}
+                >
+                  <div className="tl-switcher-icon">🏛️</div>
+                  <div className="tl-switcher-text">
+                    <span className="tl-switcher-name">
+                      {theaters.find(t => t._id === activeTheaterId)?.name || "Select Theater"}
+                    </span>
+                    <span className="tl-switcher-branch">
+                      {theaters.find(t => t._id === activeTheaterId)?.branchName || "Switch Cinema"}
+                    </span>
+                  </div>
+                  <span className={`tl-switcher-arrow ${switcherOpen ? "open" : ""}`}>▾</span>
+                </button>
+
+                {switcherOpen && (
+                  <div className="tl-switcher-dropdown">
+                    <div className="tl-switcher-header">Switch Theater</div>
+                    <div className="tl-switcher-list">
+                      {theaters.map((t) => (
+                        <button
+                          key={t._id}
+                          className={`tl-switcher-item ${t._id === activeTheaterId ? "active" : ""}`}
+                          onClick={() => {
+                            handleTheaterSwitch({ target: { value: t._id } });
+                            setSwitcherOpen(false);
+                          }}
+                        >
+                          <div className="tl-item-dot" />
+                          <div className="tl-item-info">
+                            <span className="tl-item-name">{t.name}</span>
+                            <span className="tl-item-branch">{t.branchName}</span>
+                          </div>
+                          {t._id === activeTheaterId && (
+                            <span className="tl-item-check">✓</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div className="tl-topbar-right" ref={userMenuRef}>
             <span className="tl-role-chip">

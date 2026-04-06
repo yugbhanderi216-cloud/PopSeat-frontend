@@ -54,7 +54,7 @@ const TheaterDashboard = () => {
 
   const theaterId = role === "worker"
     ? (localStorage.getItem("assignedTheaterId") || localStorage.getItem("customerTheaterId") || "")
-    : (params.get("theaterId") || state?.theaterId || localStorage.getItem("activeOwnerTheaterId") || localStorage.getItem("customerTheaterId") || "");
+    : (params.get("theaterId") || state?.theaterId || localStorage.getItem("activeTheaterId") || localStorage.getItem("activeOwnerTheaterId") || localStorage.getItem("customerTheaterId") || "");
 
   const [theater, setTheater] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -69,6 +69,7 @@ const TheaterDashboard = () => {
 
   useEffect(() => {
     if (role === "owner" && theaterId) {
+      localStorage.setItem("activeTheaterId", theaterId);
       localStorage.setItem("activeOwnerTheaterId", theaterId);
     }
   }, [role, theaterId]);
