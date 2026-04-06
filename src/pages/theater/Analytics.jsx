@@ -128,8 +128,7 @@ const buildChartData = (orders, range) => {
 const buildTopItems = (orders) => {
   const map = {};
   orders.forEach((o) => {
-    const items =
-      o?.items || o?.cartItems || o?.orderItems || [];
+    const items = (o?.items || []);
     items.forEach((item) => {
       const name = item?.name || "Unknown Item";
       const qty = item?.quantity || 1;

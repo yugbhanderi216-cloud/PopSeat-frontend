@@ -244,7 +244,7 @@ const WorkerDashboard = () => {
             const ordId      = order._id;
             const isUpdating = updatingId === ordId;
             // Fallback: items is the primary field in the new schema
-            const orderItems = order?.items || order?.cartItems || order?.orderItems || [];
+            const orderItems = (order?.items || []);
 
             return (
 
