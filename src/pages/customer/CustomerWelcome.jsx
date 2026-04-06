@@ -1,36 +1,99 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 import SessionExpiredUI from "../component/SessionExpiredUI";
+
+const API_BASE = "https://popseat.onrender.com/api";
 
 const CustomerWelcome = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [error, setError] = useState(false);
 
   const params = new URLSearchParams(location.search);
-  const sessionToken = params.get("sessionToken");
+  const theaterId = params.get("theaterId");
+  const hallId = params.get("hallId");
+  const seatId = params.get("seatId");
+  const seat = params.get("seat");
 
   useEffect(() => {
-    if (sessionToken) {
-      try {
-        localStorage.setItem("sessionToken", sessionToken);
-        const decoded = jwtDecode(sessionToken);
+    const initSession = async () => {
+      // Always create session on first page load from QR
+      if (theaterId && hallId && seatId && seat) {
+        try {
+          const res = await fetch(`${API_BASE}/session/create`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              theaterId,
+              hallId,
+              seatId,
+              seatNumber: seat
+            })
+          });
 
-        localStorage.setItem("theaterId", decoded.theaterId);
-        localStorage.setItem("seatId", decoded.seatId);
-        localStorage.setItem("hallId", decoded.hallId);
-        
-        // Automated redirect to menu after successful extraction
-        setTimeout(() => {
-          navigate("/customer/menu");
-        }, 1500);
-      } catch (err) {
-        console.error("Invalid session token:", err);
+          const data = await res.json();
+          if (res.status === 201 && data.success) {
+            localStorage.setItem("sessionId", data.sessionId);
+            localStorage.setItem("theaterId", theaterId);
+            localStorage.setItem("hallId", hallId);
+            localStorage.setItem("seatId", seatId);
+            localStorage.setItem("seatNo", seat);
+            
+            setTimeout(() => {
+              navigate("/customer/menu");
+            }, 1000);
+          } else {
+            console.error("Session creation failed", data);
+            setError(true);
+          }
+        } catch (err) {
+          console.error("API Error:", err);
+          setError(true);
+        }
+      } else {
+        // Missing URL parameters
+        // Check if session already exists
+        const existingSession = localStorage.getItem("sessionId");
+        if (!existingSession) {
+          // If no sessionId in localStorage but we have raw params in localStorage, automatically call /session/create again
+          const tId = localStorage.getItem("theaterId");
+          const hId = localStorage.getItem("hallId");
+          const sId = localStorage.getItem("seatId");
+          const sNo = localStorage.getItem("seatNo");
+          if (tId && hId && sId && sNo) {
+             try {
+               const res = await fetch(`${API_BASE}/session/create`, {
+                 method: "POST",
+                 headers: { "Content-Type": "application/json" },
+                 body: JSON.stringify({ theaterId: tId, hallId: hId, seatId: sId, seatNumber: sNo })
+               });
+               const data = await res.json();
+               if (res.status === 201 && data.success) {
+                 localStorage.setItem("sessionId", data.sessionId);
+                 setTimeout(() => navigate("/customer/menu"), 1000);
+               } else {
+                 setError(true);
+               }
+             } catch (e) {
+               setError(true);
+             }
+          } else {
+            setError(true);
+          }
+        } else {
+          setTimeout(() => {
+            navigate("/customer/menu");
+          }, 1000);
+        }
       }
-    }
-  }, [sessionToken, navigate]);
+    };
+    
+    initSession();
+  }, [theaterId, hallId, seatId, seat, navigate]);
 
-  if (!sessionToken) {
+  if (error) {
     return <SessionExpiredUI />;
   }
 

@@ -13,7 +13,7 @@ const PaymentPage = () => {
   const params = new URLSearchParams(location.search);
 
   // 1. ✅ STANDARDIZED DATA EXTRACTION
-  const sessionToken = localStorage.getItem("sessionToken") || "";
+  const sessionId = localStorage.getItem("sessionId") || "";
   const theaterId    = params.get("theaterId") || localStorage.getItem("theaterId") || "";
   const seatId       = params.get("seatId")    || localStorage.getItem("seatId")    || "";
   const hallId       = params.get("hallId")    || localStorage.getItem("hallId")    || "";
@@ -53,10 +53,10 @@ const PaymentPage = () => {
     }
   }, []);
 
-  // ✅ Calling /api/orders/create to create order
+  // ✅ Calling /api/order/create to create order
   const createFoodOrder = async () => {
     // ✅ STRICT VALIDATION BEFORE API CALL
-    if (!theaterId || !seatId || !hallId || !sessionToken) {
+    if (!sessionId) {
       throw new Error("Session information missing. Please scan QR again.");
     }
 
@@ -65,26 +65,19 @@ const PaymentPage = () => {
     }
 
     // ✅ DEBUG LOG
-    console.log("Creating Order with (NEW JWT SCHEMA):", {
-      sessionToken,
-      theaterId,
-      seatId,
-      hallId,
+    console.log("Creating Order with:", {
+      sessionId,
       items: cart.map(i => ({ menuId: i._id, quantity: i.quantity }))
     });
 
     // ✅ CORRECT API CALL (NEW BACKEND ALIGNMENT)
-    const res = await fetch(`${API_BASE}/orders/create`, {
+    const res = await fetch(`${API_BASE}/order/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` })
+        "session-id": sessionId
       },
       body: JSON.stringify({
-        sessionToken: localStorage.getItem("sessionToken"),
-        theaterId: localStorage.getItem("theaterId"),
-        seatId: localStorage.getItem("seatId"),
-        hallId: localStorage.getItem("hallId"),
         items: cart.map(i => ({
           menuId: i._id,
           quantity: i.quantity
@@ -93,6 +86,13 @@ const PaymentPage = () => {
     });
 
     const data = await res.json();
+
+    if (res.status === 401) {
+      localStorage.removeItem("sessionId");
+      // "Session expired" -> clear session and reinitialize
+      window.location.href = "/customer/welcome";
+      throw new Error(data.message || "Session expired. Reinitializing...");
+    }
 
     // ✅ SAFE ERROR HANDLING
     if (!res.ok || !data.success) {
@@ -170,8 +170,8 @@ const PaymentPage = () => {
 
   const handlePayment = () => {
     if (cart.length === 0) { setError("Your cart is empty."); return; }
-    if (!theaterId || !seatId || !hallId || !sessionToken) { 
-      setError("Cinema or seat data missing. Please scan QR code again."); 
+    if (!sessionId) { 
+      setError("Session missing. Please scan QR code again."); 
       return; 
     }
     setError("");
@@ -179,7 +179,7 @@ const PaymentPage = () => {
     startRazorpay();
   };
 
-  if (!theaterId || !sessionToken) {
+  if (!sessionId) {
     return <SessionExpiredUI />;
   }
 
