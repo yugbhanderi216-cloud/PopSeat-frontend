@@ -53,11 +53,11 @@ const PaymentPage = () => {
       quantity: item.quantity,
     }));
 
-    const res = await axios.post(`${API_BASE}/orders`, {
+    const res = await axios.post(`${API_BASE}/order`, {
       sessionStartTime: sessionStartTime ? Number(sessionStartTime) : Date.now(),
-      theaterId,
-      seatId,
-      hallId,
+      theaterId: theaterId,
+      seatId: seatId,
+      hallId: hallId,
       items
     });
 
