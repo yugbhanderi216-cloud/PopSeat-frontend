@@ -13,7 +13,7 @@ const PaymentPage = () => {
   const params = new URLSearchParams(location.search);
 
   // 1. ✅ STANDARDIZED DATA EXTRACTION
-  const sessionToken = sessionStorage.getItem("sessionToken") || "";
+  const sessionToken = localStorage.getItem("sessionToken") || "";
   const theaterId    = params.get("theaterId") || localStorage.getItem("theaterId") || "";
   const seatId       = params.get("seatId")    || localStorage.getItem("seatId")    || "";
   const hallId       = params.get("hallId")    || localStorage.getItem("hallId")    || "";
@@ -81,7 +81,7 @@ const PaymentPage = () => {
         ...(token && { Authorization: `Bearer ${token}` })
       },
       body: JSON.stringify({
-        sessionToken: sessionStorage.getItem("sessionToken"),
+        sessionToken: localStorage.getItem("sessionToken"),
         theaterId: localStorage.getItem("theaterId"),
         seatId: localStorage.getItem("seatId"),
         hallId: localStorage.getItem("hallId"),

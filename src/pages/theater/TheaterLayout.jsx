@@ -71,10 +71,9 @@ const TheaterLayout = () => {
 
   /* ── Logout ── */
   const handleLogout = () => {
-    // Auth keys live in localStorage
-    ["token", "email", "role", "theaterId", "theaterName", "branchName", "cart"]
+    ["token", "email", "role", "theaterId", "theaterName", "branchName",
+     "sessionToken", "seatId", "hallId", "cart"]
       .forEach((k) => localStorage.removeItem(k));
-    // Customer session JWT lives in sessionStorage
     sessionStorage.clear();
     navigate("/login");
   };

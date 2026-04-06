@@ -13,7 +13,7 @@ const CustomerWelcome = () => {
   useEffect(() => {
     if (sessionToken) {
       try {
-        sessionStorage.setItem("sessionToken", sessionToken);
+        localStorage.setItem("sessionToken", sessionToken);
         const decoded = jwtDecode(sessionToken);
 
         localStorage.setItem("theaterId", decoded.theaterId);
