@@ -44,7 +44,7 @@ const PaymentPage = () => {
     "Content-Type": "application/json",
   });
 
-  // 👇 FIX: Calling /api/orders/create handles creating the DB order and Razorpay Order logic!
+  // ✅ Calling /api/orders to create order and Razorpay Order logic!
   const createFoodOrder = async () => {
     const sessionStartTime = localStorage.getItem("sessionStartTime");
 
@@ -53,7 +53,7 @@ const PaymentPage = () => {
       quantity: item.quantity,
     }));
 
-    const res = await axios.post(`${API_BASE}/orders/create`, {
+    const res = await axios.post(`${API_BASE}/orders`, {
       sessionStartTime: sessionStartTime ? Number(sessionStartTime) : Date.now(),
       theaterId: theaterId,
       seatId: seatId,
