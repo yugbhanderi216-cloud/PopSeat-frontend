@@ -268,19 +268,19 @@ const AdminDashboard = () => {
   };
 
   /* ── Approve / Disable ── */
-  const updateTheaterStatus = async (cinemaId, isActive) => {
-    setActionLoading((p) => ({ ...p, [cinemaId]: true }));
+  const updateTheaterStatus = async (theaterId, isActive) => {
+    setActionLoading((p) => ({ ...p, [theaterId]: true }));
     try {
-      const res  = await fetch(`${API_BASE}/admin/cinema/${cinemaId}/status`, {
+      const res  = await fetch(`${API_BASE}/admin/cinema/${theaterId}/status`, {
         method: "PUT", headers: authHeaders(),
         body: JSON.stringify({ isActive }),
       });
       const data = await res.json();
       if (data.success)
-        setTheaters((p) => p.map((t) => t._id === cinemaId ? { ...t, isActive } : t));
+        setTheaters((p) => p.map((t) => t._id === theaterId ? { ...t, isActive } : t));
       else setError(data.message || "Failed to update.");
     } catch { setError("Network error."); }
-    finally { setActionLoading((p) => ({ ...p, [cinemaId]: false })); }
+    finally { setActionLoading((p) => ({ ...p, [theaterId]: false })); }
   };
 
   /* ── Logout ── */

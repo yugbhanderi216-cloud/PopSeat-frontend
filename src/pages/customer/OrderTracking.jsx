@@ -19,11 +19,11 @@ const OrderTracking = () => {
 
   const navigate = useNavigate();
 
-  const orderId   = localStorage.getItem("currentOrderId")    || "";
-  const token     = localStorage.getItem("customerToken")     || "";
-  const theaterId = localStorage.getItem("customerTheaterId") || "";
-  const screen    = localStorage.getItem("screenNo")          || "";
-  const seat      = localStorage.getItem("seatNo")            || "";
+  const orderId   = localStorage.getItem("currentOrderId");
+  const token     = localStorage.getItem("token");
+  const theaterId = localStorage.getItem("theaterId") || "";
+  const hallId    = localStorage.getItem("hallId") || "";
+  const seatId    = localStorage.getItem("seatId") || "";
 
   const [order,   setOrder]   = useState(null);
   const [status,  setStatus]  = useState("placed");
@@ -96,13 +96,13 @@ const OrderTracking = () => {
       localStorage.removeItem("currentOrderId");
       localStorage.removeItem("currentPaymentId");
       navigate(
-        `/customer/menu?theaterId=${theaterId}&screen=${screen}&seat=${seat}`
+        `/customer/menu?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}`
       );
     }, 4000);
 
     return () => clearTimeout(timer);
 
-  }, [status, navigate, theaterId, screen, seat]);
+  }, [status, navigate, theaterId, hallId, seatId]);
 
   const statusIndex = STATUS_FLOW.indexOf(status);
 
@@ -132,7 +132,7 @@ const OrderTracking = () => {
           <button
             className="home-btn"
             onClick={() =>
-              navigate(`/customer/menu?theaterId=${theaterId}&screen=${screen}&seat=${seat}`)
+              navigate(`/customer/menu?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}`)
             }
           >
             Back to Menu
@@ -161,23 +161,23 @@ const OrderTracking = () => {
         </p>
 
         {/* SCREEN — from API JSON or localStorage */}
-        {(order?.hallId || order?.hallName || order?.screenNo || order?.screenNumber || screen) && (
+        {(order?.hallId || order?.hallName || order?.screenNo || order?.screenNumber || hallId) && (
           <p>
-            <strong>Screen:</strong> {order?.hallName || order?.hallId?.name || order?.hallId || order?.screenNumber || order?.screenNo || screen}
+            <strong>Screen:</strong> {order?.hallName || order?.hallId?.name || order?.hallId || order?.screenNumber || order?.screenNo || hallId}
           </p>
         )}
 
         {/* SEAT — from confirmed seatId.seatNumber */}
-        {(order?.seatId?.seatNumber || order?.seatNumber || seat) && (
+        {(order?.seatId?.seatNumber || order?.seatNumber || seatId) && (
           <p>
-            <strong>Seat:</strong> {order?.seatId?.seatNumber || order?.seatNumber || seat}
+            <strong>Seat:</strong> {order?.seatId?.seatNumber || order?.seatNumber || seatId}
           </p>
         )}
 
         {/* TOTAL */}
         {order?.totalAmount && (
           <p>
-            <strong>Total:</strong> ₹ {order.totalAmount}
+            <strong>Total:</strong> ₹ {Number(order.totalAmount || 0).toLocaleString("en-IN")}
           </p>
         )}
 
@@ -211,9 +211,9 @@ const OrderTracking = () => {
                 style={{ display: "flex", justifyContent: "space-between",
                   fontSize: 13, color: "#555", marginBottom: 4 }}
               >
-                <span>{item.name} × {item.quantity}</span>
-                { (item.total || item.price) && (
-                  <span>₹ {item.total || item.price * item.quantity}</span>
+                <span>{item?.name || "Item"} × {item?.quantity || 1}</span>
+                { (item?.total || item?.price) && (
+                  <span>₹ {Number(item?.total || (item?.price || 0) * (item?.quantity || 1)).toLocaleString("en-IN")}</span>
                 )}
               </div>
             ))}
@@ -237,8 +237,8 @@ const OrderTracking = () => {
         <button
           className="home-btn"
           onClick={() =>
-            navigate(`/customer/menu?theaterId=${theaterId}&screen=${screen}&seat=${seat}`)
-          }
+          navigate(`/customer/menu?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}`)
+        }
         >
           Back to Menu
         </button>

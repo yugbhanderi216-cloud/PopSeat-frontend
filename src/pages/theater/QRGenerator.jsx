@@ -6,27 +6,23 @@ import "./QRGenerator.css";
 // ─────────────────────────────────────────────────────────────
 // APIs USED:
 //   GET  /api/cinema/:theaterId       — load theater
-//   GET  /api/hall?cinemaId=          — load halls for cinema
+//   GET  /api/hall?theaterId=          — load halls for cinema
 //   POST /api/hall                    — create hall if not exists
 //   POST /api/seat                    — create individual seat
 //   GET  /api/seat?hallId=            — load existing seats for hall
 //
 // QR URL FORMAT (scanned by customer):
-//   https://popseat-frontend.vercel.app/#/customer/welcome
-//     ?seatId=<seat._id>
+//   https://popseat-frontend.vercel.app/customer/welcome
+//     ?theaterId=<theaterId>
 //     &hallId=<hallId>
-//     &screen=<screenNumber>
+//     &seatId=<seat._id>
 //     &seat=<seatNumber>  (e.g. A1)
 // ─────────────────────────────────────────────────────────────
 
 const API_BASE = "https://popseat.onrender.com/api";
 const CUSTOMER_BASE = "https://pop-seat-frontend.vercel.app/customer/welcome";
 
-const getToken = () =>
-  localStorage.getItem("token") ||
-  localStorage.getItem("ownerToken") ||
-  localStorage.getItem("workerToken") ||
-  "";
+const getToken = () => localStorage.getItem("token") || "";
 
 const authHeaders = () => ({
   "Content-Type": "application/json",
@@ -37,29 +33,13 @@ const QRGenerator = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
 
-  const ownerEmail =
-    localStorage.getItem("ownerEmail") || localStorage.getItem("email") || "";
-  const role = (
-    localStorage.getItem("ownerRole") ||
-    localStorage.getItem("role") ||
-    ""
-  ).toLowerCase();
+  const ownerEmail = localStorage.getItem("email") || "";
+  const role = (localStorage.getItem("role") || "").toLowerCase();
 
-  const [theaterId, setTheaterId] = useState(() => {
-    const role = (localStorage.getItem("ownerRole") || localStorage.getItem("role") || "").toLowerCase();
-    const urlTheaterId = new URLSearchParams(window.location.search).get("theaterId") || state?.theaterId || "";
-    const storedTheaterId = localStorage.getItem("activeTheaterId");
-
-    if (role === "worker") return localStorage.getItem("assignedTheaterId") || "";
-
-    // EXACT LOGIC
-    if (storedTheaterId) {
-      return storedTheaterId;
-    } else if (urlTheaterId) {
-      localStorage.setItem("activeTheaterId", urlTheaterId);
-      return urlTheaterId;
-    }
-    return "";
+  const [theaterId] = useState(() => {
+    return localStorage.getItem("theaterId") || 
+           new URLSearchParams(window.location.search).get("theaterId") || 
+           state?.theaterId || "";
   });
 
   // ── State ─────────────────────────────────────────────────
@@ -164,7 +144,7 @@ const QRGenerator = () => {
 
   // ─────────────────────────────────────────────────────────
   //  HALL MAPPING — find or create hall for screen number
-  //  GET /api/hall?cinemaId= → match hallNumber === screenNumber
+  //  GET /api/hall?theaterId= → match hallNumber === screenNumber
   //  If not found → POST /api/hall
   // ─────────────────────────────────────────────────────────
   const mapScreenToHall = useCallback(
@@ -178,7 +158,7 @@ const QRGenerator = () => {
       try {
         // 1. Fetch all halls for cinema
         const res = await fetch(
-          `${API_BASE}/hall?cinemaId=${theaterData._id}`,
+          `${API_BASE}/hall?theaterId=${theaterData._id}`,
           { headers: authHeaders() }
         );
         const data = await res.json();
@@ -205,7 +185,7 @@ const QRGenerator = () => {
             method: "POST",
             headers: authHeaders(),
             body: JSON.stringify({
-              cinemaId: theaterData._id,
+              theaterId: theaterData._id,
               name: `Screen ${screenNumber}`,
               hallNumber: String(screenNumber),
             }),
@@ -359,7 +339,7 @@ const QRGenerator = () => {
 
   // ── Build QR URL ──────────────────────────────────────────
   const buildQRUrl = (seat) =>
-    `${CUSTOMER_BASE}?seatId=${seat._id}&hallId=${seat.hallId}&cinemaId=${theaterId}&screen=${selectedScreen}&seat=${seat.seatNumber}`;
+    `${CUSTOMER_BASE}?theaterId=${theaterId}&hallId=${seat.hallId}&seatId=${seat._id}&seat=${seat.seatNumber}`;
 
   // ── Loading / guard screens ───────────────────────────────
   if (theaterLoading) {

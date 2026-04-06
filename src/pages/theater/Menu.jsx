@@ -29,14 +29,12 @@ const API_BASE = "https://popseat.onrender.com/api";
 // ── Auth headers (JSON) — NOT used for FormData requests ──
 const authHeaders = () => ({
   "Content-Type": "application/json",
-  Authorization: `Bearer ${localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
-    }`,
+  Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
 });
 
 // ── Auth headers (no Content-Type) — used for FormData requests ──
 const authHeadersMultipart = () => ({
-  Authorization: `Bearer ${localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
-    }`,
+  Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
 });
 
 const ensureArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
@@ -75,31 +73,17 @@ const EMPTY_FORM = {
 
 const Menu = () => {
   // ── FIX 1: Read theaterId once (EXACT LOGIC) ──
-  const [activeTheaterId, setActiveTheaterId] = useState(() => {
-    const role = (localStorage.getItem("ownerRole") || localStorage.getItem("role") || "").toLowerCase();
-    const urlTheaterId = new URLSearchParams(window.location.search).get("theaterId");
-    const storedTheaterId = localStorage.getItem("activeTheaterId");
-
-    if (role === "worker") return localStorage.getItem("assignedTheaterId") || "";
-
-    // EXACT LOGIC
-    if (storedTheaterId) {
-      return storedTheaterId;
-    } else if (urlTheaterId) {
-      localStorage.setItem("activeTheaterId", urlTheaterId);
-      return urlTheaterId;
-    }
-    return "";
+  // ── FIX 1: Read theaterId once ──
+  const [theaterId] = useState(() => {
+    return localStorage.getItem("theaterId") || 
+           new URLSearchParams(window.location.search).get("theaterId") || "";
   });
 
   // ── Role: safely read from localStorage, always a string ──
   const role = localStorage.getItem("role")?.toLowerCase() || "";
 
-  // ── Token helper: tries ownerToken first, falls back to generic token ──
-  const getToken = () =>
-    localStorage.getItem("ownerToken") ||
-    localStorage.getItem("token") ||
-    "";
+  // ── Token helper: returns unified token from localStorage ──
+  const getAuthToken = () => localStorage.getItem("token") || "";
 
   const [items, setItems] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -121,13 +105,13 @@ const Menu = () => {
   const [theaterList, setTheaterList] = useState([]);
   const fileInputRef = useRef(null);
 
-  /* ── 📝 SMART ISOLATION: Fetch owner's theaters ── */
+  /* ── 📝 SMART ISOLATION ── */
   useEffect(() => {
-    if (role !== "owner" || !activeTheaterId) return;
+    if (role !== "owner" || !theaterId) return;
     const checkPrimary = async () => {
       try {
         const res = await fetch(`${API_BASE}/cinema`, {
-          headers: { Authorization: `Bearer ${getToken()}` },
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
         const d = await res.json();
         const list = d.cinemas || d.data || [];
@@ -136,7 +120,7 @@ const Menu = () => {
           // Rule: Stable Primary = smallest _id string (usually oldest)
           const sorted = [...list].sort((a, b) => a._id.localeCompare(b._id));
           const primaryId = sorted[0]._id;
-          setIsPrimary(activeTheaterId === primaryId);
+          setIsPrimary(theaterId === primaryId);
         }
       } catch (e) {
         console.warn("Smart Isolation (Menu): Fetch failed.");
@@ -152,7 +136,7 @@ const Menu = () => {
              and doesn't stale-close over an empty string.
   ═══════════════════════════════════════════════════════ */
   const loadMenu = useCallback(async () => {
-    if (!activeTheaterId) {
+    if (!theaterId) {
       setLoading(false);
       return;
     }
@@ -161,7 +145,7 @@ const Menu = () => {
     try {
       const url = role === "worker"
         ? `${API_BASE}/worker/menu`
-        : `${API_BASE}/menu`;
+        : `${API_BASE}/menu?theaterId=${theaterId}`;
 
       const res = await fetch(url, { headers: authHeaders() });
 
@@ -178,31 +162,14 @@ const Menu = () => {
 
       if (data.success) {
         const cleaned = (data.menu || [])
-          .filter((item) => {
-            /* ═══════════════════════════════════════════════════════
-               📝 SMARTER ISOLATION FILTER
-            ═══════════════════════════════════════════════════════ */
-            const matchesId = (item.theaterId === activeTheaterId || item.cinemaId === activeTheaterId);
-
-            // Unknown = Legacy = Primary
-            const isKnown = theaterList.some(t => (t._id === item.theaterId || t._id === item.cinemaId));
-            const isLegacy = !isKnown;
-
-            const shouldInclude = matchesId || (isPrimary && isLegacy);
-
-            return !item.isDeleted && shouldInclude;
-          })
+          .filter((item) => !item.isDeleted)
           .map((item) => ({
             id: item._id,
             _id: item._id,
             name: item.name,
             description: item.description || "",
             category: capitalizeCategory(item.category || "Others"),
-            // ✅ FIX 5 — backend returns full image URL; use it directly
             image: item.image || "",
-            /* ── VARIANTS / SIZES ── */
-            // Backend now uses 'variants' array: [{ size, price }]
-            // We map it to frontend 'sizes' state: [{ name, price }]
             sizes: (ensureArray(item.variants).length > 0)
               ? item.variants.map((v) => ({ name: v.size, price: v.price }))
               : (ensureArray(item.sizes).length > 0)
@@ -224,37 +191,25 @@ const Menu = () => {
     } finally {
       setLoading(false);
     }
-    // ✅ FIX 1 — activeTheaterId in deps (was [] before, causing stale closure)
-  }, [activeTheaterId]);
+  }, [theaterId]);
 
   useEffect(() => { loadMenu(); }, [loadMenu]);
 
-  /* ═══════════════════════════════════════════════════════
-     IMAGE UPLOAD — Multer Ready
-     Validates type + size, stores File object for FormData,
-     creates blob preview URL for display.
-  ═══════════════════════════════════════════════════════ */
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setImgError("");
-
     if (!ACCEPTED_TYPES.includes(file.type)) {
       setImgError("Only JPG, PNG, WebP, or GIF files are allowed.");
       e.target.value = "";
       return;
     }
-
     if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
       setImgError(`File too large. Max ${MAX_FILE_SIZE_MB}MB allowed.`);
       e.target.value = "";
       return;
     }
-
-    // ✅ FIX 2 — Revoke previous blob URL before creating a new one
     if (form.imageFile) URL.revokeObjectURL(form.image);
-
     setForm((prev) => ({
       ...prev,
       imageFile: file,
@@ -264,14 +219,12 @@ const Menu = () => {
   };
 
   const removeImage = () => {
-    // ✅ FIX 2 — Revoke blob URL when user removes image
     if (form.imageFile) URL.revokeObjectURL(form.image);
     setForm((prev) => ({ ...prev, image: "", imageFile: null }));
     setImgError("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  /* ── Size / Topping / Dip helpers ── */
   const addSize = () => {
     if (!tempSize.name.trim() || !tempSize.price) return;
     setSizes((prev) => [
@@ -302,7 +255,6 @@ const Menu = () => {
   };
   const removeDip = (i) => setDips((prev) => prev.filter((_, idx) => idx !== i));
 
-  /* ── Validation ── */
   const validate = () => {
     if (!form.name?.trim()) return "Item name is required.";
     if (!form.category?.trim()) return "Category is required.";
@@ -310,80 +262,48 @@ const Menu = () => {
     return null;
   };
 
-  /* ═══════════════════════════════════════════════════════
-     POST /api/menu  |  PUT /api/menu/:id
-     Uses FormData so multer can receive the image file.
-     Content-Type header is intentionally NOT set —
-     browser sets it automatically with the correct boundary.
-  ═══════════════════════════════════════════════════════ */
   const handleSubmit = async () => {
     setError("");
     const err = validate();
     if (err) { setError(err); return; }
-
     setSaving(true);
-
     const formData = new FormData();
     formData.append("name", capitalizeWords(form.name));
     formData.append("category", form.category.trim().toLowerCase());
     formData.append("description", capitalizeWords(form.description));
-    // Sequential appends for multiple variants (sizes)
     if (sizes.length > 0) {
-      // Legacy support: also keep root price/size set to the first option
       formData.append("price", sizes[0].price);
       formData.append("size", sizes[0].name);
-
       sizes.forEach((s) => {
         formData.append("variants", JSON.stringify({ size: s.name, price: Number(s.price) }));
       });
     }
-
-    // Sequential appends for multiple toppings
     toppings.forEach((t) => {
       formData.append("topping", JSON.stringify({ name: t.name, price: Number(t.price) }));
     });
-
-    // Sequential appends for multiple dips
     dips.forEach((d) => {
       formData.append("dips", JSON.stringify({ name: d.name, price: Number(d.price) }));
     });
-
-    // ✅ Only append image if user picked a NEW file
-    // If editing and no new file picked, backend keeps the existing image
-    if (form.imageFile) {
-      formData.append("image", form.imageFile);
-    }
-
-    if (activeTheaterId) {
-      formData.append("cinemaId", activeTheaterId);
-    }
+    if (form.imageFile) formData.append("image", form.imageFile);
+    if (theaterId) formData.append("theaterId", theaterId);
 
     try {
       const url = editId ? `${API_BASE}/menu/${editId}` : `${API_BASE}/menu`;
       const method = editId ? "PUT" : "POST";
-
       const res = await fetch(url, {
         method,
-        headers: authHeadersMultipart(), // ✅ No Content-Type — let browser set it for FormData
+        headers: authHeadersMultipart(),
         body: formData,
       });
       const data = await res.json();
-
       if (!data.success) {
         setError(data.message || `Failed to ${editId ? "update" : "create"} item.`);
         return;
       }
-
       const saved = data.menu;
-
-      // ✅ FIX 5 & FIX 10:
-      //   - If backend returns a full image URL, use it.
-      //   - If editing and backend didn't return image, fall back to old image URL.
-      //   - Never use a stale blob: URL as the persisted image.
       const resolvedImage = saved.image
         || (editId ? items.find((i) => i.id === editId)?.image : "")
         || "";
-
       const localItem = {
         id: saved._id,
         _id: saved._id,
@@ -391,31 +311,26 @@ const Menu = () => {
         description: saved.description || "",
         category: capitalizeCategory(saved.category || "Others"),
         image: resolvedImage,
-        cinemaId: saved.cinemaId || activeTheaterId,
-        // Sync local state with variants/sizes returned by backend
+        theaterId: saved.theaterId || theaterId,
         sizes: (ensureArray(saved.variants).length > 0)
           ? saved.variants.map((v) => ({ name: v.size, price: v.price }))
           : (ensureArray(saved.sizes).length > 0)
             ? saved.sizes.map((s) => ({ name: s.name || s.size || "Regular", price: s.price }))
             : [{ name: saved.size || "Regular", price: saved.price }],
-
         availableToppings: ensureArray(saved.topping),
         availableDips: ensureArray(saved.dips || saved.availableDips || []),
         isAvailable: saved.available !== false,
       };
-
       setItems((prev) =>
         editId
           ? prev.map((i) => (i.id === editId ? localItem : i))
           : [...prev, localItem]
       );
-
       closeModal();
     } catch (err) {
       console.error("Save error:", err);
       setError("Network error. Could not save item.");
     } finally {
-      // ✅ FIX 8 — always reset saving (already was in finally, kept)
       setSaving(false);
     }
   };

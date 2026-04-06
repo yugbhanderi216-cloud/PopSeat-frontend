@@ -21,19 +21,9 @@ const Navbar = ({ toggleSidebar }) => {
 
   // Read directly from localStorage — set at login, always available
   // FIX: triple-key fallback consistent with all other files
-  const [email] = useState(() =>
-    localStorage.getItem("ownerEmail")  ||
-    localStorage.getItem("workerEmail") ||
-    localStorage.getItem("email")       || ""
-  );
+  const [email] = useState(() => localStorage.getItem("email") || "");
 
-  const [role] = useState(() =>
-    (
-      localStorage.getItem("ownerRole")  ||
-      localStorage.getItem("workerRole") ||
-      localStorage.getItem("role")       || ""
-    ).toLowerCase()
-  );
+  const [role] = useState(() => (localStorage.getItem("role") || "").toLowerCase());
 
   const [open, setOpen] = useState(false);
   const menuRef = useRef();
@@ -56,24 +46,11 @@ const Navbar = ({ toggleSidebar }) => {
   /* ── Logout — surgical key removal only ── */
 
   const handleLogout = () => {
-
-    if (role === "owner") {
-      [
-        "ownerToken", "ownerEmail", "ownerRole",
-        "ownerPlans", "selectedPlan", "activeOwnerTheaterId",
-        "token", "email", "role",
-      ].forEach((k) => localStorage.removeItem(k));
-    } else {
-      // worker
-      [
-        "workerToken", "workerEmail", "workerRole",
-        "assignedTheaterId",
-        "token", "email", "role",
-      ].forEach((k) => localStorage.removeItem(k));
-    }
-
+    [
+      "token", "email", "role", "theaterId", "theaterName", "branchName",
+      "sessionToken", "seatId", "hallId", "cart"
+    ].forEach((k) => localStorage.removeItem(k));
     navigate("/login");
-
   };
 
   const roleConfig = ROLE_CONFIG[role] || { label: role || "User", color: "#888" };

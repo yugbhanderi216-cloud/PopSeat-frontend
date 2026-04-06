@@ -7,10 +7,7 @@ import "./Orders.css";
 
 const API_BASE = "https://popseat.onrender.com/api";
 
-const getToken = () =>
-  localStorage.getItem("ownerToken") ||
-  localStorage.getItem("workerToken") ||
-  localStorage.getItem("token") || "";
+const getToken = () => localStorage.getItem("token") || "";
 
 const STATUSES = ["placed", "preparing", "ready", "delivered"];
 
@@ -46,16 +43,14 @@ const timeAgo = (iso) => {
 const getSeatNumber = (seatId) => {
   if (!seatId) return "—";
   if (typeof seatId === "string") return seatId;
-  if (typeof seatId === "object") return seatId.seatNumber || seatId._id?.slice(-6).toUpperCase() || "—";
-  return "—";
+  return seatId?.seatNumber || seatId?._id?.slice(-6).toUpperCase() || "—";
 };
 
 /* ── Safe screen number extraction ── */
 const getScreenNumber = (hallId) => {
   if (!hallId) return "—";
   if (typeof hallId === "string") return hallId;
-  if (typeof hallId === "object") return hallId.name || hallId.screenNumber || hallId._id?.slice(-6).toUpperCase() || "—";
-  return "—";
+  return hallId?.name || hallId?.screenNumber || hallId?._id?.slice(-6).toUpperCase() || "—";
 };
 
 const Orders = () => {
@@ -74,26 +69,11 @@ const Orders = () => {
   const intervalRef = useRef(null);
   const isMounted = useRef(true);
 
-  const role = (
-    localStorage.getItem("ownerRole") ||
-    localStorage.getItem("workerRole") ||
-    localStorage.getItem("role") || ""
-  ).toLowerCase();
+  const role = (localStorage.getItem("role") || "").toLowerCase();
 
-  const [theaterId, setTheaterId] = useState(() => {
-    const urlTheaterId = new URLSearchParams(window.location.search).get("theaterId");
-    const storedTheaterId = localStorage.getItem("activeTheaterId");
-
-    if (role === "worker") return localStorage.getItem("assignedTheaterId") || "";
-
-    // EXACT LOGIC
-    if (storedTheaterId) {
-      return storedTheaterId;
-    } else if (urlTheaterId) {
-      localStorage.setItem("activeTheaterId", urlTheaterId);
-      return urlTheaterId;
-    }
-    return "";
+  const [theaterId] = useState(() => {
+    return localStorage.getItem("theaterId") || 
+           new URLSearchParams(window.location.search).get("theaterId") || "";
   });
 
   useEffect(() => {
@@ -130,54 +110,24 @@ const Orders = () => {
   }), []);
 
   const fetchOrders = useCallback(async () => {
-    if (!theaterId && role !== "worker") {
+    if (!theaterId) {
       setError("No theater ID found. Please go back to dashboard.");
       setLoading(false);
       return;
     }
 
     try {
-      const responses = await Promise.allSettled(
-        STATUSES.map((status) =>
-          fetch(`${API_BASE}/worker/orders?status=${status}`, {
-            headers: authHeaders(),
-          }).then((res) => {
-            if (res.status === 401 || res.status === 403) throw new Error("AUTH_ERROR");
-            if (!res.ok) throw new Error(`Failed ${status}`);
-            return res.json();
-          })
-        )
-      );
-
-      const seen = new Set();
-      const merged = [];
-
-      responses.forEach((res) => {
-        if (res.status === "fulfilled" && (res.value?.orders || Array.isArray(res.value))) {
-          const ordersArr = res.value.orders || (Array.isArray(res.value) ? res.value : []);
-          ordersArr.forEach((o) => {
-            /* ═══════════════════════════════════════════════════════
-               📝 SMARTER ISOLATION FILTER
-            ═══════════════════════════════════════════════════════ */
-            const matchesId = (o.theaterId === theaterId || o.cinemaId === theaterId);
-
-            // Unknown theaters = Legacy = Shown in Primary
-            const isKnown = theaterList.some(t => (t._id === o.theaterId || t._id === o.cinemaId));
-            const isLegacy = !isKnown;
-
-            const shouldInclude = (role === "worker")
-              ? true
-              : (matchesId || (isPrimary && isLegacy));
-
-            if (!seen.has(o._id) && shouldInclude) {
-              seen.add(o._id);
-              merged.push(o);
-            }
-          });
-        } else if (res.status === "rejected" && res.reason?.message === "AUTH_ERROR") {
-          setAuthError(true);
-        }
+      const res = await fetch(`${API_BASE}/orders?theaterId=${theaterId}`, {
+        headers: authHeaders(),
       });
+
+      if (res.status === 401 || res.status === 403) {
+        setAuthError(true);
+        return;
+      }
+
+      const data = await res.json();
+      const merged = data.orders || (Array.isArray(data) ? data : []);
 
       merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       if (isMounted.current) {
@@ -349,7 +299,7 @@ const Orders = () => {
                 <div className="order-meta-divider" />
                 <div className="order-meta-item">
                   <span className="order-meta-label">Total</span>
-                  <span className="order-meta-value order-total">₹{order.totalAmount}</span>
+                  <span className="order-meta-value order-total">₹{Number(order?.totalAmount || 0).toLocaleString("en-IN")}</span>
                 </div>
                 <div className="order-meta-divider" />
                 <div className="order-meta-item">
@@ -359,11 +309,11 @@ const Orders = () => {
               </div>
 
               <div className="order-items">
-                {order.items?.map((it, i) => (
+                {order?.items?.map((it, i) => (
                   <div key={i} className="order-item-row">
                     <div className="order-item-dot" />
-                    <span className="order-item-name">{it.menuItemId?.name || "Item"}</span>
-                    <span className="order-item-qty">x{it.quantity}</span>
+                    <span className="order-item-name">{it?.menuItemId?.name || it?.name || "Item"}</span>
+                    <span className="order-item-qty">x{it?.quantity || 1}</span>
                   </div>
                 ))}
               </div>

@@ -161,16 +161,11 @@ const CustomerLogin = () => {
 
       if (data.success) {
 
-        localStorage.setItem("customerToken", data.token);
-        localStorage.setItem("customerRole", data.role);
-        localStorage.setItem("customerEmail", email);
-
-        // If came from QR scan, go back to the original menu URL
-        if (redirect) {
-          window.location.href = decodeURIComponent(redirect);
-        } else {
-          navigate(`/payment?theaterId=${theaterId}`);
-        }
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", "customer");
+        // No email storage needed per strict instructions
+        
+        navigate("/customer/menu");
 
       } else {
 

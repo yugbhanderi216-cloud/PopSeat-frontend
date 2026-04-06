@@ -22,13 +22,13 @@ const CustomerMenu = () => {
   const params = new URLSearchParams(location.search);
 
   const theaterId =
-    params.get("theaterId") || localStorage.getItem("customerTheaterId");
+    params.get("theaterId") || localStorage.getItem("theaterId") || "";
 
-  const screen =
-    params.get("screen") || localStorage.getItem("screenNo");
+  const hallId =
+    params.get("hallId") || localStorage.getItem("hallId") || "";
 
-  const seat =
-    params.get("seat") || localStorage.getItem("seatNo");
+  const seatId =
+    params.get("seatId") || localStorage.getItem("seatId") || "";
 
   const type =
     params.get("type") || localStorage.getItem("seatType");
@@ -45,18 +45,10 @@ const CustomerMenu = () => {
 
   /* ================= SAVE INFO ================= */
   useEffect(() => {
-    const cinemaId = params.get("cinemaId");
-    const hallId = params.get("hall");
-    const seatId = params.get("seat");
-
-    if (screen) localStorage.setItem("screenNo", screen);
-    if (seat) localStorage.setItem("seatNo", seat);
-    if (theaterId) localStorage.setItem("customerTheaterId", theaterId);
-    if (type) localStorage.setItem("seatType", type);
-    if (cinemaId) localStorage.setItem("customerTheaterId", cinemaId);
-    if (hallId) localStorage.setItem("customerHallId", hallId);
-    if (seatId) localStorage.setItem("customerSeatId", seatId);
-  }, [screen, seat, theaterId, type]);
+    if (theaterId) localStorage.setItem("theaterId", theaterId);
+    if (hallId)    localStorage.setItem("hallId",    hallId);
+    if (seatId)    localStorage.setItem("seatId",    seatId);
+  }, [theaterId, hallId, seatId]);
 
   /* ================= LOAD CATEGORIES ================= */
   useEffect(() => {
@@ -87,9 +79,9 @@ const CustomerMenu = () => {
     const fetchMenu = async () => {
       setMenuLoading(true);
       try {
-        const activeCinemaId = params.get("cinemaId") || theaterId;
-        const url = activeCinemaId
-          ? `${API_BASE}/api/menu?cinemaId=${activeCinemaId}`
+        const targetTheaterId = params.get("theaterId") || theaterId;
+        const url = targetTheaterId
+          ? `${API_BASE}/api/menu?theaterId=${targetTheaterId}`
           : `${API_BASE}/api/menu`;
 
         const res = await fetch(url);
@@ -136,9 +128,9 @@ const CustomerMenu = () => {
   const filteredItems = items.filter((i) => i.category === activeCategory);
 
   /* ================= CART TOTALS ================= */
-  const cartTotalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartTotalQty = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const cartTotalPrice = cart.reduce(
-    (sum, item) => sum + (item.finalPrice || item.price) * item.quantity,
+    (sum, item) => sum + (Number(item.finalPrice || item.price || 0)) * (item.quantity || 0),
     0
   );
 
@@ -158,7 +150,7 @@ const CustomerMenu = () => {
           <div className="header-info">
             <h1 className="header-title">Order Food</h1>
             <p className="header-details">
-              Screen {screen} <span className="dot" /> Seat {seat}
+              Seat ID: {seatId}
             </p>
           </div>
 
@@ -166,7 +158,7 @@ const CustomerMenu = () => {
             className="cart-btn"
             onClick={() =>
               navigate(
-                `/customer/cart?theaterId=${theaterId}&screen=${screen}&seat=${seat}`
+                `/customer/cart?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}`
               )
             }
             aria-label={`View cart with ${cartTotalQty} items`}
@@ -217,7 +209,7 @@ const CustomerMenu = () => {
                     className={`customer-card ${isFeatured ? "featured-card" : "standard-card"}`}
                     onClick={() =>
                       navigate("/customer/item", {
-                        state: { item, theaterId, screen, seat },
+                        state: { item, theaterId, hallId, seatId },
                       })
                     }
                   >
@@ -262,7 +254,7 @@ const CustomerMenu = () => {
                       </div>
 
                       <div className="item-price">
-                        ₹{ensureArray(item.variants).length > 0 ? item.variants[0].price : item.price}
+                        ₹{ensureArray(item.variants).length > 0 ? (item.variants[0].price || 0) : (item.price || 0)}
                       </div>
 
                       <div className="item-cta-btn">
@@ -285,7 +277,7 @@ const CustomerMenu = () => {
           className="bottom-cart-bar"
           onClick={() =>
             navigate(
-              `/customer/cart?theaterId=${theaterId}&screen=${screen}&seat=${seat}`
+              `/customer/cart?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}`
             )
           }
         >

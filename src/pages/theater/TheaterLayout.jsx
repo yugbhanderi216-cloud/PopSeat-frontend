@@ -17,17 +17,8 @@ const TheaterLayout = () => {
   const navigate = useNavigate();
 
   /* ── Read identity ── */
-  const role = (
-    localStorage.getItem("ownerRole")  ||
-    localStorage.getItem("workerRole") ||
-    localStorage.getItem("role")       || ""
-  ).toLowerCase();
-
-  const email = (
-    localStorage.getItem("ownerEmail")  ||
-    localStorage.getItem("workerEmail") ||
-    localStorage.getItem("email")       || ""
-  );
+  const role  = (localStorage.getItem("role")  || "").toLowerCase();
+  const email = (localStorage.getItem("email") || "");
 
   const isWorker = role === "worker";
   const isOwner  = role === "owner";
@@ -81,18 +72,16 @@ const TheaterLayout = () => {
   /* ── Logout ── */
   const handleLogout = () => {
     [
-      "ownerToken", "ownerEmail", "ownerRole",
-      "ownerPlans", "selectedPlan", "activeOwnerTheaterId", "activeTheaterId",
-      "workerToken", "workerEmail", "workerRole", "assignedTheaterId",
-      "token", "email", "role",
+      "token", "email", "role", "theaterId", "theaterName", "branchName",
+      "sessionToken", "seatId", "hallId", "cart"
     ].forEach((k) => localStorage.removeItem(k));
     navigate("/login");
   };
 
   /* ── Theater Switching (Owner only) ── */
   const [theaters, setTheaters] = useState([]);
-  const [activeTheaterId, setActiveTheaterId] = useState(() => {
-    return localStorage.getItem("activeTheaterId") || localStorage.getItem("activeOwnerTheaterId") || "";
+  const [theaterId, setTheaterId] = useState(() => {
+    return localStorage.getItem("theaterId") || "";
   });
 
   useEffect(() => {
@@ -101,7 +90,7 @@ const TheaterLayout = () => {
       try {
         const res = await fetch("https://popseat.onrender.com/api/cinema", {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""}`
+            Authorization: `Bearer ${localStorage.getItem("token") || ""}`
           }
         });
         const data = await res.json();
@@ -116,17 +105,16 @@ const TheaterLayout = () => {
   }, [isOwner]);
 
   const handleTheaterSwitch = (newId) => {
-    if (!newId || newId === activeTheaterId) return;
+    if (!newId || newId === theaterId) return;
 
     // 1. Clear old data
     ["cart", "ordersCache", "menuCache"].forEach((k) => localStorage.removeItem(k));
 
-    // 2. Set new session (EXACT LOGIC)
-    localStorage.setItem("activeTheaterId", newId);
-    localStorage.setItem("activeOwnerTheaterId", newId); 
+    // 2. Set new session
+    localStorage.setItem("theaterId", newId);
     
     // 3. Update state immediately
-    setActiveTheaterId(newId);
+    setTheaterId(newId);
 
     // 4. Navigate cleanly
     navigate("/theater/overview");
@@ -242,10 +230,10 @@ const TheaterLayout = () => {
                   <div className="tl-switcher-icon">🏛️</div>
                   <div className="tl-switcher-text">
                     <span className="tl-switcher-name">
-                      {theaters.find(t => t._id === activeTheaterId)?.name || "Select Theater"}
+                      {theaters.find(t => t._id === theaterId)?.name || "Select Theater"}
                     </span>
                     <span className="tl-switcher-branch">
-                      {theaters.find(t => t._id === activeTheaterId)?.branchName || "Switch Cinema"}
+                      {theaters.find(t => t._id === theaterId)?.branchName || "Switch Cinema"}
                     </span>
                   </div>
                   <span className={`tl-switcher-arrow ${switcherOpen ? "open" : ""}`}>▾</span>
@@ -258,7 +246,7 @@ const TheaterLayout = () => {
                       {theaters.map((t) => (
                         <button
                           key={t._id}
-                          className={`tl-switcher-item ${t._id === activeTheaterId ? "active" : ""}`}
+                          className={`tl-switcher-item ${t._id === theaterId ? "active" : ""}`}
                           onClick={() => {
                             handleTheaterSwitch(t._id);
                             setSwitcherOpen(false);
@@ -269,7 +257,7 @@ const TheaterLayout = () => {
                             <span className="tl-item-name">{t.name}</span>
                             <span className="tl-item-branch">{t.branchName}</span>
                           </div>
-                          {t._id === activeTheaterId && (
+                          {t._id === theaterId && (
                             <span className="tl-item-check">✓</span>
                           )}
                         </button>
@@ -309,7 +297,7 @@ const TheaterLayout = () => {
 
         {/* Page content */}
         <div className="tl-content">
-          <Outlet key={activeTheaterId} />
+          <Outlet key={theaterId} />
         </div>
 
       </main>

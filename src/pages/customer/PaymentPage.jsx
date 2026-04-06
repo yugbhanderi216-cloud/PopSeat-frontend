@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import "./PaymentPage.css";
+import SessionExpiredUI from "../component/SessionExpiredUI";
 
 const API_BASE = "https://popseat.onrender.com/api";
 const RAZORPAY_KEY = "rzp_test_STsZnqsQOPRrqZ";
@@ -11,29 +12,11 @@ const PaymentPage = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
 
-  // 1. ✅ SAFE DATA EXTRACTION (DO NOT REMOVE OLD KEYS)
-  const theaterId =
-    params.get("theaterId") ||
-    localStorage.getItem("customerTheaterId") ||
-    localStorage.getItem("theaterId") ||
-    "";
-
-  const seatId =
-    params.get("seatId") ||
-    localStorage.getItem("seatId") ||
-    localStorage.getItem("customerSeatId") || "";
-
-  const hallId =
-    params.get("hallId") ||
-    localStorage.getItem("hallId") ||
-    localStorage.getItem("customerHallId") ||
-    "Unknown";
-
-  const seatNumber =
-    localStorage.getItem("seatNo") ||
-    params.get("seat") ||
-    localStorage.getItem("customerSeatId") ||
-    "Unknown";
+  // 1. ✅ STANDARDIZED DATA EXTRACTION
+  const sessionToken = localStorage.getItem("sessionToken") || "";
+  const theaterId    = params.get("theaterId") || localStorage.getItem("theaterId") || "";
+  const seatId       = params.get("seatId")    || localStorage.getItem("seatId")    || "";
+  const hallId       = params.get("hallId")    || localStorage.getItem("hallId")    || "";
 
   // 2. ✅ NORMALIZE VALUES (VERY IMPORTANT)
   useEffect(() => {
@@ -43,8 +26,8 @@ const PaymentPage = () => {
   }, [theaterId, seatId, hallId]);
 
   const screen = params.get("screen") || localStorage.getItem("screenNo") || "";
-  const seat = params.get("seat") || localStorage.getItem("seatNo") || "";
-  const token = localStorage.getItem("customerToken") || "";
+  const seat   = params.get("seat")   || localStorage.getItem("seatNo")   || "";
+  const token  = localStorage.getItem("token") || "";
 
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -70,76 +53,53 @@ const PaymentPage = () => {
     }
   }, []);
 
-  // ✅ Calling /api/orders to create order
+  // ✅ Calling /api/orders/create to create order
   const createFoodOrder = async () => {
-    // ✅ ENSURE SESSION EXISTS INTERNALLY
-    let sessionStartTime = localStorage.getItem("sessionStartTime");
-    if (!sessionStartTime) {
-      sessionStartTime = Date.now();
-      localStorage.setItem("sessionStartTime", sessionStartTime);
-    }
-
     // ✅ STRICT VALIDATION BEFORE API CALL
-    if (!theaterId) {
-      throw new Error("Theater information missing. Please scan QR again.");
-    }
-
-    if (!seatNumber || seatNumber === "Unknown") {
-      throw new Error("Seat information missing. Please scan QR again.");
-    }
-
-    if (!hallId || hallId === "Unknown") {
-      throw new Error("Hall information missing. Please scan QR again.");
+    if (!theaterId || !seatId || !hallId || !sessionToken) {
+      throw new Error("Session information missing. Please scan QR again.");
     }
 
     if (!cart || cart.length === 0) {
       throw new Error("Cart is empty.");
     }
 
-    // ✅ CALCULATE TOTAL (REQUIRED BY BACKEND)
-    const total = cart.reduce(
-      (sum, item) =>
-        sum + Number(item.finalPrice || item.price || 0) * item.quantity,
-      0
-    );
-
-    // ✅ FIX ITEMS STRUCTURE (VERY IMPORTANT)
-    const items = cart.map((item) => ({
-      menuId: item.menuId || item._id,  // REQUIRED
-      name: item.name + (item.size ? ` (${item.size})` : ""),
-      quantity: Number(item.quantity),  // REQUIRED
-      price: Number(item.finalPrice || item.price || 0)
-    }));
-
-    // ✅ DEBUG LOG (FOR TESTING)
-    console.log("Creating Order with (HYBRID FORMAT):", {
+    // ✅ DEBUG LOG
+    console.log("Creating Order with (NEW JWT SCHEMA):", {
+      sessionToken,
       theaterId,
-      seatNumber,
+      seatId,
       hallId,
-      total,
-      items
+      items: cart.map(i => ({ menuId: i._id, quantity: i.quantity }))
     });
 
-    // ✅ CORRECT API CALL (FINAL FIX)
-    const res = await axios.post(`${API_BASE}/order`, {
-      theaterId: String(theaterId),
-      seatNumber: String(seatNumber),
-      hallId: String(hallId),
-      totalAmount: Number(total),
-      items: items
-    }, {
+    // ✅ CORRECT API CALL (NEW BACKEND ALIGNMENT)
+    const res = await fetch(`${API_BASE}/orders/create`, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...(token && { Authorization: `Bearer ${token}` })
-      }
+      },
+      body: JSON.stringify({
+        sessionToken: localStorage.getItem("sessionToken"),
+        theaterId: localStorage.getItem("theaterId"),
+        seatId: localStorage.getItem("seatId"),
+        hallId: localStorage.getItem("hallId"),
+        items: cart.map(i => ({
+          menuId: i._id,
+          quantity: i.quantity
+        }))
+      })
     });
 
+    const data = await res.json();
+
     // ✅ SAFE ERROR HANDLING
-    if (!res.data || !res.data.success) {
-      throw new Error(res.data?.message || "Order creation failed");
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || "Order creation failed");
     }
 
-    return res.data;
+    return data;
   };
 
   const verifyPayment = async (paymentId) => {
@@ -185,7 +145,7 @@ const PaymentPage = () => {
             localStorage.setItem("currentPaymentId", internalPaymentId || "");
             localStorage.removeItem("cart");
 
-            navigate(`/tracking?theaterId=${theaterId}&screen=${screen}&seat=${seat}`);
+            navigate(`/tracking?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}`);
           } catch (verifyErr) {
             setError(verifyErr.message || "Payment verification failed.");
             setLoading(false);
@@ -210,7 +170,7 @@ const PaymentPage = () => {
 
   const handlePayment = () => {
     if (cart.length === 0) { setError("Your cart is empty."); return; }
-    if (!theaterId || !seatNumber || seatNumber === "Unknown" || !hallId || hallId === "Unknown") { 
+    if (!theaterId || !seatId || !hallId || !sessionToken) { 
       setError("Cinema or seat data missing. Please scan QR code again."); 
       return; 
     }
@@ -218,6 +178,10 @@ const PaymentPage = () => {
     setLoading(true);
     startRazorpay();
   };
+
+  if (!theaterId || !sessionToken) {
+    return <SessionExpiredUI />;
+  }
 
   return (
     <div className="payment-page">
@@ -230,7 +194,7 @@ const PaymentPage = () => {
           <span className="payment-amount">Confirming Details...</span>
         </div>
 
-        <p className="plan-note">✦ Screen {screen} • Seat {seat}</p>
+        <p className="plan-note">✦ Seat ID: {seatId}</p>
         <div className="payment-divider" />
 
         <div className="customer-order-list">

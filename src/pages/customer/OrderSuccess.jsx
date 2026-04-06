@@ -16,7 +16,7 @@ const STATUS_STEPS = ["placed", "preparing", "ready", "delivered"];
 //  NOTE FOR BACKEND TEAM:
 //    Requires GET /api/order/:id to be implemented (Section 1.6).
 //    The endpoint must:
-//      • Accept Authorization: Bearer <customerToken>
+//      • Accept Authorization: Bearer <token>
 //      • Return { success: true, order: { _id, orderStatus, items, ... } }
 //      • Return 404 { success: false, message: "Order not found" } if not found
 // ─────────────────────────────────────────────────────────────
@@ -26,10 +26,10 @@ const OrderSuccess = () => {
 
   // ── Read state from localStorage (set by CustomerCart before redirect) ──
   const orderId   = localStorage.getItem("currentOrderId");
-  const token     = localStorage.getItem("customerToken");
-  const theaterId = localStorage.getItem("customerTheaterId") || "";
-  const screen    = localStorage.getItem("screenNo")          || "";
-  const seat      = localStorage.getItem("seatNo")            || "";
+  const token     = localStorage.getItem("token");
+  const theaterId = localStorage.getItem("theaterId") || "";
+  const hallId    = localStorage.getItem("hallId") || "";
+  const seatId    = localStorage.getItem("seatId") || "";
 
   const [order,   setOrder]   = useState(null);
   const [loading, setLoading] = useState(true);
@@ -124,10 +124,9 @@ const OrderSuccess = () => {
 
   // ─────────────────────────────────────────────────────────
   //  NAVIGATION
-  // ─────────────────────────────────────────────────────────
   const handleBackToMenu = () => {
     navigate(
-      `/customer/menu?theaterId=${theaterId}&screen=${screen}&seat=${seat}`
+      `/customer/menu?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}`
     );
   };
 

@@ -91,9 +91,11 @@ const Login = () => {
       localStorage.setItem("isAuth", "true");
       if (data.userId) localStorage.setItem("userId", data.userId);
 
-      // If backend returns assignedTheaterId (future-ready), store it
+      // Standardize theaterId for both workers and owners
       if (role === "worker" && data.assignedTheaterId) {
-        localStorage.setItem("assignedTheaterId", data.assignedTheaterId);
+        localStorage.setItem("theaterId", data.assignedTheaterId);
+      } else if (data.theaterId || data.theaterId) {
+        localStorage.setItem("theaterId", data.theaterId || data.theaterId);
       }
 
       if (role === "owner")        navigate("/owner/home", { replace: true });

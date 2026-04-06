@@ -7,22 +7,16 @@ import "./WorkerDashboard.css";
 //   GET /api/worker/orders?status= ✅ — fetches all 4 statuses
 //   PUT /api/worker/order-status/:id ✅ — updates order status
 //
-// ⚠️  MISSING (for backend team):
-//   Worker login response should include assignedTheaterId
+//   Worker login response should include theaterId
 //   so WorkerDashboard can filter orders by theater.
-//   Currently shows ALL orders from all theaters.
 // ─────────────────────────────────────────────────────────────
 
 // FIX: Standardized to include /api — consistent with Orders.jsx and Analytics.jsx
 const API_BASE = "https://popseat.onrender.com/api";
 
-// FIX: was reading only "token" — now uses workerToken fallback
 const authHeaders = () => ({
   "Content-Type" : "application/json",
-  Authorization  : `Bearer ${
-    localStorage.getItem("workerToken") ||
-    localStorage.getItem("token")       || ""
-  }`,
+  Authorization  : `Bearer ${localStorage.getItem("token") || ""}`,
 });
 
 // Status flow — lowercase only (API never returns Title Case)
@@ -51,15 +45,9 @@ const WorkerDashboard = () => {
   const navigate = useNavigate();
 
   // FIX: removed "loggedInUser" fallback — old localStorage system removed
-  // FIX: use workerEmail/workerRole keys first for consistency
-  const email = (
-    localStorage.getItem("workerEmail") ||
-    localStorage.getItem("email")       || ""
-  );
-  const role = (
-    localStorage.getItem("workerRole") ||
-    localStorage.getItem("role")       || ""
-  ).toLowerCase();
+  const email = localStorage.getItem("email") || "";
+  const role = (localStorage.getItem("role") || "").toLowerCase();
+  const theaterId = localStorage.getItem("theaterId") || "";
 
   const [orders,     setOrders]     = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -89,32 +77,15 @@ const WorkerDashboard = () => {
   =============================== */
 
   const loadOrders = useCallback(async () => {
-
+    if (!theaterId) return;
     setError("");
-
     try {
-
-      const responses = await Promise.allSettled(
-        ACTIVE_STATUSES.map((status) =>
-          fetch(`${API_BASE}/worker/orders?status=${status}`, {
-            headers: authHeaders(),
-          }).then((r) => r.json())
-        )
-      );
-
-      const seen   = new Set();
-      const merged = [];
-
-      responses.forEach((result) => {
-        if (result.status === "fulfilled" && result.value?.success) {
-          (result.value.orders || []).forEach((order) => {
-            if (!seen.has(order._id)) {
-              seen.add(order._id);
-              merged.push(order);
-            }
-          });
-        }
+      const res = await fetch(`${API_BASE}/orders?theaterId=${theaterId}`, {
+        headers: authHeaders(),
       });
+      const data = await res.json();
+      const merged = (data.orders || (Array.isArray(data) ? data : []))
+        .filter(o => ACTIVE_STATUSES.includes(o.orderStatus));
 
       // Sort: placed first, then preparing, then ready — action priority
       const statusOrder = { placed: 0, preparing: 1, ready: 2 };
@@ -272,8 +243,8 @@ const WorkerDashboard = () => {
             const action     = STATUS_FLOW[status];
             const ordId      = order._id;
             const isUpdating = updatingId === ordId;
-            // Fallback: backend may use cartItems/orderItems/foodItems instead of items
-            const orderItems = order.items || order.cartItems || order.orderItems || order.foodItems || [];
+            // Fallback: items is the primary field in the new schema
+            const orderItems = order?.items || order?.cartItems || order?.orderItems || [];
 
             return (
 
@@ -310,7 +281,7 @@ const WorkerDashboard = () => {
                   <div className="order-detail-row">
                     <span className="detail-label">Amount</span>
                     <span className="detail-value">
-                      ₹ {order.totalAmount || 0}
+                      ₹ {Number(order?.totalAmount || 0).toLocaleString("en-IN")}
                     </span>
                   </div>
 
@@ -332,9 +303,9 @@ const WorkerDashboard = () => {
                   <div className="order-items">
                     {orderItems.map((item, i) => (
                       <div key={i} className="order-item-row">
-                        <span>{item.name || item.itemName || item.foodName || "Item"}</span>
-                        <span>×{item.quantity || item.qty || 1}</span>
-                        <span>₹{item.price || item.unitPrice || 0}</span>
+                        <span>{item?.name || "Item"}</span>
+                        <span>×{item?.quantity || 1}</span>
+                        <span>₹{(item?.price || 0) * (item?.quantity || 1)}</span>
                       </div>
                     ))}
                   </div>

@@ -9,29 +9,11 @@ import "./Analytics.css";
 const API_BASE = "https://popseat.onrender.com/api";
 const ALL_STATUSES = ["placed", "preparing", "ready", "delivered"];
 
-const getToken = () =>
-  localStorage.getItem("ownerToken") ||
-  localStorage.getItem("workerToken") ||
-  localStorage.getItem("token") || "";
+const getToken = () => localStorage.getItem("token") || "";
 
-const getRole = () =>
-  (
-    localStorage.getItem("ownerRole") ||
-    localStorage.getItem("workerRole") ||
-    localStorage.getItem("role") || ""
-  ).toLowerCase();
+const getRole = () => (localStorage.getItem("role") || "").toLowerCase();
 
-const getTheaterId = (role) => {
-  if (role === "worker") {
-    return localStorage.getItem("assignedTheaterId") || "";
-  }
-  // OWNER: prioritize active selection in localStorage
-  return (
-    localStorage.getItem("activeTheaterId") || 
-    localStorage.getItem("activeOwnerTheaterId") || 
-    ""
-  );
-};
+const getTheaterId = () => localStorage.getItem("theaterId") || "";
 
 const formatCurrency = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
@@ -89,7 +71,7 @@ const buildChartData = (orders, range) => {
         const key = `${d.getHours().toString().padStart(2, "0")}:00`;
         if (buckets[key]) {
           buckets[key].Orders += 1;
-          buckets[key].Revenue += o.totalAmount || 0;
+          buckets[key].Revenue += Number(o?.totalAmount || 0);
         }
       }
     });
@@ -111,7 +93,7 @@ const buildChartData = (orders, range) => {
         const key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
         if (buckets[key]) {
           buckets[key].Orders += 1;
-          buckets[key].Revenue += o.totalAmount || 0;
+          buckets[key].Revenue += Number(o?.totalAmount || 0);
         }
       }
     });
@@ -132,7 +114,7 @@ const buildChartData = (orders, range) => {
         const key = d.toLocaleDateString("en-US", { month: "short" });
         if (buckets[key]) {
           buckets[key].Orders += 1;
-          buckets[key].Revenue += o.totalAmount || 0;
+          buckets[key].Revenue += Number(o?.totalAmount || 0);
         }
       }
     });
@@ -147,11 +129,11 @@ const buildTopItems = (orders) => {
   const map = {};
   orders.forEach((o) => {
     const items =
-      o.items || o.cartItems || o.orderItems || o.foodItems || [];
+      o?.items || o?.cartItems || o?.orderItems || [];
     items.forEach((item) => {
-      const name = item.name || item.itemName || item.foodName || "Unknown Item";
-      const qty = item.quantity || item.qty || 1;
-      const rev = (item.price || item.unitPrice || 0) * qty;
+      const name = item?.name || "Unknown Item";
+      const qty = item?.quantity || 1;
+      const rev = (item?.price || 0) * qty;
       if (!map[name]) map[name] = { name, qty: 0, revenue: 0 };
       map[name].qty += qty;
       map[name].revenue += rev;
@@ -170,20 +152,9 @@ const Analytics = () => {
   const [searchParams] = useSearchParams();
   const role = getRole();
 
-  const [cinemaId, setCinemaId] = useState(() => {
-    const urlTheaterId = searchParams.get("theaterId");
-    const storedTheaterId = localStorage.getItem("activeTheaterId");
-
-    if (role === "worker") return getTheaterId(role);
-
-    // EXACT LOGIC
-    if (storedTheaterId) {
-      return storedTheaterId;
-    } else if (urlTheaterId) {
-      localStorage.setItem("activeTheaterId", urlTheaterId);
-      return urlTheaterId;
-    }
-    return "";
+  const [theaterId] = useState(() => {
+    return localStorage.getItem("theaterId") || 
+           searchParams.get("theaterId") || "";
   });
 
   const [orders, setOrders] = useState([]);
@@ -196,7 +167,7 @@ const Analytics = () => {
 
   /* ── 📝 SMART ISOLATION: Fetch owner's theaters ── */
   useEffect(() => {
-    if (getRole() !== "owner" || !cinemaId) return;
+    if (getRole() !== "owner" || !theaterId) return;
     const checkPrimary = async () => {
       try {
         const res = await fetch(`${API_BASE}/cinema`, {
@@ -209,79 +180,41 @@ const Analytics = () => {
           // Rule: Stable Primary = smallest _id string (usually oldest)
           const sorted = [...list].sort((a, b) => a._id.localeCompare(b._id));
           const primaryId = sorted[0]._id;
-          setIsPrimary(cinemaId === primaryId);
+          setIsPrimary(theaterId === primaryId);
         }
       } catch (e) {
         console.warn("Smart Isolation (Analytics): Fetch failed.");
       }
     };
     checkPrimary();
-  }, [cinemaId]);
+  }, [theaterId]);
 
   /* ── Fetch all orders across statuses ── */
   const fetchOrders = useCallback(async () => {
-    if (!cinemaId) return;
+    if (!theaterId) return;
     setLoading(true);
     setError("");
-    const token = getToken();
-
     try {
-      const statusList = ["placed", "preparing", "ready", "delivered"];
-      const responses = await Promise.allSettled(
-        statusList.map(s =>
-          fetch(`${API_BASE}/worker/orders?status=${s}`, {
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          })
-        )
-      );
-
-      const jsonPromises = responses
-        .filter(r => r.status === "fulfilled" && r.value.ok)
-        .map(r => r.value.json());
-
-      const jsonResponses = await Promise.all(jsonPromises);
-
-      const seen = new Set();
-      const merged = [];
-
-      jsonResponses.forEach((data) => {
-        if (data.orders || Array.isArray(data)) {
-          const ordersArr = data.orders || (Array.isArray(data) ? data : []);
-          ordersArr.forEach((o) => {
-            /* ═══════════════════════════════════════════════════════
-               📝 SMARTER ISOLATION FILTER
-            ═══════════════════════════════════════════════════════ */
-            const matchesId = (o.theaterId === cinemaId || o.cinemaId === cinemaId);
-
-            // Unknown = Legacy = Primary
-            const isKnown = theaterList.some(t => (t._id === o.theaterId || t._id === o.cinemaId));
-            const isLegacy = !isKnown;
-
-            const shouldInclude = matchesId || (isPrimary && isLegacy);
-
-            if (!seen.has(o._id) && shouldInclude) {
-              seen.add(o._id);
-              merged.push(o);
-            }
-          });
-        }
+      const res = await fetch(`${API_BASE}/orders?theaterId=${theaterId}`, {
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
       });
-
+      const data = await res.json();
+      const merged = data.orders || (Array.isArray(data) ? data : []);
       setOrders(merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
     } catch {
       setError("Failed to load analytics data. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [cinemaId, isPrimary]);
+  }, [theaterId]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   /* ── Derived stats ── */
   const stats = useMemo(() => {
-    const delivered = orders.filter((o) => o.orderStatus === "delivered");
+    const delivered = orders.filter((o) => o?.orderStatus === "delivered");
     // Revenue = all orders (not just delivered) so it reflects actual business income
-    const revenue = orders.reduce((s, o) => s + (o.totalAmount || 0), 0);
+    const revenue = orders.reduce((s, o) => s + Number(o?.totalAmount || 0), 0);
     const avgOrder = orders.length ? Math.round(revenue / orders.length) : 0;
     const pending = orders.filter((o) => ["placed", "preparing", "ready"].includes(o.orderStatus)).length;
     const convRate = orders.length ? Math.round((delivered.length / orders.length) * 100) : 0;

@@ -9,8 +9,7 @@ import "./EditTheater.css";
 
 const API_BASE = "https://popseat.onrender.com/api";
 
-const getAuthToken = () =>
-  localStorage.getItem("ownerToken") || localStorage.getItem("token") || "";
+const getAuthToken = () => localStorage.getItem("token") || "";
 
 const getImageUrl = (url) => {
   if (!url) return "";
@@ -46,7 +45,7 @@ const EditTheater = () => {
   const theaterId =
     params.get("theaterId") ||
     location.state?.theaterId ||
-    localStorage.getItem("activeOwnerTheaterId") || "";
+    localStorage.getItem("theaterId") || "";
 
   const [theaterData, setTheaterData] = useState(null);
   const [logoFile, setLogoFile] = useState(null);   // File | null
@@ -56,11 +55,7 @@ const EditTheater = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const role = (
-    localStorage.getItem("ownerRole") ||
-    localStorage.getItem("role") ||
-    ""
-  ).toLowerCase();
+  const role = (localStorage.getItem("role") || "").toLowerCase();
 
   /* ── Role guard ── */
   useEffect(() => {

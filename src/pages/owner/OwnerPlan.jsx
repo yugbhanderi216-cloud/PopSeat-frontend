@@ -15,15 +15,14 @@ import "./OwnerPlan.css";
 
 const API_BASE = "https://popseat.onrender.com/api";
 
-const getOwnerToken = () =>
-  localStorage.getItem("ownerToken") || localStorage.getItem("token") || "";
+const getAuthToken = () => localStorage.getItem("token") || "";
 
 // plans fetched dynamically
 
 const OwnerPlan = () => {
   const navigate = useNavigate();
-  const token = getOwnerToken();
-  const ownerEmail = localStorage.getItem("ownerEmail") || localStorage.getItem("email") || "";
+  const token = getAuthToken();
+  const ownerEmail = localStorage.getItem("email") || "";
 
   const [plans, setPlans] = useState([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
@@ -48,9 +47,7 @@ const OwnerPlan = () => {
   }, []);
 
   useEffect(() => {
-    const role = (
-      localStorage.getItem("ownerRole") || localStorage.getItem("role") || ""
-    ).toLowerCase();
+    const role = (localStorage.getItem("role") || "").toLowerCase();
     if (!token || role !== "owner") {
       navigate("/login", { replace: true });
     }
@@ -70,7 +67,7 @@ const OwnerPlan = () => {
         const res = await fetch(`${API_BASE}/subscription/my`, {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${getAuthToken()}`,
           },
         });
         const data = await res.json();

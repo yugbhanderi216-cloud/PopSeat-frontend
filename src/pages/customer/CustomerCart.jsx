@@ -25,7 +25,7 @@ const CustomerCart = () => {
   const params   = new URLSearchParams(location.search);
 
   const theaterId =
-    params.get("theaterId") || localStorage.getItem("customerTheaterId") || "";
+    params.get("theaterId") || localStorage.getItem("theaterId") || "";
 
   const [cart,    setCart]    = useState([]);
   const [error,   setError]   = useState("");
@@ -33,7 +33,7 @@ const CustomerCart = () => {
   const goBack = () => navigate(-1);
 
   /* ── Currency formatter ── */
-  const formatCurrency = (amount) => `₹ ${Number(amount).toFixed(2)}`;
+  const formatCurrency = (amount) => `₹ ${Number(amount || 0).toFixed(2)}`;
 
   /* ── Load cart from localStorage ── */
   useEffect(() => {
@@ -89,12 +89,12 @@ const CustomerCart = () => {
       return;
     }
 
-    const token  = localStorage.getItem("customerToken");
-    const seatId = localStorage.getItem("customerSeatId");
+    const token  = localStorage.getItem("token");
+    const seatId = localStorage.getItem("seatId");
 
     // Not logged in — go to login, then directly to payment
     if (!token) {
-      if (theaterId) localStorage.setItem("customerTheaterId", theaterId);
+      if (theaterId) localStorage.setItem("theaterId", theaterId);
       const returnUrl = encodeURIComponent(`/payment?theaterId=${theaterId}`);
       navigate(`/customer/login?theaterId=${theaterId}&redirect=${returnUrl}`);
       return;
@@ -156,7 +156,7 @@ const CustomerCart = () => {
                 </div>
                 
                 <p className="cart-price">
-                  {formatCurrency(item.finalPrice || item.price)}
+                  {formatCurrency(item.finalPrice || item.price || 0)}
                 </p>
               </div>
             );

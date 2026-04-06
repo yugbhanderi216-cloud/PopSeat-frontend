@@ -16,7 +16,7 @@ const formatTime = (time) => {
 };
 
 const formatCurrency = (amount) =>
-  `₹ ${Number(amount).toLocaleString("en-IN")}`;
+  `₹ ${Number(amount || 0).toLocaleString("en-IN")}`;
 
 const getImageUrl = (url) => {
   if (!url) return "";
@@ -26,11 +26,7 @@ const getImageUrl = (url) => {
 
 const authHeaders = () => ({
   "Content-Type" : "application/json",
-  Authorization  : `Bearer ${
-    localStorage.getItem("ownerToken")  ||
-    localStorage.getItem("workerToken") ||
-    localStorage.getItem("token")       || ""
-  }`,
+  Authorization  : `Bearer ${localStorage.getItem("token") || ""}`,
 });
 
 const TheaterDashboard = () => {
@@ -38,34 +34,15 @@ const TheaterDashboard = () => {
   const location  = useLocation();
   const { state } = location;
 
-  const role = (
-    localStorage.getItem("ownerRole") ||
-    localStorage.getItem("workerRole") ||
-    localStorage.getItem("role") || ""
-  ).toLowerCase();
-
-  const email = (
-    localStorage.getItem("ownerEmail") ||
-    localStorage.getItem("workerEmail") ||
-    localStorage.getItem("email") || ""
-  );
+  const role  = (localStorage.getItem("role")  || "").toLowerCase();
+  const email = (localStorage.getItem("email") || "");
 
   const params = new URLSearchParams(location.search);
 
-  const [theaterId, setTheaterId] = useState(() => {
-    const urlTheaterId = params.get("theaterId") || state?.theaterId || "";
-    const storedTheaterId = localStorage.getItem("activeTheaterId");
-
-    if (role === "worker") return String(localStorage.getItem("assignedTheaterId") || "");
-
-    // OWNER: Source of Truth is localStorage (EXACT LOGIC)
-    if (storedTheaterId) {
-      return storedTheaterId;
-    } else if (urlTheaterId) {
-      localStorage.setItem("activeTheaterId", urlTheaterId);
-      return urlTheaterId;
-    }
-    return "";
+  const [theaterId] = useState(() => {
+    return localStorage.getItem("theaterId") || 
+           params.get("theaterId") || 
+           state?.theaterId || "";
   });
 
   const [theater, setTheater] = useState(null);
@@ -129,50 +106,16 @@ const TheaterDashboard = () => {
   const fetchOrders = useCallback(async () => {
     if (!theaterId) return;
     try {
-      // UNIFIED FETCH: Use status-based worker endpoints as they are stable.
-      // Bypass the crashing /api/orders?cinemaId query.
-      const responses = await Promise.allSettled(
-        WORKER_STATUSES.map((status) =>
-          fetch(`${API_BASE}/worker/orders?status=${status}`, {
-            headers: authHeaders(),
-          }).then((r) => r.json())
-        )
-      );
-
-      const seen = new Set();
-      const merged = [];
-
-      responses.forEach((result) => {
-        // ✅ CORRECTION: result.value might contain orders even if success is undefined
-        if (result.status === "fulfilled" && (result.value?.orders || Array.isArray(result.value))) {
-          const ordersArr = result.value?.orders || (Array.isArray(result.value) ? result.value : []);
-          ordersArr.forEach((order) => {
-            /* ═══════════════════════════════════════════════════════
-               📝 SMARTER ISOLATION FILTER
-               - Primary Theater: Owns its ID + all 'Unknown/Legacy' data.
-               - Regular Theater: Owns ONLY its ID.
-            ═══════════════════════════════════════════════════════ */
-            const matchesId = (order.theaterId === theaterId || order.cinemaId === theaterId);
-            
-            // Is this order tied to a theater that IS NOT in our current account's theater list?
-            // If it's unknown/legacy, and we are the Primary theater, we show it.
-            const isKnownTheater = theaterList.some(t => (t._id === order.theaterId || t._id === order.cinemaId));
-            const isLegacy = !isKnownTheater;
-
-            const shouldInclude = matchesId || (isPrimary && isLegacy);
-
-            if (!seen.has(order._id) && shouldInclude) {
-              seen.add(order._id);
-              merged.push(order);
-            }
-          });
-        }
+      const res = await fetch(`${API_BASE}/orders?theaterId=${theaterId}`, {
+        headers: authHeaders(),
       });
+      const data = await res.json();
+      const merged = data.orders || (Array.isArray(data) ? data : []);
       setOrders(merged);
     } catch (err) {
       console.error("Orders fetch error:", err);
     }
-  }, [theaterId, isPrimary, theaterList]);
+  }, [theaterId]);
 
   useEffect(() => {
     if (!theater) return;
@@ -199,10 +142,10 @@ const TheaterDashboard = () => {
   if (error) return <div className="dashboard-state error"><p>{error}</p></div>;
   if (!theater) return null;
 
-  const totalOrders = orders.length;
-  const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const totalOrders = orders?.length || 0;
+  const totalRevenue = orders?.reduce((sum, o) => sum + (o?.totalAmount || 0), 0);
   const statusCounts = WORKER_STATUSES.reduce((acc, s) => {
-    acc[s] = orders.filter((o) => o.orderStatus === s).length;
+    acc[s] = (orders || []).filter((o) => o?.orderStatus === s).length;
     return acc;
   }, {});
 
@@ -216,7 +159,7 @@ const TheaterDashboard = () => {
           <div className="theater-titles">
             <h1 className="theater-name">{theater?.name || "Loading..."}</h1>
             <p className="theater-location">
-              {theater?.location} • {theater?.city}{theater?.branchName ? `, ${theater.branchName}` : ""}
+              {theater?.location} • {theater?.city}{theater?.branchName ? `, ${theater?.branchName}` : ""}
             </p>
           </div>
         </div>

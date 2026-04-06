@@ -40,11 +40,9 @@ import RenewPlan    from "./pages/owner/RenewPlan";
    Protects routes by token presence and role.
    allowedRoles: lowercase string array e.g. ["owner","worker"]
 ───────────────────────────────────────────────────────────── */
-const PrivateRoute = ({ element, allowedRoles }) => {
+const PrivateRoute = ({ element }) => {
   const token = localStorage.getItem("token");
-  const role  = localStorage.getItem("role")?.toLowerCase();
-  if (!token)                                      return <Navigate to="/login" replace />;
-  if (allowedRoles && !allowedRoles.includes(role)) return <Navigate to="/login" replace />;
+  if (!token) return <Navigate to="/login" replace />;
   return element;
 };
 
@@ -66,21 +64,18 @@ const OwnerOnly = ({ element }) => {
    If missing → shows "No Theater Assigned" screen.
 ───────────────────────────────────────────────────────────── */
 const WorkerRedirect = () => {
-  const assignedTheaterId = localStorage.getItem("assignedTheaterId");
+  const theaterId = localStorage.getItem("theaterId");
 
-  // If backend returned theaterId at login, use it for full dashboard
-  if (assignedTheaterId) {
+  if (theaterId) {
     return (
       <Navigate
         to="/theater/overview"
-        state={{ theaterId: assignedTheaterId }}
+        state={{ theaterId }}
         replace
       />
     );
   }
 
-  // Backend handles worker→theater association via JWT token
-  // Navigate directly to orders — the backend filters by the worker's JWT
   return <Navigate to="/theater/orders" replace />;
 };
 
@@ -145,16 +140,18 @@ function App() {
         <Route path="settings" element={<OwnerOnly element={<EditTheater />} />} />
       </Route>
 
-      {/* Customer flow — public */}
+      {/* Customer flow */}
       <Route path="/customer"         element={<CustomerWelcome />} />
       <Route path="/customer/welcome" element={<CustomerWelcome />} />
       <Route path="/customer/login"   element={<CustomerLogin />} />
       <Route path="/customer/menu"    element={<CustomerMenu />} />
       <Route path="/customer/cart"    element={<CustomerCart />} />
       <Route path="/customer/item"    element={<CustomerItemDetails />} />
-      <Route path="/payment"          element={<PaymentPage />} />
-      <Route path="/tracking"         element={<OrderTracking />} />
-      <Route path="/order-success"    element={<OrderSuccess />} />
+      
+      {/* Protected Customer Routes */}
+      <Route path="/payment"          element={<PrivateRoute element={<PaymentPage />}   allowedRoles={["customer"]} />} />
+      <Route path="/tracking"         element={<PrivateRoute element={<OrderTracking />} allowedRoles={["customer"]} />} />
+      <Route path="/order-success"    element={<PrivateRoute element={<OrderSuccess />}  allowedRoles={["customer"]} />} />
 
       {/* Admin */}
       <Route path="/admin-login"      element={<AdminLogin />} />

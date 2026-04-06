@@ -12,12 +12,11 @@ import "./OwnerPayment.css";
 const API_BASE = "https://popseat.onrender.com/api";
 const RAZORPAY_KEY = "rzp_test_STsZnqsQOPRrqZ";
 
-const getOwnerToken = () =>
-  localStorage.getItem("ownerToken") || localStorage.getItem("token") || "";
+const getAuthToken = () => localStorage.getItem("token") || "";
 
 const authHeaders = () => ({
   "Content-Type": "application/json",
-  Authorization: `Bearer ${getOwnerToken()}`,
+  Authorization: `Bearer ${getAuthToken()}`,
 });
 
 const loadRazorpayScript = () =>
@@ -197,7 +196,7 @@ const OwnerPayment = () => {
         ),
 
         prefill: {
-          email: localStorage.getItem("ownerEmail") || localStorage.getItem("email") || "",
+          email: localStorage.getItem("email") || "",
         },
 
         theme: { color: "#79334D" },

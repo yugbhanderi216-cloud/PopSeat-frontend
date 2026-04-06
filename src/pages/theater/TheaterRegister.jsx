@@ -18,10 +18,7 @@ const capitalizeSmart = (text) => {
     .replace(/(^|\s)\w/g, (letter) => letter.toUpperCase());
 };
 
-const getAuthToken = () =>
-  localStorage.getItem("ownerToken") ||
-  localStorage.getItem("token") ||
-  "";
+const getAuthToken = () => localStorage.getItem("token") || "";
 
 // JSON auth headers (for subscription check & bank details)
 const jsonAuthHeaders = () => ({
@@ -42,10 +39,7 @@ const CAPITALIZE_FIELDS = [
 const TheaterRegister = () => {
   const navigate = useNavigate();
 
-  const ownerEmail =
-    localStorage.getItem("ownerEmail") ||
-    localStorage.getItem("email") ||
-    "";
+  const ownerEmail = localStorage.getItem("email") || "";
 
   const [loading, setLoading] = useState(false);
   const [subLoading, setSubLoading] = useState(true);
@@ -278,7 +272,7 @@ const TheaterRegister = () => {
         return;
       }
 
-      const cinemaId = cinemaData.cinema?._id;
+      const theaterId = cinemaData.cinema?._id;
 
       // ✅ Backend now auto-creates halls and returns them in response
       // cinemaData.halls = [{ _id, name, screenNumber, hallNumber, ... }]
@@ -288,10 +282,10 @@ const TheaterRegister = () => {
       }
 
       /* ── STEP 2: Save bank details — POST /api/cinema/:id/bank-details ── */
-      if (cinemaId && hasBankDetails()) {
+      if (theaterId && hasBankDetails()) {
         try {
           const bankRes = await fetch(
-            `${API_BASE}/api/cinema/${cinemaId}/bank-details`,
+            `${API_BASE}/api/cinema/${theaterId}/bank-details`,
             {
               method: "POST",
               headers: jsonAuthHeaders(),
@@ -319,6 +313,8 @@ const TheaterRegister = () => {
       }
 
       // ✅ Success — navigate to owner home
+      localStorage.setItem("theaterId", theaterId);
+      localStorage.removeItem("activeTheaterId");
       navigate("/owner/home");
 
     } catch (err) {

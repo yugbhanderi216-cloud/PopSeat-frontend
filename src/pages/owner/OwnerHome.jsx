@@ -6,7 +6,7 @@ import logo from "../PopSeat_Logo.png";
 
 // APIs USED:
 //   GET    /api/owner/cinemas             ✅ confirmed (falls back to /api/cinema if 404)
-//   GET    /api/owner/workers/:cinemaId   ✅ confirmed
+//   GET    /api/owner/workers/:theaterId   ✅ confirmed
 //   DELETE /api/owner/delete-worker/:id  ✅ confirmed
 //   POST   /api/owner/create-worker      ✅ confirmed
 //   GET    /api/subscription/my          ✅ confirmed
@@ -32,8 +32,7 @@ const getImageUrl = (url) => {
 
 const authHeaders = () => ({
   "Content-Type": "application/json",
-  Authorization: `Bearer ${localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
-    }`,
+  Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
 });
 
 const ConfirmModal = ({ confirmDelete, onCancel, onConfirm }) => {
@@ -72,8 +71,8 @@ const ConfirmModal = ({ confirmDelete, onCancel, onConfirm }) => {
 
 const OwnerHome = () => {
   const navigate = useNavigate();
-  const ownerToken = localStorage.getItem("ownerToken") || localStorage.getItem("token") || "";
-  const role = (localStorage.getItem("ownerRole") || localStorage.getItem("role") || "").toLowerCase();
+  const token = localStorage.getItem("token") || "";
+  const role = (localStorage.getItem("role") || "").toLowerCase();
 
   const [theaters, setTheaters] = useState([]);
   const [workersMap, setWorkersMap] = useState({});
@@ -105,10 +104,10 @@ const OwnerHome = () => {
 
   /* ── Auth guard ── */
   useEffect(() => {
-    if (!ownerToken || role !== "owner") {
+    if (!token || role !== "owner") {
       navigate("/login", { replace: true });
     }
-  }, [ownerToken, role, navigate]);
+  }, [token, role, navigate]);
 
   /* ── GET /api/subscription/my ── */
   const loadSubscription = useCallback(async () => {
@@ -165,16 +164,16 @@ const OwnerHome = () => {
     }
   }, []);
 
-  /* ── GET /api/owner/workers/:cinemaId ── */
-  const loadWorkers = useCallback(async (cinemaId, signal) => {
+  /* ── GET /api/owner/workers/:theaterId ── */
+  const loadWorkers = useCallback(async (theaterId, signal) => {
     try {
       const res = await fetch(
-        `${API_BASE}/api/owner/workers/${cinemaId}`,
+        `${API_BASE}/api/owner/workers/${theaterId}`,
         { headers: authHeaders(), signal }
       );
       const data = await res.json();
       if (data.success && isMounted.current) {
-        setWorkersMap((prev) => ({ ...prev, [cinemaId]: data.workers || [] }));
+        setWorkersMap((prev) => ({ ...prev, [theaterId]: data.workers || [] }));
       }
     } catch (err) {
       if (err.name === "AbortError") return;
@@ -190,20 +189,20 @@ const OwnerHome = () => {
   }, [theaters, loadWorkers]);
 
   useEffect(() => {
-    if (ownerToken && role === "owner") {
+    if (token && role === "owner") {
       loadSubscription();
       loadCinemas();
     }
-  }, [loadSubscription, loadCinemas]);
+  }, [token, role, loadSubscription, loadCinemas]);
 
   /* ── Helpers ── */
   const setAction = (key, val) =>
     setActionLoading((prev) => ({ ...prev, [key]: val }));
 
-  const updateWorkerInput = (cinemaId, field, value) =>
+  const updateWorkerInput = (theaterId, field, value) =>
     setWorkerInputs((prev) => ({
       ...prev,
-      [cinemaId]: { ...(prev[cinemaId] || {}), [field]: value },
+      [theaterId]: { ...(prev[theaterId] || {}), [field]: value },
     }));
 
   const isSubscriptionActive =
@@ -229,24 +228,24 @@ const OwnerHome = () => {
   };
 
   /* ── POST /api/owner/create-worker ── */
-  const handleAddWorker = async (cinemaId) => {
-    const { name, email, password } = workerInputs[cinemaId] || {};
+  const handleAddWorker = async (theaterId) => {
+    const { name, email, password } = workerInputs[theaterId] || {};
     if (!name?.trim() || !email?.trim() || !password?.trim()) {
       setError("Please fill in worker name, email and password.");
       return;
     }
-    setAction(`add-${cinemaId}`, true);
+    setAction(`add-${theaterId}`, true);
     setError("");
     try {
       const res = await fetch(`${API_BASE}/api/owner/create-worker`, {
         method: "POST",
         headers: authHeaders(),
-        // cinemaId links this worker to the specific theater
+        // theaterId links this worker to the specific theater
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim().toLowerCase(),
           password: password.trim(),
-          cinemaId,
+          theaterId,
         }),
       });
       const data = await res.json();
@@ -258,34 +257,34 @@ const OwnerHome = () => {
       if (data.worker) {
         setWorkersMap((prev) => ({
           ...prev,
-          [cinemaId]: [...(prev[cinemaId] || []), data.worker],
+          [theaterId]: [...(prev[theaterId] || []), data.worker],
         }));
       } else {
-        await loadWorkers(cinemaId);
+        await loadWorkers(theaterId);
       }
 
-      // Cache worker email → cinemaId so Login.jsx can auto-assign
+      // Cache worker email → theaterId so Login.jsx can auto-assign
       // the theaterId when the worker logs in (backend doesn't return this)
       const workerEmail = email.trim().toLowerCase();
       const cacheKey = "worker_cinema_map";
       const existingCache = JSON.parse(localStorage.getItem(cacheKey) || "{}");
-      existingCache[workerEmail] = cinemaId;
+      existingCache[workerEmail] = theaterId;
       localStorage.setItem(cacheKey, JSON.stringify(existingCache));
 
       setWorkerInputs((prev) => ({
         ...prev,
-        [cinemaId]: { name: "", email: "", password: "" },
+        [theaterId]: { name: "", email: "", password: "" },
       }));
     } catch (err) {
       console.error("Create worker error:", err);
       setError("Network error. Could not create worker.");
     } finally {
-      setAction(`add-${cinemaId}`, false);
+      setAction(`add-${theaterId}`, false);
     }
   };
 
   /* ── DELETE /api/owner/delete-worker/:id ── */
-  const handleDeleteWorker = async (cinemaId, workerId) => {
+  const handleDeleteWorker = async (theaterId, workerId) => {
     setDeleteLoading((prev) => ({ ...prev, [workerId]: true }));
     setConfirmDelete(null);
     try {
@@ -297,7 +296,7 @@ const OwnerHome = () => {
       if (data.success) {
         setWorkersMap((prev) => ({
           ...prev,
-          [cinemaId]: (prev[cinemaId] || []).filter(
+          [theaterId]: (prev[theaterId] || []).filter(
             (w) => (w._id || w.id) !== workerId
           ),
         }));
@@ -313,17 +312,17 @@ const OwnerHome = () => {
   };
 
   /* ── DELETE /api/cinema/:id ── */
-  const handleDeleteTheater = async (cinemaId) => {
+  const handleDeleteTheater = async (theaterId) => {
     setConfirmDelete(null);
-    setDeleteLoading((prev) => ({ ...prev, [cinemaId]: true }));
+    setDeleteLoading((prev) => ({ ...prev, [theaterId]: true }));
     try {
-      const res = await fetch(`${API_BASE}/api/cinema/${cinemaId}`, {
+      const res = await fetch(`${API_BASE}/api/cinema/${theaterId}`, {
         method: "DELETE",
         headers: authHeaders(),
       });
       const data = await res.json();
       if (data.success) {
-        setTheaters((prev) => prev.filter((t) => t._id !== cinemaId));
+        setTheaters((prev) => prev.filter((t) => t._id !== theaterId));
       } else {
         setError(data.message || "Failed to delete theater.");
       }
@@ -331,7 +330,7 @@ const OwnerHome = () => {
       console.error("Delete theater error:", err);
       setError("Network error. Could not delete theater.");
     } finally {
-      setDeleteLoading((prev) => ({ ...prev, [cinemaId]: false }));
+      setDeleteLoading((prev) => ({ ...prev, [theaterId]: false }));
     }
   };
 
@@ -341,9 +340,8 @@ const OwnerHome = () => {
       setError("This theater is pending Super Admin approval. ⏳");
       return;
     }
-    // Set activeTheaterId for switching logic and persistent context
-    localStorage.setItem("activeTheaterId", theater._id);
-    localStorage.setItem("activeOwnerTheaterId", theater._id); // Backward compatibility
+    // Set theaterId for unified session tracking
+    localStorage.setItem("theaterId", theater._id);
     
     navigate(`/theater/overview?theaterId=${theater._id}`, {
       state: { theaterId: theater._id },
@@ -368,9 +366,10 @@ const OwnerHome = () => {
 
   /* ── Logout ── */
   const handleLogout = () => {
-    ["ownerToken", "token", "ownerEmail", "email", "ownerRole", "role"].forEach(
-      (k) => localStorage.removeItem(k)
-    );
+    [
+      "token", "email", "role", "theaterId", "theaterName", "branchName",
+      "sessionToken", "seatId", "hallId", "cart"
+    ].forEach((k) => localStorage.removeItem(k));
     navigate("/login");
   };
 
@@ -393,9 +392,9 @@ const OwnerHome = () => {
         confirmDelete={confirmDelete}
         onCancel={() => setConfirmDelete(null)}
         onConfirm={() => {
-          const { type, id, cinemaId } = confirmDelete;
+          const { type, id, theaterId } = confirmDelete;
           if (type === "theater") handleDeleteTheater(id);
-          else handleDeleteWorker(cinemaId, id);
+          else handleDeleteWorker(theaterId, id);
         }}
       />
 
@@ -626,7 +625,7 @@ const OwnerHome = () => {
                                 onClick={() =>
                                   setConfirmDelete({
                                     type: "worker", id: wId,
-                                    cinemaId: t._id, label: w.name,
+                                    theaterId: t._id, label: w.name,
                                   })
                                 }
                                 disabled={!!deleteLoading[wId]}
