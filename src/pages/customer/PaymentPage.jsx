@@ -27,6 +27,12 @@ const PaymentPage = () => {
     localStorage.getItem("hallId") ||
     localStorage.getItem("customerHallId") || "";
 
+  const seatNumber =
+    localStorage.getItem("seatNo") ||
+    params.get("seat") ||
+    localStorage.getItem("customerSeatId") ||
+    "Unknown";
+
   // 2. ✅ NORMALIZE VALUES (VERY IMPORTANT)
   useEffect(() => {
     if (theaterId) localStorage.setItem("theaterId", theaterId);
@@ -64,7 +70,7 @@ const PaymentPage = () => {
 
   // ✅ Calling /api/orders to create order
   const createFoodOrder = async () => {
-    // 3. ✅ ENSURE SESSION EXISTS
+    // 3. ✅ ENSURE SESSION EXISTS INTERNALLY
     let sessionStartTime = localStorage.getItem("sessionStartTime");
     if (!sessionStartTime) {
       sessionStartTime = Date.now();
@@ -72,32 +78,38 @@ const PaymentPage = () => {
     }
 
     // 4. ✅ STRICT VALIDATION BEFORE API CALL
-    if (!theaterId || !seatId || !hallId) {
-      throw new Error("Invalid session. Please scan QR again.");
+    if (!seatNumber || !hallId) {
+      throw new Error("Missing seat or hall data. Please scan QR again.");
     }
 
     if (!cart || cart.length === 0) {
       throw new Error("Cart is empty.");
     }
 
+    // 2. ✅ CALCULATE TOTAL (FRONTEND REQUIRED)
+    const total = cart.reduce(
+      (sum, item) =>
+        sum + Number(item.finalPrice || item.price || 0) * item.quantity,
+      0
+    );
+
     // 8. ✅ DEBUG LOG (FOR TESTING ONLY)
-    console.log("Creating Order with:", {
-      theaterId,
-      seatId,
+    console.log("Creating Order with (OLD FORMAT):", {
+      seatNumber,
       hallId,
-      sessionStartTime,
+      total,
       cart
     });
 
-    // 5. ✅ CORRECT API PAYLOAD (DO NOT CHANGE STRUCTURE)
+    // 5. ✅ USE OLD PAYLOAD FORMAT (CRITICAL FIX)
     const res = await axios.post(`${API_BASE}/order`, {
-      sessionStartTime: Number(sessionStartTime),
-      theaterId: String(theaterId),
-      seatId: String(seatId),
+      seatNumber: String(seatNumber),
       hallId: String(hallId),
+      totalAmount: Number(total),
       items: cart.map(item => ({
-        menuId: item.menuId || item._id,
-        quantity: item.quantity
+        name: item.name + (item.size ? ` (${item.size})` : ""),
+        quantity: Number(item.quantity),
+        price: Number(item.finalPrice || item.price || 0)
       }))
     }, {
       headers: {
