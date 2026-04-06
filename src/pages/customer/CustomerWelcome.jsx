@@ -33,6 +33,10 @@ const CustomerWelcome = () => {
             })
           });
 
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          
           const data = await res.json();
           if (res.status === 201 && data.success) {
             localStorage.setItem("sessionId", data.sessionId);
@@ -69,6 +73,10 @@ const CustomerWelcome = () => {
                  headers: { "Content-Type": "application/json" },
                  body: JSON.stringify({ theaterId: tId, hallId: hId, seatId: sId, seatNumber: sNo })
                });
+               
+               if (!res.ok) {
+                   throw new Error(`HTTP error! status: ${res.status}`);
+               }
                const data = await res.json();
                if (res.status === 201 && data.success) {
                  localStorage.setItem("sessionId", data.sessionId);
@@ -77,6 +85,7 @@ const CustomerWelcome = () => {
                  setError(true);
                }
              } catch (e) {
+               console.error("Session reinit error:", e);
                setError(true);
              }
           } else {
