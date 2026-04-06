@@ -80,6 +80,10 @@ const PaymentPage = () => {
     }
 
     // ✅ STRICT VALIDATION BEFORE API CALL
+    if (!theaterId) {
+      throw new Error("Theater information missing. Please scan QR again.");
+    }
+
     if (!seatNumber || seatNumber === "Unknown") {
       throw new Error("Seat information missing. Please scan QR again.");
     }
@@ -109,6 +113,7 @@ const PaymentPage = () => {
 
     // ✅ DEBUG LOG (FOR TESTING)
     console.log("Creating Order with (HYBRID FORMAT):", {
+      theaterId,
       seatNumber,
       hallId,
       total,
@@ -117,6 +122,7 @@ const PaymentPage = () => {
 
     // ✅ CORRECT API CALL (FINAL FIX)
     const res = await axios.post(`${API_BASE}/order`, {
+      theaterId: String(theaterId),
       seatNumber: String(seatNumber),
       hallId: String(hallId),
       totalAmount: Number(total),
@@ -204,7 +210,7 @@ const PaymentPage = () => {
 
   const handlePayment = () => {
     if (cart.length === 0) { setError("Your cart is empty."); return; }
-    if (!seatNumber || seatNumber === "Unknown" || !hallId || hallId === "Unknown") { 
+    if (!theaterId || !seatNumber || seatNumber === "Unknown" || !hallId || hallId === "Unknown") { 
       setError("Cinema or seat data missing. Please scan QR code again."); 
       return; 
     }
