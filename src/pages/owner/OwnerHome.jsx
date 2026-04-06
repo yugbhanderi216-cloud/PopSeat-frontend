@@ -240,12 +240,10 @@ const OwnerHome = () => {
       const res = await fetch(`${API_BASE}/api/owner/create-worker`, {
         method: "POST",
         headers: authHeaders(),
-        // theaterId links this worker to the specific theater
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim().toLowerCase(),
-          password: password.trim(),
-          theaterId,
+          password: password.trim()
         }),
       });
       const data = await res.json();
