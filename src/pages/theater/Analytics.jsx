@@ -313,13 +313,13 @@ const Analytics = () => {
 
   return (
     <div className="analytics-container">
-      <div className="analytics-header">
-        <div className="analytics-header-left">
+      <div className="analytics-topbar">
+        <div className="analytics-topbar-left">
           <h1 className="analytics-title">Business Analytics</h1>
           <p className="analytics-subtitle">Real-time performance and revenue tracking</p>
         </div>
-        <div className="analytics-header-right">
-          <button className="orders-refresh-btn" onClick={() => fetchOrders()}>
+        <div className="analytics-topbar-right">
+          <button className="analytics-refresh-btn" onClick={() => fetchOrders()}>
             ↻ Refresh
           </button>
         </div>

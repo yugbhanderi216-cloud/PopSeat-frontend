@@ -83,6 +83,12 @@
   letter-spacing: -0.3px;
 }
 
+.analytics-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
 .analytics-badge {
   display: inline-flex;
   align-items: center;
@@ -96,8 +102,15 @@
   white-space: nowrap;
 }
 
+.analytics-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .analytics-refresh-btn {
-  padding: 7px 14px;
+  height: 32px;
+  padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
@@ -108,6 +121,9 @@
   white-space: nowrap;
   box-shadow: var(--sh);
   transition: all .12s;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .analytics-refresh-btn:hover {
