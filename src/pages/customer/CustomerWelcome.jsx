@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SessionExpiredUI from "../component/SessionExpiredUI";
 
@@ -29,10 +29,17 @@ const CustomerWelcome = () => {
     params.get("cinemaId") ||
     localStorage.getItem("customerTheaterId");
 
-  const hallId = params.get("hallId");
-  const seatId = params.get("seatId");
-  const seat = params.get("seat");
+  const hallId =
+    params.get("hallId") ||
+    localStorage.getItem("customerHallId");
 
+  const seatId =
+    params.get("seatId") ||
+    localStorage.getItem("customerSeatId");
+
+  const seat =
+    params.get("seat") ||
+    localStorage.getItem("seatNo");
   useEffect(() => {
     if (theaterId) localStorage.setItem("customerTheaterId", theaterId);
     if (hallId) localStorage.setItem("customerHallId", hallId);
@@ -74,21 +81,30 @@ const CustomerWelcome = () => {
     }
   };
 
+  const hasInitialized = useRef(false);
+
   useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    let isMounted = true;
+
     const init = async () => {
       if (!theaterId || !hallId || !seatId || !seat) {
-        setError(true);
+        // wait a bit before failing (prevents false error)
+        setTimeout(() => {
+          if (!theaterId || !hallId || !seatId || !seat) {
+            setError(true);
+          }
+        }, 500);
         return;
       }
 
-      const existingSession = localStorage.getItem("sessionId");
-
-      if (existingSession) {
-        navigate("/customer/menu");
-        return;
-      }
+      localStorage.removeItem("sessionId");
 
       const success = await createSession();
+
+      if (!isMounted) return;
 
       if (success) {
         navigate("/customer/menu");
@@ -98,20 +114,23 @@ const CustomerWelcome = () => {
     };
 
     init();
-  }, [theaterId, hallId, seatId, seat, navigate]);
 
+    return () => {
+      isMounted = false;
+    };
+  }, [theaterId, hallId, seatId, seat, navigate]);
   if (error) {
     return <SessionExpiredUI />;
   }
 
   return (
-    <div style={{ 
-      display: "flex", 
-      flexDirection: "column", 
-      alignItems: "center", 
-      justifyContent: "center", 
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
       height: "100vh",
-      background: "#fff" 
+      background: "#fff"
     }}>
       <div className="welcome-loader">
         <div style={{ fontSize: "24px", fontWeight: "600", color: "#e61e2a" }}>
