@@ -285,7 +285,7 @@ const Menu = () => {
       formData.append("dips", JSON.stringify({ name: d.name, price: Number(d.price) }));
     });
     if (form.imageFile) formData.append("image", form.imageFile);
-    if (theaterId) formData.append("theaterId", theaterId);
+    if (theaterId) formData.append("cinemaId", theaterId);
 
     try {
       const url = editId ? `${API_BASE}/menu/${editId}` : `${API_BASE}/menu`;
