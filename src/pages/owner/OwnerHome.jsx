@@ -243,7 +243,8 @@ const OwnerHome = () => {
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim().toLowerCase(),
-          password: password.trim()
+          password: password.trim(),
+          cinemaId: theaterId
         }),
       });
       const data = await res.json();
