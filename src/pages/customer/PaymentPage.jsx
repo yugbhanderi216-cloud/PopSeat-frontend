@@ -11,11 +11,12 @@ const PaymentPage = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
 
-  const seatId = params.get("seatId") || localStorage.getItem("seatId") || localStorage.getItem("customerSeatId");
-  const theaterId = localStorage.getItem("theaterId") || localStorage.getItem("customerTheaterId") || "";
+  const seatId = params.get("seatId") || localStorage.getItem("seatId") || localStorage.getItem("customerSeatId") || "";
+  const theaterId = params.get("theaterId") || localStorage.getItem("theaterId") || localStorage.getItem("customerTheaterId") || "";
   const hallId = params.get("hallId") || localStorage.getItem("hallId") || localStorage.getItem("customerHallId") || "";
-  const screen = localStorage.getItem("screenNo") || "";
-  const seat = localStorage.getItem("seatNo") || "";
+  const screen = params.get("screen") || localStorage.getItem("screenNo") || "";
+  const seat = params.get("seat") || localStorage.getItem("seatNo") || "";
+  const token = localStorage.getItem("customerToken") || "";
 
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -55,10 +56,15 @@ const PaymentPage = () => {
 
     const res = await axios.post(`${API_BASE}/order`, {
       sessionStartTime: sessionStartTime ? Number(sessionStartTime) : Date.now(),
-      theaterId: theaterId,
-      seatId: seatId,
-      hallId: hallId,
+      theaterId: String(theaterId),
+      seatId: String(seatId),
+      hallId: String(hallId),
       items
+    }, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` })
+      }
     });
 
     return res.data;
