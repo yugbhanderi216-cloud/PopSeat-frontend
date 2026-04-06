@@ -47,29 +47,23 @@ const CustomerWelcome = () => {
     const checkHallId = hallId;
 
     if (checkTheaterId && checkSeatId && checkHallId) {
-      const currentTheaterId = localStorage.getItem("theaterId") || localStorage.getItem("customerTheaterId");
-      
-      // 1. CLEAR OLD SESSION
-      if (currentTheaterId && currentTheaterId !== checkTheaterId) {
-        localStorage.removeItem("theaterId");
-        localStorage.removeItem("seatId");
-        localStorage.removeItem("hallId");
-        localStorage.removeItem("sessionStartTime");
-        localStorage.removeItem("cart");
-        localStorage.removeItem("customerTheaterId");
-        localStorage.removeItem("customerSeatId");
-        localStorage.removeItem("customerHallId");
+      // 7. ✅ SAFE THEATER SWITCH FIX (NO BREAKAGE)
+      const prevTheater = localStorage.getItem("theaterId") || localStorage.getItem("customerTheaterId");
+
+      if (prevTheater && prevTheater !== checkTheaterId) {
+        localStorage.removeItem("cart"); // Only clear when actually switching
+        localStorage.setItem("sessionStartTime", Date.now()); // Reset session for new theater
       }
 
-      // 2. SET NEW SESSION
-      localStorage.setItem("theaterId", checkTheaterId);
-      localStorage.setItem("seatId", checkSeatId);
-      localStorage.setItem("hallId", checkHallId);
       if (!localStorage.getItem("sessionStartTime")) {
         localStorage.setItem("sessionStartTime", Date.now());
       }
+
+      // 2. SET NEW SESSION (Supporting both old and new keys)
+      localStorage.setItem("theaterId", checkTheaterId);
+      localStorage.setItem("seatId", checkSeatId);
+      localStorage.setItem("hallId", checkHallId);
       
-      // Fallbacks for older components
       localStorage.setItem("customerTheaterId", checkTheaterId);
       localStorage.setItem("customerSeatId", checkSeatId);
       localStorage.setItem("customerHallId", checkHallId);

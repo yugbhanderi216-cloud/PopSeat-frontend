@@ -11,9 +11,29 @@ const PaymentPage = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
 
-  const seatId = params.get("seatId") || localStorage.getItem("seatId") || localStorage.getItem("customerSeatId") || "";
-  const theaterId = params.get("theaterId") || localStorage.getItem("theaterId") || localStorage.getItem("customerTheaterId") || "";
-  const hallId = params.get("hallId") || localStorage.getItem("hallId") || localStorage.getItem("customerHallId") || "";
+  // 1. ✅ SAFE DATA EXTRACTION (DO NOT REMOVE OLD KEYS)
+  const theaterId =
+    params.get("theaterId") ||
+    localStorage.getItem("theaterId") ||
+    localStorage.getItem("customerTheaterId") || "";
+
+  const seatId =
+    params.get("seatId") ||
+    localStorage.getItem("seatId") ||
+    localStorage.getItem("customerSeatId") || "";
+
+  const hallId =
+    params.get("hallId") ||
+    localStorage.getItem("hallId") ||
+    localStorage.getItem("customerHallId") || "";
+
+  // 2. ✅ NORMALIZE VALUES (VERY IMPORTANT)
+  useEffect(() => {
+    if (theaterId) localStorage.setItem("theaterId", theaterId);
+    if (seatId) localStorage.setItem("seatId", seatId);
+    if (hallId) localStorage.setItem("hallId", hallId);
+  }, [theaterId, seatId, hallId]);
+
   const screen = params.get("screen") || localStorage.getItem("screenNo") || "";
   const seat = params.get("seat") || localStorage.getItem("seatNo") || "";
   const token = localStorage.getItem("customerToken") || "";
@@ -41,25 +61,44 @@ const PaymentPage = () => {
       setCart([]);
     }
   }, []);
-  const authHeaders = () => ({
-    "Content-Type": "application/json",
-  });
 
   // ✅ Calling /api/orders to create order
   const createFoodOrder = async () => {
-    const sessionStartTime = localStorage.getItem("sessionStartTime");
+    // 3. ✅ ENSURE SESSION EXISTS
+    let sessionStartTime = localStorage.getItem("sessionStartTime");
+    if (!sessionStartTime) {
+      sessionStartTime = Date.now();
+      localStorage.setItem("sessionStartTime", sessionStartTime);
+    }
 
-    const items = cart.map((item) => ({
-      menuId: item.menuId || item._id,
-      quantity: item.quantity,
-    }));
+    // 4. ✅ STRICT VALIDATION BEFORE API CALL
+    if (!theaterId || !seatId || !hallId) {
+      throw new Error("Invalid session. Please scan QR again.");
+    }
 
+    if (!cart || cart.length === 0) {
+      throw new Error("Cart is empty.");
+    }
+
+    // 8. ✅ DEBUG LOG (FOR TESTING ONLY)
+    console.log("Creating Order with:", {
+      theaterId,
+      seatId,
+      hallId,
+      sessionStartTime,
+      cart
+    });
+
+    // 5. ✅ CORRECT API PAYLOAD (DO NOT CHANGE STRUCTURE)
     const res = await axios.post(`${API_BASE}/order`, {
-      sessionStartTime: sessionStartTime ? Number(sessionStartTime) : Date.now(),
+      sessionStartTime: Number(sessionStartTime),
       theaterId: String(theaterId),
       seatId: String(seatId),
       hallId: String(hallId),
-      items
+      items: cart.map(item => ({
+        menuId: item.menuId || item._id,
+        quantity: item.quantity
+      }))
     }, {
       headers: {
         "Content-Type": "application/json",
@@ -130,7 +169,8 @@ const PaymentPage = () => {
       });
       rzp.open();
     } catch (err) {
-      setError(err.message || "Could not start payment.");
+      // 6. ✅ SAFE ERROR HANDLING
+      setError(err.response?.data?.message || err.message || "Order failed");
       setLoading(false);
     }
   };
