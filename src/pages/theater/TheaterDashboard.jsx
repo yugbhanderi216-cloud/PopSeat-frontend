@@ -210,7 +210,7 @@ const TheaterDashboard = () => {
           <div className="theater-titles">
             <h1 className="theater-name">{theater?.name || "Loading..."}</h1>
             <p className="theater-location">
-              {theater?.location} • {theater?.city}
+              {theater?.location} • {theater?.city}{theater?.branchName ? `, ${theater.branchName}` : ""}
             </p>
           </div>
         </div>

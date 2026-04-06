@@ -183,7 +183,7 @@ const TheaterDashboard = () => {
                 <header className="main-header">
                     <div className="theater-info">
                         <h1>{theater?.name || 'Theater Name'}</h1>
-                        <p>{theater?.city || 'City'} • {theater?.address || 'Address'}</p>
+                        <p>{theater?.city || 'City'}{theater?.branchName ? `, ${theater.branchName}` : ''} • {theater?.address || 'Address'}</p>
                     </div>
                     <div className="user-profile">
                         <span className="user-email">{email || 'User Email'}</span>
