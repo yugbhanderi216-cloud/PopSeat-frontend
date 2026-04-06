@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 import "./PaymentPage.css";
 
 const API_BASE = "https://popseat.onrender.com/api";
@@ -10,9 +11,9 @@ const PaymentPage = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
 
-  const seatId = params.get("seatId") || localStorage.getItem("customerSeatId");
-  const theaterId = localStorage.getItem("customerTheaterId") || "";
-  const hallId = params.get("hallId") || localStorage.getItem("customerHallId") || localStorage.getItem("hallId") || "";
+  const seatId = params.get("seatId") || localStorage.getItem("seatId") || localStorage.getItem("customerSeatId");
+  const theaterId = localStorage.getItem("theaterId") || localStorage.getItem("customerTheaterId") || "";
+  const hallId = params.get("hallId") || localStorage.getItem("hallId") || localStorage.getItem("customerHallId") || "";
   const screen = localStorage.getItem("screenNo") || "";
   const seat = localStorage.getItem("seatNo") || "";
 
@@ -39,40 +40,30 @@ const PaymentPage = () => {
       setCart([]);
     }
   }, []);
-
-  const total = cart.reduce(
-    (sum, item) => sum + Number(item.finalPrice || item.price || 0) * item.quantity,
-    0
-  );
-
   const authHeaders = () => ({
     "Content-Type": "application/json",
   });
 
-  // 👇 FIX: Calling /api/order handles BOTH creating the DB order and the Razorpay Order logic!
+  // 👇 FIX: Calling /api/orders/create handles creating the DB order and Razorpay Order logic!
   const createFoodOrder = async () => {
+    const sessionStartTime = localStorage.getItem("sessionStartTime");
+
     const items = cart.map((item) => ({
       menuId: item.menuId || item._id,
-      name: item.name,
       quantity: item.quantity,
-      price: Number(item.finalPrice || item.price || 0),
     }));
 
-    const res = await fetch(`${API_BASE}/order`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify({
-        seatNumber: seat || seatId || "Unknown",
-        hallId:     hallId || "Unknown",
-        totalAmount: total,
-        items,
-        // FIX Bug#5: send theaterId so backend can save it on the order document
-        // This allows owner dashboard to filter orders by theater
-        theaterId: theaterId || localStorage.getItem("customerTheaterId") || "",
-      }),
+    const res = await axios.post(`${API_BASE}/orders/create`, {
+      sessionStartTime: sessionStartTime ? Number(sessionStartTime) : Date.now(),
+      theaterId: theaterId,
+      seatId: seatId,
+      hallId: hallId,
+      items
+    }, {
+      headers: authHeaders()
     });
 
-    const data = await res.json();
+    const data = res.data;
     if (!data.success) throw new Error(data.message || "Order creation failed.");
     return data;
   };
@@ -107,7 +98,7 @@ const PaymentPage = () => {
 
       const options = {
         key: RAZORPAY_KEY,
-        amount: total * 100,
+        amount: orderData.payment?.amount || orderData.order?.totalAmount * 100 || 0, // Fallback safely or rely on backend amount if passed
         currency: "INR",
         name: "PopSeat Cinema",
         description: "Food Order Payment",
@@ -155,8 +146,8 @@ const PaymentPage = () => {
         <h1 className="payment-plan-name">Confirm Order</h1>
 
         <div className="payment-price-block">
-          <span className="payment-currency">₹</span>
-          <span className="payment-amount">{total.toLocaleString("en-IN")}</span>
+          {/* Total is calculated securely by the backend upon order creation */}
+          <span className="payment-amount">Confirming Details...</span>
         </div>
 
         <p className="plan-note">✦ Screen {screen} • Seat {seat}</p>
@@ -167,9 +158,6 @@ const PaymentPage = () => {
             <div key={item.cartKey || item._id || i} className="customer-order-item">
               <span className="item-name">
                 {item.name}{item.size ? ` (${item.size})` : ""} × {item.quantity}
-              </span>
-              <span className="item-price">
-                ₹ {Number(item.finalPrice || item.price || 0) * item.quantity}
               </span>
             </div>
           ))}
@@ -184,7 +172,7 @@ const PaymentPage = () => {
               Processing...
             </span>
           ) : (
-            `Pay ₹${total.toLocaleString("en-IN")}`
+            `Proceed to Pay`
           )}
         </button>
 

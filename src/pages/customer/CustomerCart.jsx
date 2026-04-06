@@ -78,9 +78,7 @@ const CustomerCart = () => {
   };
 
   /* ── Total ── */
-  const total = cart.reduce((sum, item) => {
-    return sum + Number(item.finalPrice || item.price || 0) * item.quantity;
-  }, 0);
+  // Removed total calculation on frontend
 
   /* ── Checkout ── */
   const handleCheckout = () => {
@@ -169,8 +167,7 @@ const CustomerCart = () => {
       {/* Footer */}
       <div className="cart-footer">
         <h3>
-          Total Bill
-          <span>{formatCurrency(total)}</span>
+          Proceed to Checkout
         </h3>
         <button
           className="checkout-btn"
