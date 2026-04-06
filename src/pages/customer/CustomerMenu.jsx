@@ -81,7 +81,7 @@ const CustomerMenu = () => {
       try {
         const targetTheaterId = params.get("theaterId") || theaterId;
         const url = targetTheaterId
-          ? `${API_BASE}/api/menu?theaterId=${targetTheaterId}`
+          ? `${API_BASE}/api/menu?cinemaId=${targetTheaterId}`
           : `${API_BASE}/api/menu`;
 
         const res = await fetch(url);

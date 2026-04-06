@@ -145,7 +145,7 @@ const Menu = () => {
     try {
       const url = role === "worker"
         ? `${API_BASE}/worker/menu`
-        : `${API_BASE}/menu?theaterId=${theaterId}`;
+        : `${API_BASE}/menu?cinemaId=${theaterId}`;
 
       const res = await fetch(url, { headers: authHeaders() });
 
