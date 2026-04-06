@@ -398,7 +398,7 @@ const QRGenerator = () => {
       <header className="qr-header">
         <div className="qr-header-left">
           <div>
-            <h1 className="qr-title">QR Generator</h1>
+            <h1 className="qr-title">▣ QR Generator</h1>
             <p className="qr-subtitle">
               {theaterData.name}
               {theaterData.branchName ? ` · ${theaterData.branchName}` : ""}

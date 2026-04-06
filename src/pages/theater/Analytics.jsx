@@ -6,7 +6,7 @@ import {
 } from "recharts";
 import "./Analytics.css";
 
-const API_BASE   = "https://popseat.onrender.com/api";
+const API_BASE = "https://popseat.onrender.com/api";
 const ALL_STATUSES = ["placed", "preparing", "ready", "delivered"];
 
 const getToken = () =>
@@ -29,22 +29,22 @@ const getTheaterId = (role) =>
 const formatCurrency = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
 const CHART_RANGES = [
-  { key: "daily",   label: "Today"   },
-  { key: "weekly",  label: "7 Days"  },
+  { key: "daily", label: "Today" },
+  { key: "weekly", label: "7 Days" },
   { key: "monthly", label: "30 Days" },
-  { key: "yearly",  label: "12 Mo."  },
+  { key: "yearly", label: "12 Mo." },
 ];
 
 const CHART_METRICS = [
-  { key: "orders",  label: "Orders"  },
+  { key: "orders", label: "Orders" },
   { key: "revenue", label: "Revenue" },
-  { key: "both",    label: "Both"    },
+  { key: "both", label: "Both" },
 ];
 
 const STATUS_CONFIG = [
-  { key: "placed",    label: "Placed",    color: "#79334D" },
+  { key: "placed", label: "Placed", color: "#79334D" },
   { key: "preparing", label: "Preparing", color: "#f59e0b" },
-  { key: "ready",     label: "Ready",     color: "#0891b2" },
+  { key: "ready", label: "Ready", color: "#0891b2" },
   { key: "delivered", label: "Delivered", color: "#16a34a" },
 ];
 
@@ -71,17 +71,17 @@ const buildChartData = (orders, range) => {
   if (range === "daily") {
     const buckets = {};
     for (let h = 23; h >= 0; h--) {
-      const d   = new Date(now); d.setHours(now.getHours() - h, 0, 0, 0);
+      const d = new Date(now); d.setHours(now.getHours() - h, 0, 0, 0);
       const key = `${d.getHours().toString().padStart(2, "0")}:00`;
       buckets[key] = { label: key, Orders: 0, Revenue: 0 };
     }
     orders.forEach((o) => {
-      const d        = new Date(o.createdAt);
-      const diffHrs  = (now - d) / (1000 * 60 * 60);
+      const d = new Date(o.createdAt);
+      const diffHrs = (now - d) / (1000 * 60 * 60);
       if (diffHrs <= 24 && d.getDate() === now.getDate()) {
         const key = `${d.getHours().toString().padStart(2, "0")}:00`;
         if (buckets[key]) {
-          buckets[key].Orders  += 1;
+          buckets[key].Orders += 1;
           buckets[key].Revenue += o.totalAmount || 0;
         }
       }
@@ -90,20 +90,20 @@ const buildChartData = (orders, range) => {
   }
 
   if (range === "weekly" || range === "monthly") {
-    const days    = range === "weekly" ? 7 : 30;
+    const days = range === "weekly" ? 7 : 30;
     const buckets = {};
     for (let i = days - 1; i >= 0; i--) {
-      const d   = new Date(now); d.setDate(now.getDate() - i);
+      const d = new Date(now); d.setDate(now.getDate() - i);
       const key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
       buckets[key] = { label: key, Orders: 0, Revenue: 0 };
     }
     orders.forEach((o) => {
-      const d        = new Date(o.createdAt);
+      const d = new Date(o.createdAt);
       const diffDays = (now - d) / (1000 * 60 * 60 * 24);
       if (diffDays <= days) {
         const key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
         if (buckets[key]) {
-          buckets[key].Orders  += 1;
+          buckets[key].Orders += 1;
           buckets[key].Revenue += o.totalAmount || 0;
         }
       }
@@ -114,17 +114,17 @@ const buildChartData = (orders, range) => {
   if (range === "yearly") {
     const buckets = {};
     for (let i = 11; i >= 0; i--) {
-      const d   = new Date(now); d.setMonth(now.getMonth() - i);
+      const d = new Date(now); d.setMonth(now.getMonth() - i);
       const key = d.toLocaleDateString("en-US", { month: "short" });
       buckets[key] = { label: key, Orders: 0, Revenue: 0 };
     }
     orders.forEach((o) => {
-      const d          = new Date(o.createdAt);
+      const d = new Date(o.createdAt);
       const diffMonths = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
       if (diffMonths >= 0 && diffMonths <= 11) {
         const key = d.toLocaleDateString("en-US", { month: "short" });
         if (buckets[key]) {
-          buckets[key].Orders  += 1;
+          buckets[key].Orders += 1;
           buckets[key].Revenue += o.totalAmount || 0;
         }
       }
@@ -143,10 +143,10 @@ const buildTopItems = (orders) => {
       o.items || o.cartItems || o.orderItems || o.foodItems || [];
     items.forEach((item) => {
       const name = item.name || item.itemName || item.foodName || "Unknown Item";
-      const qty  = item.quantity || item.qty || 1;
-      const rev  = (item.price || item.unitPrice || 0) * qty;
+      const qty = item.quantity || item.qty || 1;
+      const rev = (item.price || item.unitPrice || 0) * qty;
       if (!map[name]) map[name] = { name, qty: 0, revenue: 0 };
-      map[name].qty     += qty;
+      map[name].qty += qty;
       map[name].revenue += rev;
     });
   });
@@ -159,24 +159,24 @@ const buildTopItems = (orders) => {
 //  Analytics Component
 // ─────────────────────────────────────────────
 const Analytics = () => {
-  const location       = useLocation();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const role           = getRole();
+  const role = getRole();
 
   const cinemaId = useMemo(() => {
-    const fromUrl   = searchParams.get("theaterId") || "";
-    const fromState = location.state?.theaterId     || "";
-    if (fromUrl)   return fromUrl;
+    const fromUrl = searchParams.get("theaterId") || "";
+    const fromState = location.state?.theaterId || "";
+    if (fromUrl) return fromUrl;
     if (fromState) return fromState;
     return getTheaterId(role);
   }, [searchParams, location.state, role]);
 
-  const [orders,      setOrders]      = useState([]);
-  const [chartRange,  setChartRange]  = useState("weekly");
+  const [orders, setOrders] = useState([]);
+  const [chartRange, setChartRange] = useState("weekly");
   const [chartMetric, setChartMetric] = useState("orders");
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState("");
-  const [isPrimary,   setIsPrimary]   = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [isPrimary, setIsPrimary] = useState(false);
   const [theaterList, setTheaterList] = useState([]);
 
   /* ── 📝 SMART ISOLATION: Fetch owner's theaters ── */
@@ -237,7 +237,7 @@ const Analytics = () => {
                📝 SMARTER ISOLATION FILTER
             ═══════════════════════════════════════════════════════ */
             const matchesId = (o.theaterId === cinemaId || o.cinemaId === cinemaId);
-            
+
             // Unknown = Legacy = Primary
             const isKnown = theaterList.some(t => (t._id === o.theaterId || t._id === o.cinemaId));
             const isLegacy = !isKnown;
@@ -264,20 +264,20 @@ const Analytics = () => {
 
   /* ── Derived stats ── */
   const stats = useMemo(() => {
-    const delivered  = orders.filter((o) => o.orderStatus === "delivered");
+    const delivered = orders.filter((o) => o.orderStatus === "delivered");
     // Revenue = all orders (not just delivered) so it reflects actual business income
-    const revenue    = orders.reduce((s, o) => s + (o.totalAmount || 0), 0);
-    const avgOrder   = orders.length ? Math.round(revenue / orders.length) : 0;
-    const pending    = orders.filter((o) => ["placed", "preparing", "ready"].includes(o.orderStatus)).length;
-    const convRate   = orders.length ? Math.round((delivered.length / orders.length) * 100) : 0;
+    const revenue = orders.reduce((s, o) => s + (o.totalAmount || 0), 0);
+    const avgOrder = orders.length ? Math.round(revenue / orders.length) : 0;
+    const pending = orders.filter((o) => ["placed", "preparing", "ready"].includes(o.orderStatus)).length;
+    const convRate = orders.length ? Math.round((delivered.length / orders.length) * 100) : 0;
 
     return {
-      total:     orders.length,
+      total: orders.length,
       revenue,
       delivered: delivered.length,
       preparing: orders.filter((o) => o.orderStatus === "preparing").length,
-      placed:    orders.filter((o) => o.orderStatus === "placed").length,
-      ready:     orders.filter((o) => o.orderStatus === "ready").length,
+      placed: orders.filter((o) => o.orderStatus === "placed").length,
+      ready: orders.filter((o) => o.orderStatus === "ready").length,
       pending,
       avgOrder,
       convRate,
@@ -285,7 +285,7 @@ const Analytics = () => {
   }, [orders]);
 
   const chartData = useMemo(() => buildChartData(orders, chartRange), [orders, chartRange]);
-  const topItems  = useMemo(() => buildTopItems(orders), [orders]);
+  const topItems = useMemo(() => buildTopItems(orders), [orders]);
 
   /* ── Chart range summary numbers ── */
   const rangeSummary = useMemo(() => {
@@ -296,7 +296,7 @@ const Analytics = () => {
     return totals;
   }, [chartData]);
 
-  const showOrders  = chartMetric === "orders"  || chartMetric === "both";
+  const showOrders = chartMetric === "orders" || chartMetric === "both";
   const showRevenue = chartMetric === "revenue" || chartMetric === "both";
 
   /* ── Loading ── */
@@ -315,7 +315,7 @@ const Analytics = () => {
     <div className="analytics-container">
       <div className="analytics-topbar">
         <div className="analytics-topbar-left">
-          <h1 className="analytics-title">Business Analytics</h1>
+          <h1 className="analytics-title">◈ Business Analytics</h1>
           <p className="analytics-subtitle">Real-time performance and revenue tracking</p>
         </div>
         <div className="analytics-topbar-right">
@@ -429,12 +429,12 @@ const Analytics = () => {
                 <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#8b5cf6" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}    />
+                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#10b981" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}    />
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                     </linearGradient>
                   </defs>
 
@@ -524,7 +524,7 @@ const Analytics = () => {
           ) : (
             STATUS_CONFIG.map(({ key, label, color }) => {
               const count = orders.filter((o) => o.orderStatus === key).length;
-              const pct   = orders.length > 0 ? (count / orders.length) * 100 : 0;
+              const pct = orders.length > 0 ? (count / orders.length) * 100 : 0;
               return (
                 <div key={key} className="status-bar-row">
                   <div className="status-bar-meta">

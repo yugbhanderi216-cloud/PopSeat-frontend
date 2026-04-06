@@ -373,7 +373,7 @@ const EditTheater = () => {
         {/* HEADER */}
         <div className="edit-header">
           <div>
-            <h2 className="edit-title">Edit Theater</h2>
+            <h2 className="edit-title">⬢ Edit Theater</h2>
             <p className="edit-subtitle">
               {theaterData.name}{theaterData.branchName ? ` · ${theaterData.branchName}` : ""}
             </p>

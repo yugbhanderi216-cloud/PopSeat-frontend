@@ -8,36 +8,36 @@ import "./Orders.css";
 const API_BASE = "https://popseat.onrender.com/api";
 
 const getToken = () =>
-  localStorage.getItem("ownerToken")  ||
+  localStorage.getItem("ownerToken") ||
   localStorage.getItem("workerToken") ||
-  localStorage.getItem("token")       || "";
+  localStorage.getItem("token") || "";
 
 const STATUSES = ["placed", "preparing", "ready", "delivered"];
 
 const NEXT_STATUS = {
-  placed   : "preparing",
+  placed: "preparing",
   preparing: "ready",
-  ready    : "delivered",
+  ready: "delivered",
 };
 
 const NEXT_LABEL = {
-  placed   : "Start Preparing",
+  placed: "Start Preparing",
   preparing: "Mark Ready",
-  ready    : "Mark Delivered",
+  ready: "Mark Delivered",
 };
 
 const STATUS_META = {
-  placed   : { label: "Placed",    color: "#79334D", bg: "rgba(121, 51, 77,0.10)", border: "rgba(121, 51, 77,0.22)" },
+  placed: { label: "Placed", color: "#79334D", bg: "rgba(121, 51, 77,0.10)", border: "rgba(121, 51, 77,0.22)" },
   preparing: { label: "Preparing", color: "#d97706", bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.24)" },
-  ready    : { label: "Ready",     color: "#0891b2", bg: "rgba(8,145,178,0.10)",  border: "rgba(8,145,178,0.22)"  },
-  delivered: { label: "Delivered", color: "#16a34a", bg: "rgba(34,197,94,0.10)",  border: "rgba(34,197,94,0.22)"  },
+  ready: { label: "Ready", color: "#0891b2", bg: "rgba(8,145,178,0.10)", border: "rgba(8,145,178,0.22)" },
+  delivered: { label: "Delivered", color: "#16a34a", bg: "rgba(34,197,94,0.10)", border: "rgba(34,197,94,0.22)" },
 };
 
 /* ── Relative time ── */
 const timeAgo = (iso) => {
   if (!iso) return "";
   const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
-  if (diff < 60)   return `${diff}s ago`;
+  if (diff < 60) return `${diff}s ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   return `${Math.floor(diff / 3600)}h ago`;
 };
@@ -59,25 +59,25 @@ const getScreenNumber = (hallId) => {
 };
 
 const Orders = () => {
-  const [orders,       setOrders]       = useState([]);
+  const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState("");
-  const [loading,      setLoading]      = useState(true);
-  const [error,        setError]        = useState("");
-  const [authError,    setAuthError]    = useState(false);
-  const [updating,     setUpdating]     = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [authError, setAuthError] = useState(false);
+  const [updating, setUpdating] = useState({});
   const [selectedDate, setSelectedDate] = useState("");
-  const [currentPage,  setCurrentPage]  = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const ORDERS_PER_PAGE = 8;
-  const [tick,         setTick]         = useState(0);
-  const [isPrimary,    setIsPrimary]    = useState(false);
-  const [theaterList,  setTheaterList]  = useState([]);
+  const [tick, setTick] = useState(0);
+  const [isPrimary, setIsPrimary] = useState(false);
+  const [theaterList, setTheaterList] = useState([]);
   const intervalRef = useRef(null);
-  const isMounted   = useRef(true);
+  const isMounted = useRef(true);
 
   const role = (
-    localStorage.getItem("ownerRole")  ||
+    localStorage.getItem("ownerRole") ||
     localStorage.getItem("workerRole") ||
-    localStorage.getItem("role")       || ""
+    localStorage.getItem("role") || ""
   ).toLowerCase();
 
   const theaterId = role === "worker"
@@ -148,13 +148,13 @@ const Orders = () => {
                📝 SMARTER ISOLATION FILTER
             ═══════════════════════════════════════════════════════ */
             const matchesId = (o.theaterId === theaterId || o.cinemaId === theaterId);
-            
+
             // Unknown theaters = Legacy = Shown in Primary
             const isKnown = theaterList.some(t => (t._id === o.theaterId || t._id === o.cinemaId));
             const isLegacy = !isKnown;
 
             const shouldInclude = (role === "worker")
-              ? true 
+              ? true
               : (matchesId || (isPrimary && isLegacy));
 
             if (!seen.has(o._id) && shouldInclude) {
@@ -276,32 +276,32 @@ const Orders = () => {
         <div className="orders-topbar-right">
           <div className="orders-date-picker-wrap">
             <span className="orders-date-icon">📅</span>
-            <input 
-              type="date" 
-              className="orders-date-input" 
-              value={selectedDate} 
-              onChange={(e) => {setSelectedDate(e.target.value); setCurrentPage(1);}} 
+            <input
+              type="date"
+              className="orders-date-input"
+              value={selectedDate}
+              onChange={(e) => { setSelectedDate(e.target.value); setCurrentPage(1); }}
             />
             {selectedDate && <button className="orders-date-clear" onClick={() => setSelectedDate("")}>✕</button>}
           </div>
-          <button className="orders-refresh-btn" onClick={() => {setLoading(true); fetchOrders();}}>↻ Refresh</button>
+          <button className="orders-refresh-btn" onClick={() => { setLoading(true); fetchOrders(); }}>↻ Refresh</button>
         </div>
       </div>
 
       <div className="orders-filter-tabs">
-        <button 
+        <button
           className={`filter-tab ${statusFilter === "" ? "active" : ""}`}
-          onClick={() => {setStatusFilter(""); setCurrentPage(1);}}
+          onClick={() => { setStatusFilter(""); setCurrentPage(1); }}
         >
           All <span className="filter-tab-count">{orders.length}</span>
         </button>
         {STATUSES.map(s => {
           const count = orders.filter(o => o.orderStatus === s).length;
           return (
-            <button 
+            <button
               key={s}
               className={`filter-tab ${statusFilter === s ? "active" : ""}`}
-              onClick={() => {setStatusFilter(s); setCurrentPage(1);}}
+              onClick={() => { setStatusFilter(s); setCurrentPage(1); }}
             >
               {STATUS_META[s].label} <span className="filter-tab-count">{count}</span>
             </button>
@@ -359,9 +359,9 @@ const Orders = () => {
 
             <div className="order-actions">
               {NEXT_STATUS[order.orderStatus] ? (
-                <button 
+                <button
                   className={`order-action-btn status-${order.orderStatus}`}
-                  onClick={() => updateStatus(order._id, order.orderStatus)} 
+                  onClick={() => updateStatus(order._id, order.orderStatus)}
                   disabled={updating[order._id]}
                 >
                   {updating[order._id] ? (

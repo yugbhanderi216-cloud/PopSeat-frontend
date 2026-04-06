@@ -29,16 +29,14 @@ const API_BASE = "https://popseat.onrender.com/api";
 // ── Auth headers (JSON) — NOT used for FormData requests ──
 const authHeaders = () => ({
   "Content-Type": "application/json",
-  Authorization: `Bearer ${
-    localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
-  }`,
+  Authorization: `Bearer ${localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
+    }`,
 });
 
 // ── Auth headers (no Content-Type) — used for FormData requests ──
 const authHeadersMultipart = () => ({
-  Authorization: `Bearer ${
-    localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
-  }`,
+  Authorization: `Bearer ${localStorage.getItem("ownerToken") || localStorage.getItem("token") || ""
+    }`,
 });
 
 const ensureArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
@@ -91,22 +89,22 @@ const Menu = () => {
     localStorage.getItem("token") ||
     "";
 
-  const [items,       setItems]       = useState([]);
-  const [showModal,   setShowModal]   = useState(false);
-  const [editId,      setEditId]      = useState(null);
-  const [form,        setForm]        = useState(EMPTY_FORM);
-  const [sizes,       setSizes]       = useState([]);
-  const [toppings,    setToppings]    = useState([]);
-  const [dips,        setDips]        = useState([]);
-  const [tempSize,    setTempSize]    = useState({ name: "", price: "" });
+  const [items, setItems] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [sizes, setSizes] = useState([]);
+  const [toppings, setToppings] = useState([]);
+  const [dips, setDips] = useState([]);
+  const [tempSize, setTempSize] = useState({ name: "", price: "" });
   const [tempTopping, setTempTopping] = useState({ name: "", price: "" });
-  const [tempDip,     setTempDip]     = useState({ name: "", price: "" });
-  const [loading,     setLoading]     = useState(true);
-  const [saving,      setSaving]      = useState(false);
-  const [deleting,    setDeleting]    = useState(false); // FIX 9
-  const [error,       setError]       = useState("");
-  const [imgError,    setImgError]    = useState("");
-  const [confirmDel,  setConfirmDel]  = useState(null);
+  const [tempDip, setTempDip] = useState({ name: "", price: "" });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false); // FIX 9
+  const [error, setError] = useState("");
+  const [imgError, setImgError] = useState("");
+  const [confirmDel, setConfirmDel] = useState(null);
   const [isPrimary, setIsPrimary] = useState(false);
   const [theaterList, setTheaterList] = useState([]);
   const fileInputRef = useRef(null);
@@ -173,7 +171,7 @@ const Menu = () => {
                📝 SMARTER ISOLATION FILTER
             ═══════════════════════════════════════════════════════ */
             const matchesId = (item.theaterId === activeTheaterId || item.cinemaId === activeTheaterId);
-            
+
             // Unknown = Legacy = Primary
             const isKnown = theaterList.some(t => (t._id === item.theaterId || t._id === item.cinemaId));
             const isLegacy = !isKnown;
@@ -183,13 +181,13 @@ const Menu = () => {
             return !item.isDeleted && shouldInclude;
           })
           .map((item) => ({
-            id               : item._id,
-            _id              : item._id,
-            name             : item.name,
-            description      : item.description || "",
-            category         : capitalizeCategory(item.category || "Others"),
+            id: item._id,
+            _id: item._id,
+            name: item.name,
+            description: item.description || "",
+            category: capitalizeCategory(item.category || "Others"),
             // ✅ FIX 5 — backend returns full image URL; use it directly
-            image            : item.image || "",
+            image: item.image || "",
             /* ── VARIANTS / SIZES ── */
             // Backend now uses 'variants' array: [{ size, price }]
             // We map it to frontend 'sizes' state: [{ name, price }]
@@ -201,7 +199,7 @@ const Menu = () => {
 
             availableToppings: ensureArray(item.topping),
             availableDips: ensureArray(item.dips || item.availableDips || []),
-            isAvailable      : item.available !== false,
+            isAvailable: item.available !== false,
           }));
         setItems(cleaned);
         if (!cleaned.length) setError("");
@@ -214,7 +212,7 @@ const Menu = () => {
     } finally {
       setLoading(false);
     }
-  // ✅ FIX 1 — activeTheaterId in deps (was [] before, causing stale closure)
+    // ✅ FIX 1 — activeTheaterId in deps (was [] before, causing stale closure)
   }, [activeTheaterId]);
 
   useEffect(() => { loadMenu(); }, [loadMenu]);
@@ -248,7 +246,7 @@ const Menu = () => {
     setForm((prev) => ({
       ...prev,
       imageFile: file,
-      image    : URL.createObjectURL(file),
+      image: URL.createObjectURL(file),
     }));
     e.target.value = "";
   };
@@ -294,9 +292,9 @@ const Menu = () => {
 
   /* ── Validation ── */
   const validate = () => {
-    if (!form.name?.trim())     return "Item name is required.";
+    if (!form.name?.trim()) return "Item name is required.";
     if (!form.category?.trim()) return "Category is required.";
-    if (sizes.length === 0)     return "Add at least one size with a price.";
+    if (sizes.length === 0) return "Add at least one size with a price.";
     return null;
   };
 
@@ -314,14 +312,14 @@ const Menu = () => {
     setSaving(true);
 
     const formData = new FormData();
-    formData.append("name",        capitalizeWords(form.name));
-    formData.append("category",    form.category.trim().toLowerCase());
+    formData.append("name", capitalizeWords(form.name));
+    formData.append("category", form.category.trim().toLowerCase());
     formData.append("description", capitalizeWords(form.description));
     // Sequential appends for multiple variants (sizes)
     if (sizes.length > 0) {
       // Legacy support: also keep root price/size set to the first option
       formData.append("price", sizes[0].price);
-      formData.append("size",  sizes[0].name);
+      formData.append("size", sizes[0].name);
 
       sizes.forEach((s) => {
         formData.append("variants", JSON.stringify({ size: s.name, price: Number(s.price) }));
@@ -349,13 +347,13 @@ const Menu = () => {
     }
 
     try {
-      const url    = editId ? `${API_BASE}/menu/${editId}` : `${API_BASE}/menu`;
+      const url = editId ? `${API_BASE}/menu/${editId}` : `${API_BASE}/menu`;
       const method = editId ? "PUT" : "POST";
 
-      const res  = await fetch(url, {
+      const res = await fetch(url, {
         method,
         headers: authHeadersMultipart(), // ✅ No Content-Type — let browser set it for FormData
-        body   : formData,
+        body: formData,
       });
       const data = await res.json();
 
@@ -375,13 +373,13 @@ const Menu = () => {
         || "";
 
       const localItem = {
-        id               : saved._id,
-        _id              : saved._id,
-        name             : saved.name,
-        description      : saved.description || "",
-        category         : capitalizeCategory(saved.category || "Others"),
-        image            : resolvedImage,
-        cinemaId         : saved.cinemaId || activeTheaterId,
+        id: saved._id,
+        _id: saved._id,
+        name: saved.name,
+        description: saved.description || "",
+        category: capitalizeCategory(saved.category || "Others"),
+        image: resolvedImage,
+        cinemaId: saved.cinemaId || activeTheaterId,
         // Sync local state with variants/sizes returned by backend
         sizes: (ensureArray(saved.variants).length > 0)
           ? saved.variants.map((v) => ({ name: v.size, price: v.price }))
@@ -421,8 +419,8 @@ const Menu = () => {
     setDeleting(true);
     setError("");
     try {
-      const res  = await fetch(`${API_BASE}/menu/${id}`, {
-        method : "DELETE",
+      const res = await fetch(`${API_BASE}/menu/${id}`, {
+        method: "DELETE",
         headers: authHeaders(),
       });
       const data = await res.json();
@@ -444,16 +442,16 @@ const Menu = () => {
      Optimistic update with rollback on failure.
   ═══════════════════════════════════════════════════════ */
   const toggleAvailability = async (id) => {
-    const item   = items.find((i) => i.id === id);
+    const item = items.find((i) => i.id === id);
     const newVal = !item?.isAvailable;
     setItems((prev) =>
       prev.map((i) => (i.id === id ? { ...i, isAvailable: newVal } : i))
     );
     try {
-      const res  = await fetch(`${API_BASE}/menu/${id}`, {
-        method : "PUT",
+      const res = await fetch(`${API_BASE}/menu/${id}`, {
+        method: "PUT",
         headers: authHeaders(),
-        body   : JSON.stringify({ available: newVal }),
+        body: JSON.stringify({ available: newVal }),
       });
       const data = await res.json();
       if (!data.success) {
@@ -510,12 +508,12 @@ const Menu = () => {
     resetModalState(form);
     setEditId(item.id);
     setForm({
-      name       : item.name,
+      name: item.name,
       description: item.description,
-      category   : item.category,
+      category: item.category,
       // Use remote image URL as preview; imageFile stays null until user picks new file
-      image      : item.image || "",
-      imageFile  : null,
+      image: item.image || "",
+      imageFile: null,
     });
     setSizes(ensureArray(item.sizes));
     setToppings(ensureArray(item.availableToppings));
@@ -536,7 +534,7 @@ const Menu = () => {
     return (
       <div className="menu-page">
         <div className="menu-header">
-          <h2>🍔 Food Menu</h2>
+          <h2>☷ Food Menu</h2>
         </div>
         <div className="menu-loading">
           <div className="menu-spinner" />
@@ -556,7 +554,7 @@ const Menu = () => {
         <h2>🍔 Food Menu</h2>
         <div className="menu-header-actions">
           <button className="menu-refresh-btn" onClick={loadMenu}>↻ Refresh</button>
-          <button className="add-btn"          onClick={openAddModal}>+ Add Item</button>
+          <button className="add-btn" onClick={openAddModal}>+ Add Item</button>
         </div>
       </div>
 
@@ -619,18 +617,18 @@ const Menu = () => {
                     </div>
                     {(ensureArray(item.availableToppings).length > 0 ||
                       ensureArray(item.availableDips).length > 0) && (
-                      <p className="menu-extras-note">
-                        {ensureArray(item.availableToppings).length > 0 &&
-                          `${item.availableToppings.length} topping${item.availableToppings.length > 1 ? "s" : ""}`}
-                        {ensureArray(item.availableToppings).length > 0 &&
-                          ensureArray(item.availableDips).length > 0 &&
-                          " · "}
-                        {ensureArray(item.availableDips).length > 0 &&
-                          `${item.availableDips.length} dip${item.availableDips.length > 1 ? "s" : ""}`}
-                      </p>
-                    )}
+                        <p className="menu-extras-note">
+                          {ensureArray(item.availableToppings).length > 0 &&
+                            `${item.availableToppings.length} topping${item.availableToppings.length > 1 ? "s" : ""}`}
+                          {ensureArray(item.availableToppings).length > 0 &&
+                            ensureArray(item.availableDips).length > 0 &&
+                            " · "}
+                          {ensureArray(item.availableDips).length > 0 &&
+                            `${item.availableDips.length} dip${item.availableDips.length > 1 ? "s" : ""}`}
+                        </p>
+                      )}
                     <div className="menu-card-actions">
-                      <button className="menu-edit-btn"   onClick={() => handleEdit(item)}>✏ Edit</button>
+                      <button className="menu-edit-btn" onClick={() => handleEdit(item)}>✏ Edit</button>
                       <button
                         className="menu-delete-btn"
                         onClick={() => setConfirmDel({ id: item.id, name: item.name })}
