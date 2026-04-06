@@ -110,15 +110,18 @@
   margin: 0;
 }
 
+.dashboard-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 /* ═══════════════════════════════════════════
-   REFRESH BUTTON — matches adm-refresh-btn
+   REFRESH BUTTON — Matches Orders.jsx
 ═══════════════════════════════════════════ */
-.dashboard-refresh-btn {
-  position: absolute;
-  right: 28px;
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 8px 18px;
+.refresh-btn {
+  height: 32px;
+  padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
@@ -130,11 +133,19 @@
   white-space: nowrap;
   box-shadow: var(--sh);
   transition: all .12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.dashboard-refresh-btn:hover {
+.refresh-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.refresh-btn:active {
+  transform: translateY(1px);
 }
 
 /* ═══════════════════════════════════════════
@@ -424,11 +435,20 @@
     position: static;
   }
 
-  .dashboard-refresh-btn {
-    position: static;
-    transform: none;
+  .dashboard-header-right {
+    flex-direction: column;
+    align-items: stretch;
     width: 100%;
-    text-align: center;
+    gap: 12px;
+  }
+
+  .dashboard-header-right > div {
+    text-align: center !important;
+    margin-right: 0 !important;
+  }
+
+  .refresh-btn {
+    width: 100%;
   }
 
   .dashboard-header-left {

@@ -97,6 +97,12 @@
   animation: pgFade 0.55s ease both;
 }
 
+#auth-login-page {
+  padding: 0 !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+}
+
 @keyframes pgFade {
   from {
     opacity: 0;
@@ -1150,21 +1156,21 @@
   }
 
   .login-right {
-    width: 100%;
+    width: 100% !important;
     background:
       radial-gradient(ellipse 62% 38% at 50% 0%, rgba(121, 51, 77, 0.10) 0%, transparent 64%),
-      var(--bg);
+      var(--bg) !important;
   }
 }
 
 @media (max-width:600px) {
   .login-right {
-    padding: 28px 20px;
+    padding: 28px 20px !important;
   }
 
-  .login-card {
-    padding: 36px 28px 32px;
-    border-radius: 14px;
+  .login-right .login-card {
+    padding: 36px 28px 32px !important;
+    border-radius: 14px !important;
   }
 
   .brand h1 {
@@ -1176,9 +1182,21 @@
   }
 }
 
+@media (max-width:480px) {
+  .login-right {
+    padding: 16px 12px !important;
+  }
+
+  .login-right .login-card {
+    padding: 32px 20px 24px !important;
+    border-radius: 16px !important;
+    width: 100% !important;
+  }
+}
+
 @media (max-width:380px) {
-  .login-card {
-    padding: 28px 18px 26px;
+  .login-right .login-card {
+    padding: 28px 16px 26px !important;
   }
 
   .brand h1 {

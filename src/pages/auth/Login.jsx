@@ -109,7 +109,7 @@ const Login = () => {
   };
 
   return (
-    <div className="login-page">
+    <div className="login-page" id="auth-login-page">
 
       {/* ═══════════════════════════════════════════
           LEFT — CINEMATIC MOSAIC PANEL
