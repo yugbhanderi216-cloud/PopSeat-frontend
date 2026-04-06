@@ -314,7 +314,6 @@ const TheaterRegister = () => {
 
       // ✅ Success — navigate to owner home
       localStorage.setItem("theaterId", theaterId);
-      localStorage.removeItem("activeTheaterId");
       navigate("/owner/home");
 
     } catch (err) {

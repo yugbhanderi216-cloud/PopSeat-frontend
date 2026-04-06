@@ -13,7 +13,7 @@ import "./Menu.css";
 //   Base64 compression has been removed from the frontend.
 //
 // FIXES APPLIED (Frontend):
-//   ✅ FIX 1 — activeTheaterId added to useCallback deps (was causing stale closure)
+//   ✅ FIX 1 — theaterId added to useCallback deps (was causing stale closure)
 //   ✅ FIX 2 — URL.revokeObjectURL() called in closeModal() to prevent memory leaks
 //   ✅ FIX 3 — URL.revokeObjectURL() called in openAddModal() before resetting form
 //   ✅ FIX 4 — URL.revokeObjectURL() called in handleEdit() before resetting form
@@ -127,11 +127,11 @@ const Menu = () => {
       }
     };
     checkPrimary();
-  }, [role, activeTheaterId]);
+  }, [role, theaterId]);
 
   /* ═══════════════════════════════════════════════════════
      GET /api/menu
-     ✅ FIX 1 — activeTheaterId now included in deps array
+     ✅ FIX 1 — theaterId now included in deps array
              so loadMenu always uses the latest theaterId
              and doesn't stale-close over an empty string.
   ═══════════════════════════════════════════════════════ */
