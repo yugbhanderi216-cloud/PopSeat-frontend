@@ -216,12 +216,7 @@ const TheaterDashboard = () => {
         </div>
 
         <div className="dashboard-header-right">
-          {/* ── 🔍 DIAGNOSTIC BADGE ── */}
-          <div style={{ marginRight: "1rem", "textAlign": "right", "opacity": 0.6, "fontSize": "10px", "fontFamily": "monospace" }}>
-            ID: {theaterId?.slice(-6)}<br />
-            PRIMARY: {isPrimary ? "YES" : "NO"}
-          </div>
-          <button className="refresh-btn" onClick={() => { setLoading(true); fetchOrders(); }}>
+          <button className="orders-refresh-btn" onClick={() => { setLoading(true); fetchOrders(); }}>
             ↻ Refresh
           </button>
         </div>

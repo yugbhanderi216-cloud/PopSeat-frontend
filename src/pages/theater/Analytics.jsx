@@ -319,12 +319,7 @@ const Analytics = () => {
           <p className="analytics-subtitle">Real-time performance and revenue tracking</p>
         </div>
         <div className="analytics-header-right">
-          {/* 🔍 DIAGNOSTIC BADGE */}
-          <div style={{ marginRight: "1rem", "textAlign": "right", "opacity": 0.5, "fontSize": "9px", "fontFamily": "monospace" }}>
-            ID: {cinemaId?.slice(-6)}<br />
-            PRIMARY: {isPrimary ? "YES" : "NO"}
-          </div>
-          <button className="analytics-refresh-btn" onClick={() => fetchOrders()}>
+          <button className="orders-refresh-btn" onClick={() => fetchOrders()}>
             ↻ Refresh
           </button>
         </div>

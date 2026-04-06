@@ -274,11 +274,6 @@ const Orders = () => {
           <p className="order-time">{filteredOrders.length} orders found</p>
         </div>
         <div className="orders-topbar-right">
-          {/* 🔍 DIAGNOSTIC BADGE */}
-          <div style={{ marginRight: "1rem", "textAlign": "right", "opacity": 0.5, "fontSize": "9px", "fontFamily": "monospace", "lineHeight": "1.2" }}>
-            ID: {theaterId?.slice(-6)}<br />
-            PRIMARY: {isPrimary ? "YES" : "NO"}
-          </div>
           <div className="orders-date-picker-wrap">
             <span className="orders-date-icon">📅</span>
             <input 
