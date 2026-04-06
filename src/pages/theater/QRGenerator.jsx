@@ -45,12 +45,22 @@ const QRGenerator = () => {
     ""
   ).toLowerCase();
 
-  const theaterId =
-    localStorage.getItem("activeTheaterId") ||
-    state?.theaterId ||
-    localStorage.getItem("activeOwnerTheaterId") ||
-    localStorage.getItem("assignedTheaterId") ||
-    "";
+  const [theaterId, setTheaterId] = useState(() => {
+    const role = (localStorage.getItem("ownerRole") || localStorage.getItem("role") || "").toLowerCase();
+    const urlTheaterId = new URLSearchParams(window.location.search).get("theaterId") || state?.theaterId || "";
+    const storedTheaterId = localStorage.getItem("activeTheaterId");
+
+    if (role === "worker") return localStorage.getItem("assignedTheaterId") || "";
+
+    // EXACT LOGIC
+    if (storedTheaterId) {
+      return storedTheaterId;
+    } else if (urlTheaterId) {
+      localStorage.setItem("activeTheaterId", urlTheaterId);
+      return urlTheaterId;
+    }
+    return "";
+  });
 
   // ── State ─────────────────────────────────────────────────
   const [theaterData, setTheaterData] = useState(null);

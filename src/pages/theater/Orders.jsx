@@ -80,9 +80,21 @@ const Orders = () => {
     localStorage.getItem("role") || ""
   ).toLowerCase();
 
-  const theaterId = role === "worker"
-    ? (localStorage.getItem("assignedTheaterId") || "")
-    : (localStorage.getItem("activeTheaterId") || localStorage.getItem("activeOwnerTheaterId") || "");
+  const [theaterId, setTheaterId] = useState(() => {
+    const urlTheaterId = new URLSearchParams(window.location.search).get("theaterId");
+    const storedTheaterId = localStorage.getItem("activeTheaterId");
+
+    if (role === "worker") return localStorage.getItem("assignedTheaterId") || "";
+
+    // EXACT LOGIC
+    if (storedTheaterId) {
+      return storedTheaterId;
+    } else if (urlTheaterId) {
+      localStorage.setItem("activeTheaterId", urlTheaterId);
+      return urlTheaterId;
+    }
+    return "";
+  });
 
   useEffect(() => {
     isMounted.current = true;

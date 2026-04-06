@@ -52,9 +52,21 @@ const TheaterDashboard = () => {
 
   const params = new URLSearchParams(location.search);
 
-  const theaterId = role === "worker"
-    ? (localStorage.getItem("assignedTheaterId") || localStorage.getItem("customerTheaterId") || "")
-    : (params.get("theaterId") || state?.theaterId || localStorage.getItem("activeTheaterId") || localStorage.getItem("activeOwnerTheaterId") || localStorage.getItem("customerTheaterId") || "");
+  const [theaterId, setTheaterId] = useState(() => {
+    const urlTheaterId = params.get("theaterId") || state?.theaterId || "";
+    const storedTheaterId = localStorage.getItem("activeTheaterId");
+
+    if (role === "worker") return String(localStorage.getItem("assignedTheaterId") || "");
+
+    // OWNER: Source of Truth is localStorage (EXACT LOGIC)
+    if (storedTheaterId) {
+      return storedTheaterId;
+    } else if (urlTheaterId) {
+      localStorage.setItem("activeTheaterId", urlTheaterId);
+      return urlTheaterId;
+    }
+    return "";
+  });
 
   const [theater, setTheater] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -66,13 +78,6 @@ const TheaterDashboard = () => {
   useEffect(() => {
     if (!email || !role) navigate("/login", { replace: true });
   }, [email, role, navigate]);
-
-  useEffect(() => {
-    if (role === "owner" && theaterId) {
-      localStorage.setItem("activeTheaterId", theaterId);
-      localStorage.setItem("activeOwnerTheaterId", theaterId);
-    }
-  }, [role, theaterId]);
 
   /* ── 📝 SMART ISOLATION: Fetch owner's theaters to identify the primary one ── */
   useEffect(() => {

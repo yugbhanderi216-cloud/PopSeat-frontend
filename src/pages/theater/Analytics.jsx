@@ -21,10 +21,17 @@ const getRole = () =>
     localStorage.getItem("role") || ""
   ).toLowerCase();
 
-const getTheaterId = (role) =>
-  role === "worker"
-    ? (localStorage.getItem("assignedTheaterId") || localStorage.getItem("customerSeatId") || "") // Worker context
-    : (localStorage.getItem("activeTheaterId") || localStorage.getItem("activeOwnerTheaterId") || localStorage.getItem("customerTheaterId") || ""); // Owner context
+const getTheaterId = (role) => {
+  if (role === "worker") {
+    return localStorage.getItem("assignedTheaterId") || "";
+  }
+  // OWNER: prioritize active selection in localStorage
+  return (
+    localStorage.getItem("activeTheaterId") || 
+    localStorage.getItem("activeOwnerTheaterId") || 
+    ""
+  );
+};
 
 const formatCurrency = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
@@ -163,13 +170,21 @@ const Analytics = () => {
   const [searchParams] = useSearchParams();
   const role = getRole();
 
-  const cinemaId = useMemo(() => {
-    const fromUrl = searchParams.get("theaterId") || "";
-    const fromState = location.state?.theaterId || "";
-    if (fromUrl) return fromUrl;
-    if (fromState) return fromState;
-    return getTheaterId(role);
-  }, [searchParams, location.state, role]);
+  const [cinemaId, setCinemaId] = useState(() => {
+    const urlTheaterId = searchParams.get("theaterId");
+    const storedTheaterId = localStorage.getItem("activeTheaterId");
+
+    if (role === "worker") return getTheaterId(role);
+
+    // EXACT LOGIC
+    if (storedTheaterId) {
+      return storedTheaterId;
+    } else if (urlTheaterId) {
+      localStorage.setItem("activeTheaterId", urlTheaterId);
+      return urlTheaterId;
+    }
+    return "";
+  });
 
   const [orders, setOrders] = useState([]);
   const [chartRange, setChartRange] = useState("weekly");

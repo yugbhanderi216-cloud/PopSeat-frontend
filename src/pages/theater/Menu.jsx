@@ -74,12 +74,23 @@ const EMPTY_FORM = {
 };
 
 const Menu = () => {
-  // ── FIX 1: Read theaterId once at component level (stable reference) ──
-  const activeTheaterId =
-    localStorage.getItem("activeTheaterId") ||
-    localStorage.getItem("activeOwnerTheaterId") ||
-    localStorage.getItem("assignedTheaterId") ||
-    "";
+  // ── FIX 1: Read theaterId once (EXACT LOGIC) ──
+  const [activeTheaterId, setActiveTheaterId] = useState(() => {
+    const role = (localStorage.getItem("ownerRole") || localStorage.getItem("role") || "").toLowerCase();
+    const urlTheaterId = new URLSearchParams(window.location.search).get("theaterId");
+    const storedTheaterId = localStorage.getItem("activeTheaterId");
+
+    if (role === "worker") return localStorage.getItem("assignedTheaterId") || "";
+
+    // EXACT LOGIC
+    if (storedTheaterId) {
+      return storedTheaterId;
+    } else if (urlTheaterId) {
+      localStorage.setItem("activeTheaterId", urlTheaterId);
+      return urlTheaterId;
+    }
+    return "";
+  });
 
   // ── Role: safely read from localStorage, always a string ──
   const role = localStorage.getItem("role")?.toLowerCase() || "";

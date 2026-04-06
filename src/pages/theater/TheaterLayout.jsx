@@ -91,7 +91,9 @@ const TheaterLayout = () => {
 
   /* ── Theater Switching (Owner only) ── */
   const [theaters, setTheaters] = useState([]);
-  const activeTheaterId = localStorage.getItem("activeTheaterId") || localStorage.getItem("activeOwnerTheaterId") || "";
+  const [activeTheaterId, setActiveTheaterId] = useState(() => {
+    return localStorage.getItem("activeTheaterId") || localStorage.getItem("activeOwnerTheaterId") || "";
+  });
 
   useEffect(() => {
     if (!isOwner) return;
@@ -113,20 +115,21 @@ const TheaterLayout = () => {
     fetchTheaters();
   }, [isOwner]);
 
-  const handleTheaterSwitch = (e) => {
-    const newId = e.target.value;
+  const handleTheaterSwitch = (newId) => {
     if (!newId || newId === activeTheaterId) return;
 
     // 1. Clear old data
-    localStorage.removeItem("cart");
-    localStorage.removeItem("ordersCache");
+    ["cart", "ordersCache", "menuCache"].forEach((k) => localStorage.removeItem(k));
 
-    // 2. Set new session
+    // 2. Set new session (EXACT LOGIC)
     localStorage.setItem("activeTheaterId", newId);
     localStorage.setItem("activeOwnerTheaterId", newId); 
+    
+    // 3. Update state immediately
+    setActiveTheaterId(newId);
 
-    // 3. Reload dashboard
-    window.location.reload();
+    // 4. Navigate cleanly
+    navigate("/theater/overview");
   };
 
   /* ── Nav items (same rules as before) ── */
@@ -257,7 +260,7 @@ const TheaterLayout = () => {
                           key={t._id}
                           className={`tl-switcher-item ${t._id === activeTheaterId ? "active" : ""}`}
                           onClick={() => {
-                            handleTheaterSwitch({ target: { value: t._id } });
+                            handleTheaterSwitch(t._id);
                             setSwitcherOpen(false);
                           }}
                         >
@@ -306,7 +309,7 @@ const TheaterLayout = () => {
 
         {/* Page content */}
         <div className="tl-content">
-          <Outlet />
+          <Outlet key={activeTheaterId} />
         </div>
 
       </main>
