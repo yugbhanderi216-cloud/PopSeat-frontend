@@ -551,7 +551,7 @@ const Menu = () => {
 
       {/* HEADER */}
       <div className="menu-header">
-        <h2>🍔 Food Menu</h2>
+        <h2>☷ Food Menu</h2>
         <div className="menu-header-actions">
           <button className="menu-refresh-btn" onClick={loadMenu}>↻ Refresh</button>
           <button className="add-btn" onClick={openAddModal}>+ Add Item</button>

@@ -143,7 +143,7 @@ const TheaterDashboard = () => {
         { id: 'overview', label: 'Overview Dashboard', icon: '📊' },
         { id: 'orders', label: 'Orders Management', icon: '🧾' },
         { id: 'analytics', label: 'Analytics', icon: '📈' },
-        { id: 'menu', label: 'Food Menu Management', icon: '🍔' },
+        { id: 'menu', label: 'Food Menu Management', icon: '☷' },
         { id: 'qr', label: 'QR Code Generator', icon: '🔲' },
     ];
 
