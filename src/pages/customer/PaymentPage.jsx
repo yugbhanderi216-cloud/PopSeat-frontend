@@ -44,7 +44,7 @@ const PaymentPage = () => {
     "Content-Type": "application/json",
   });
 
-  // ✅ Calling /api/orders to create order and Razorpay Order logic!
+  // ✅ Calling /api/orders to create order
   const createFoodOrder = async () => {
     const sessionStartTime = localStorage.getItem("sessionStartTime");
 
@@ -55,23 +55,19 @@ const PaymentPage = () => {
 
     const res = await axios.post(`${API_BASE}/orders`, {
       sessionStartTime: sessionStartTime ? Number(sessionStartTime) : Date.now(),
-      theaterId: theaterId,
-      seatId: seatId,
-      hallId: hallId,
+      theaterId,
+      seatId,
+      hallId,
       items
-    }, {
-      headers: authHeaders()
     });
 
-    const data = res.data;
-    if (!data.success) throw new Error(data.message || "Order creation failed.");
-    return data;
+    return res.data;
   };
 
   const verifyPayment = async (paymentId) => {
     const res = await fetch(`${API_BASE}/payment/verify`, {
       method: "POST",
-      headers: authHeaders(),
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ orderId: paymentId }), 
     });
 
@@ -89,7 +85,7 @@ const PaymentPage = () => {
     }
 
     try {
-      // 1. Automatically generate the Order & Razorpay tracking object in ONE step
+      // 1. Create order and get payment details in one call
       const orderData = await createFoodOrder();
       
       const internalOrderId = orderData.order?._id;
@@ -98,17 +94,19 @@ const PaymentPage = () => {
 
       const options = {
         key: RAZORPAY_KEY,
-        amount: orderData.payment?.amount || orderData.order?.totalAmount * 100 || 0, // Fallback safely or rely on backend amount if passed
+        amount: orderData.payment.amount,
         currency: "INR",
         name: "PopSeat Cinema",
         description: "Food Order Payment",
-        order_id: rzpOrderId, // Trigger Razorpay using the generated Tracker ID
+        order_id: rzpOrderId,
         handler: async () => {
           try {
             await verifyPayment(internalPaymentId);
+
             localStorage.setItem("currentOrderId", internalOrderId || "");
             localStorage.setItem("currentPaymentId", internalPaymentId || "");
             localStorage.removeItem("cart");
+
             navigate(`/tracking?theaterId=${theaterId}&screen=${screen}&seat=${seat}`);
           } catch (verifyErr) {
             setError(verifyErr.message || "Payment verification failed.");
@@ -116,7 +114,7 @@ const PaymentPage = () => {
           }
         },
         theme: { color: "#79334D" },
-        modal: { ondismiss: () => { setLoading(false); setError("Payment cancelled by user."); } },
+        modal: { ondismiss: () => { setLoading(false); setError("Payment cancelled."); } },
       };
 
       const rzp = new window.Razorpay(options);
