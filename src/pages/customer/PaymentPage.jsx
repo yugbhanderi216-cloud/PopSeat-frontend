@@ -14,8 +14,9 @@ const PaymentPage = () => {
   // 1. ✅ SAFE DATA EXTRACTION (DO NOT REMOVE OLD KEYS)
   const theaterId =
     params.get("theaterId") ||
+    localStorage.getItem("customerTheaterId") ||
     localStorage.getItem("theaterId") ||
-    localStorage.getItem("customerTheaterId") || "";
+    "";
 
   const seatId =
     params.get("seatId") ||
@@ -25,7 +26,8 @@ const PaymentPage = () => {
   const hallId =
     params.get("hallId") ||
     localStorage.getItem("hallId") ||
-    localStorage.getItem("customerHallId") || "";
+    localStorage.getItem("customerHallId") ||
+    "Unknown";
 
   const seatNumber =
     localStorage.getItem("seatNo") ||
@@ -37,7 +39,7 @@ const PaymentPage = () => {
   useEffect(() => {
     if (theaterId) localStorage.setItem("theaterId", theaterId);
     if (seatId) localStorage.setItem("seatId", seatId);
-    if (hallId) localStorage.setItem("hallId", hallId);
+    if (hallId !== "Unknown") localStorage.setItem("hallId", hallId);
   }, [theaterId, seatId, hallId]);
 
   const screen = params.get("screen") || localStorage.getItem("screenNo") || "";
@@ -70,53 +72,66 @@ const PaymentPage = () => {
 
   // ✅ Calling /api/orders to create order
   const createFoodOrder = async () => {
-    // 3. ✅ ENSURE SESSION EXISTS INTERNALLY
+    // ✅ ENSURE SESSION EXISTS INTERNALLY
     let sessionStartTime = localStorage.getItem("sessionStartTime");
     if (!sessionStartTime) {
       sessionStartTime = Date.now();
       localStorage.setItem("sessionStartTime", sessionStartTime);
     }
 
-    // 4. ✅ STRICT VALIDATION BEFORE API CALL
-    if (!seatNumber || !hallId) {
-      throw new Error("Missing seat or hall data. Please scan QR again.");
+    // ✅ STRICT VALIDATION BEFORE API CALL
+    if (!seatNumber || seatNumber === "Unknown") {
+      throw new Error("Seat information missing. Please scan QR again.");
+    }
+
+    if (!hallId || hallId === "Unknown") {
+      throw new Error("Hall information missing. Please scan QR again.");
     }
 
     if (!cart || cart.length === 0) {
       throw new Error("Cart is empty.");
     }
 
-    // 2. ✅ CALCULATE TOTAL (FRONTEND REQUIRED)
+    // ✅ CALCULATE TOTAL (REQUIRED BY BACKEND)
     const total = cart.reduce(
       (sum, item) =>
         sum + Number(item.finalPrice || item.price || 0) * item.quantity,
       0
     );
 
-    // 8. ✅ DEBUG LOG (FOR TESTING ONLY)
-    console.log("Creating Order with (OLD FORMAT):", {
+    // ✅ FIX ITEMS STRUCTURE (VERY IMPORTANT)
+    const items = cart.map((item) => ({
+      menuId: item.menuId || item._id,  // REQUIRED
+      name: item.name + (item.size ? ` (${item.size})` : ""),
+      quantity: Number(item.quantity),  // REQUIRED
+      price: Number(item.finalPrice || item.price || 0)
+    }));
+
+    // ✅ DEBUG LOG (FOR TESTING)
+    console.log("Creating Order with (HYBRID FORMAT):", {
       seatNumber,
       hallId,
       total,
-      cart
+      items
     });
 
-    // 5. ✅ USE OLD PAYLOAD FORMAT (CRITICAL FIX)
+    // ✅ CORRECT API CALL (FINAL FIX)
     const res = await axios.post(`${API_BASE}/order`, {
       seatNumber: String(seatNumber),
       hallId: String(hallId),
       totalAmount: Number(total),
-      items: cart.map(item => ({
-        name: item.name + (item.size ? ` (${item.size})` : ""),
-        quantity: Number(item.quantity),
-        price: Number(item.finalPrice || item.price || 0)
-      }))
+      items: items
     }, {
       headers: {
         "Content-Type": "application/json",
         ...(token && { Authorization: `Bearer ${token}` })
       }
     });
+
+    // ✅ SAFE ERROR HANDLING
+    if (!res.data || !res.data.success) {
+      throw new Error(res.data?.message || "Order creation failed");
+    }
 
     return res.data;
   };
@@ -189,7 +204,10 @@ const PaymentPage = () => {
 
   const handlePayment = () => {
     if (cart.length === 0) { setError("Your cart is empty."); return; }
-    if (!theaterId || !hallId) { setError("Cinema data missing. Scan QR code again."); return; }
+    if (!seatNumber || seatNumber === "Unknown" || !hallId || hallId === "Unknown") { 
+      setError("Cinema or seat data missing. Please scan QR code again."); 
+      return; 
+    }
     setError("");
     setLoading(true);
     startRazorpay();
