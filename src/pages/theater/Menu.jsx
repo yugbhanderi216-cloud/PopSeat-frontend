@@ -137,23 +137,21 @@ const Menu = () => {
   ═══════════════════════════════════════════════════════ */
   const loadMenu = useCallback(async () => {
     if (!theaterId) {
+      setError("Theater not selected");
       setLoading(false);
       return;
     }
     setLoading(true);
     setError("");
     try {
-      const url = role === "worker"
-        ? `${API_BASE}/worker/menu`
-        : `${API_BASE}/menu?cinemaId=${theaterId}`;
+      const url = `${API_BASE}/menu?cinemaId=${theaterId}`;
 
       const res = await fetch(url, { headers: authHeaders() });
 
-      if (res.status === 500) {
-        setError(
-          "Server error (500) — the backend crashed while loading the menu. " +
-          "Please check your backend logs and try again."
-        );
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("API Error:", text);
+        setError("Failed to load menu");
         setLoading(false);
         return;
       }
@@ -191,7 +189,7 @@ const Menu = () => {
     } finally {
       setLoading(false);
     }
-  }, [theaterId]);
+  }, [theaterId, role]);
 
   useEffect(() => { loadMenu(); }, [loadMenu]);
 
@@ -295,6 +293,15 @@ const Menu = () => {
         headers: authHeadersMultipart(),
         body: formData,
       });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("API Error:", text);
+        setError(`Failed to ${editId ? "update" : "create"} item.`);
+        setSaving(false);
+        return;
+      }
+
       const data = await res.json();
       if (!data.success) {
         setError(data.message || `Failed to ${editId ? "update" : "create"} item.`);
@@ -350,6 +357,15 @@ const Menu = () => {
         method: "DELETE",
         headers: authHeaders(),
       });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("API Error:", text);
+        setError("Failed to delete item.");
+        setDeleting(false);
+        return;
+      }
+
       const data = await res.json();
       if (!data.success) {
         setError(data.message || "Failed to delete item.");
@@ -380,6 +396,17 @@ const Menu = () => {
         headers: authHeaders(),
         body: JSON.stringify({ available: newVal }),
       });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("API Error:", text);
+        // Rollback on failure
+        setItems((prev) =>
+          prev.map((i) => (i.id === id ? { ...i, isAvailable: !newVal } : i))
+        );
+        return;
+      }
+
       const data = await res.json();
       if (!data.success) {
         // Rollback on failure
