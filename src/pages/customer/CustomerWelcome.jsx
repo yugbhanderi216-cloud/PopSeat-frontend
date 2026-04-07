@@ -35,7 +35,7 @@ const CustomerWelcome = () => {
   const theaterId = params.get("theaterId") || params.get("cinemaId") || localStorage.getItem("customerTheaterId");
   const hallId = params.get("hallId") || localStorage.getItem("customerHallId");
   const seatId = params.get("seatId") || localStorage.getItem("customerSeatId");
-  const seat = params.get("seat") || localStorage.getItem("seatNo");
+  const seatName = params.get("seat") || localStorage.getItem("seatNo");
   const screen = params.get("screen") || localStorage.getItem("screenNo");
 
   // Sync with localStorage
@@ -43,9 +43,9 @@ const CustomerWelcome = () => {
     if (theaterId) localStorage.setItem("customerTheaterId", theaterId);
     if (hallId) localStorage.setItem("customerHallId", hallId);
     if (seatId) localStorage.setItem("customerSeatId", seatId);
-    if (seat) localStorage.setItem("seatNo", seat);
+    if (seatName) localStorage.setItem("seatNo", seatName);
     if (screen) localStorage.setItem("screenNo", screen);
-  }, [theaterId, hallId, seatId, seat, screen]);
+  }, [theaterId, hallId, seatId, seatName, screen]);
 
   // -- Fetch Theater Info for Rich UI --
   useEffect(() => {
@@ -74,7 +74,7 @@ const CustomerWelcome = () => {
       const res = await fetch(`${API_BASE}/session/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ theaterId, hallId, seatId, seatNumber: seat })
+        body: JSON.stringify({ theaterId, hallId, seatId, seatNumber: seatName })
       });
 
       if (res.status === 201) {
@@ -162,9 +162,9 @@ const CustomerWelcome = () => {
         {/* Concave Header with Theater Logo */}
         <div className="welcome-header-card">
           <div className="welcome-logo-container">
-            {logoUrl ? (
+            {getImageUrl(theater?.logo) ? (
               <img 
-                src={logoUrl} 
+                src={getImageUrl(theater?.logo)} 
                 alt="Theater Logo" 
                 className="welcome-logo-modern" 
                 onError={(e) => e.target.style.display = 'none'}
@@ -198,7 +198,7 @@ const CustomerWelcome = () => {
                 <div className="info-icon">💺</div>
                 <span className="info-label">Seat</span>
               </div>
-              <span className="info-value">{seat || "---"}</span>
+              <span className="info-value">{seatName || "---"}</span>
             </div>
           </div>
 
