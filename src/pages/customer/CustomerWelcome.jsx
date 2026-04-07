@@ -5,6 +5,8 @@ import "./CustomerWelcome.css";
 
 const API_BASE = "https://popseat.onrender.com/api";
 
+
+
 const getImageUrl = (url) => {
   if (!url) return "";
   if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("blob:")) return url;
@@ -40,6 +42,11 @@ const CustomerWelcome = () => {
 
   // Sync with localStorage
   useEffect(() => {
+    const previousTheater = localStorage.getItem("theaterId");
+    if (theaterId && previousTheater && previousTheater !== theaterId) {
+      localStorage.removeItem("cart"); // Purge cross-theater cart contamination
+    }
+
     if (theaterId) localStorage.setItem("theaterId", theaterId);
     if (hallId) localStorage.setItem("hallId", hallId);
     if (seatId) localStorage.setItem("seatId", seatId);
@@ -96,7 +103,7 @@ const CustomerWelcome = () => {
 
       // 3. FALLBACK BYPASS: If 404 (Not Found), the backend endpoint isn't ready.
       // We proceed using URL params directly so the user isn't stuck.
-      return true; 
+      return true;
     } catch (err) {
       console.warn("Session bypass active due to network/endpoint issue:", err);
       return true;
@@ -150,7 +157,7 @@ const CustomerWelcome = () => {
   // Header/Logo defaults
   const logoData = theater?.theaterLogo || theater?.logo || theater?.logoUrl || "";
   const logoUrl = logoData.startsWith("data:") ? logoData : getImageUrl(logoData);
-  
+
   const name = theater?.name || "Welcome to Cinema";
   const branch = theater?.branchName || "Main Branch";
   const city = theater?.city || theater?.location || "Theater";
