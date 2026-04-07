@@ -55,33 +55,27 @@ const PaymentPage = () => {
 
   // ✅ Calling /api/order/create to create order
   const createFoodOrder = async () => {
-    // ✅ STRICT VALIDATION BEFORE API CALL
-    if (!sessionId) {
-      throw new Error("Session information missing. Please scan QR again.");
-    }
-
     if (!cart || cart.length === 0) {
       throw new Error("Cart is empty.");
     }
-
-    // ✅ DEBUG LOG
-    console.log("Creating Order with:", {
-      sessionId,
-      items: cart.map(i => ({ menuId: i._id, quantity: i.quantity }))
-    });
 
     // ✅ CORRECT API CALL (NEW BACKEND ALIGNMENT)
     const res = await fetch(`${API_BASE}/order/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "session-id": sessionId
+        ...(sessionId && { "session-id": sessionId }),
+        ...(token && { Authorization: `Bearer ${token}` })
       },
       body: JSON.stringify({
         items: cart.map(i => ({
           menuId: i._id,
           quantity: i.quantity
-        }))
+        })),
+        theaterId,
+        hallId,
+        seatId,
+        seatNumber: seat
       })
     });
 
@@ -170,8 +164,8 @@ const PaymentPage = () => {
 
   const handlePayment = () => {
     if (cart.length === 0) { setError("Your cart is empty."); return; }
-    if (!sessionId) { 
-      setError("Session missing. Please scan QR code again."); 
+    if (!theaterId || !seatId) { 
+      setError("Seat information missing. Please scan QR code again."); 
       return; 
     }
     setError("");
@@ -179,12 +173,7 @@ const PaymentPage = () => {
     startRazorpay();
   };
 
-  if (!sessionId) {
-    // Instead of showing the error UI, we redirect for a silent refresh if we have params
-    if (theaterId && seatId) {
-      window.location.href = `/customer/welcome?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}&seat=${seat}`;
-      return <div style={{ padding: "40px", textAlign: "center" }}>Refreshing session...</div>;
-    }
+  if (!theaterId || !seatId) {
     return <SessionExpiredUI />;
   }
 
