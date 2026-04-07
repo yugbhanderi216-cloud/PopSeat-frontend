@@ -117,9 +117,10 @@
 }
 
 /* ═══════════════════════════════════════════
-   REFRESH BUTTON — Matches Orders.jsx
+   REFRESH BUTTON — Matches Analytics page
 ═══════════════════════════════════════════ */
-.refresh-btn {
+.refresh-btn,
+.orders-refresh-btn {
   height: 32px;
   padding: 0 14px;
   border: 1px solid var(--border);
@@ -139,12 +140,14 @@
   flex-shrink: 0;
 }
 
-.refresh-btn:hover {
+.refresh-btn:hover,
+.orders-refresh-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
 
-.refresh-btn:active {
+.refresh-btn:active,
+.orders-refresh-btn:active {
   transform: translateY(1px);
 }
 
@@ -437,7 +440,7 @@
 
   .dashboard-header-right {
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-end;
     width: 100%;
     gap: 12px;
   }
@@ -447,8 +450,9 @@
     margin-right: 0 !important;
   }
 
-  .refresh-btn {
-    width: 100%;
+  .refresh-btn,
+  .orders-refresh-btn {
+    justify-content: center;
   }
 
   .dashboard-header-left {

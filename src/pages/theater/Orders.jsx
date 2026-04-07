@@ -72,8 +72,8 @@ const Orders = () => {
   const role = (localStorage.getItem("role") || "").toLowerCase();
 
   const [theaterId] = useState(() => {
-    return localStorage.getItem("theaterId") || 
-           new URLSearchParams(window.location.search).get("theaterId") || "";
+    return localStorage.getItem("theaterId") ||
+      new URLSearchParams(window.location.search).get("theaterId") || "";
   });
 
   useEffect(() => {
@@ -293,7 +293,7 @@ const Orders = () => {
                 <div className="order-meta-item">
                   <span className="order-meta-label">Screen/Seat</span>
                   <span className="order-meta-value">
-                    Sc {getScreenNumber(order.hallId)} · {order.seatNumber || getSeatNumber(order.seatId)}
+                    {getScreenNumber(order.hallId)} · {order.seatNumber || getSeatNumber(order.seatId)}
                   </span>
                 </div>
                 <div className="order-meta-divider" />
