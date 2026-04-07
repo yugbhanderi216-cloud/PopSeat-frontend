@@ -143,7 +143,8 @@ const QRGenerator = () => {
       setGeneratedSeats([]);
       setError("");
       try {
-        const res = await fetch(`${API_BASE}/hall?theaterId=${theaterData._id}`, {
+        // Use cinemaId to correctly retrieve isolated halls for this theater
+        const res = await fetch(`${API_BASE}/hall?cinemaId=${theaterData._id}`, {
           headers: authHeaders(),
         });
         const data = await res.json();
@@ -161,7 +162,7 @@ const QRGenerator = () => {
             method: "POST",
             headers: authHeaders(),
             body: JSON.stringify({
-              theaterId: theaterData._id,
+              cinemaId: theaterData._id, // Use cinemaId to match backend DB schema
               name: `Screen ${screenNumber}`,
               hallNumber: String(screenNumber),
             }),

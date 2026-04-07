@@ -148,10 +148,10 @@ function App() {
       <Route path="/customer/cart"    element={<CustomerCart />} />
       <Route path="/customer/item"    element={<CustomerItemDetails />} />
       
-      {/* Protected Customer Routes */}
-      <Route path="/payment"          element={<PrivateRoute element={<PaymentPage />}   allowedRoles={["customer"]} />} />
-      <Route path="/tracking"         element={<PrivateRoute element={<OrderTracking />} allowedRoles={["customer"]} />} />
-      <Route path="/order-success"    element={<PrivateRoute element={<OrderSuccess />}  allowedRoles={["customer"]} />} />
+      {/* Fixed: Customer Routes (Internal Session Auth, no owner-token needed) */}
+      <Route path="/payment"          element={<PaymentPage />} />
+      <Route path="/tracking"         element={<OrderTracking />} />
+      <Route path="/order-success"    element={<OrderSuccess />} />
 
       {/* Admin */}
       <Route path="/admin-login"      element={<AdminLogin />} />

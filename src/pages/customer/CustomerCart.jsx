@@ -89,25 +89,22 @@ const CustomerCart = () => {
       return;
     }
 
-    const token  = localStorage.getItem("token");
     const seatId = localStorage.getItem("seatId");
 
-    // Not logged in — go to login, then directly to payment
-    if (!token) {
-      if (theaterId) localStorage.setItem("theaterId", theaterId);
-      const returnUrl = encodeURIComponent(`/payment?theaterId=${theaterId}`);
-      navigate(`/customer/login?theaterId=${theaterId}&redirect=${returnUrl}`);
-      return;
-    }
-
-    // Seat missing — can't place order without seat context
+    // Seat context is mandatory for cinema ordering
     if (!seatId) {
       setError("Seat information is missing. Please scan your QR code again.");
       return;
     }
 
-    // All good — hand off to PaymentPage which creates the order
-    // after obtaining a real Razorpay order ID from the server.
+    const token = localStorage.getItem("token");
+    if (!token) {
+      const paymentUrl = `/payment?theaterId=${theaterId}`;
+      navigate(`/customer/login?theaterId=${theaterId}&redirect=${encodeURIComponent(paymentUrl)}`);
+      return;
+    }
+
+    // All good — hand off to PaymentPage
     navigate(`/payment?theaterId=${theaterId}`);
   };
 

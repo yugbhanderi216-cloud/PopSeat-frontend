@@ -165,7 +165,11 @@ const CustomerLogin = () => {
         localStorage.setItem("role", "customer");
         // No email storage needed per strict instructions
         
-        navigate("/customer/menu");
+        if (redirect) {
+          navigate(decodeURIComponent(redirect));
+        } else {
+          navigate("/customer/menu");
+        }
 
       } else {
 
