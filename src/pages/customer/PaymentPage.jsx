@@ -67,10 +67,9 @@ const PaymentPage = () => {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
+        theaterId: theaterId,
         seatNumber: seat || seatId || "Unknown",
         hallId: hallId || "Unknown",
-        cinemaId: theaterId || "Unknown",
-        theaterId: theaterId || "Unknown",
         totalAmount: total,
         items,
       }),
