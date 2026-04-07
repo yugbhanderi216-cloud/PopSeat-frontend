@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import "./PaymentPage.css";
-import SessionExpiredUI from "../component/SessionExpiredUI";
 
 const API_BASE = "https://popseat.onrender.com/api";
 const RAZORPAY_KEY = "rzp_test_STsZnqsQOPRrqZ";
@@ -12,22 +10,11 @@ const PaymentPage = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
 
-  // 1. ✅ STANDARDIZED DATA EXTRACTION
-  const sessionId = localStorage.getItem("sessionId") || "";
-  const theaterId    = params.get("theaterId") || localStorage.getItem("theaterId") || "";
-  const seatId       = params.get("seatId")    || localStorage.getItem("seatId")    || "";
-  const hallId       = params.get("hallId")    || localStorage.getItem("hallId")    || "";
-
-  // 2. ✅ NORMALIZE VALUES (VERY IMPORTANT)
-  useEffect(() => {
-    if (theaterId) localStorage.setItem("theaterId", theaterId);
-    if (seatId) localStorage.setItem("seatId", seatId);
-    if (hallId !== "Unknown") localStorage.setItem("hallId", hallId);
-  }, [theaterId, seatId, hallId]);
-
-  const screen = params.get("screen") || localStorage.getItem("screenNo") || "";
-  const seat   = params.get("seat")   || localStorage.getItem("seatNo")   || "";
-  const token  = localStorage.getItem("token") || "";
+  const seatId = params.get("seatId") || localStorage.getItem("customerSeatId");
+  const theaterId = localStorage.getItem("customerTheaterId") || localStorage.getItem("theaterId") || "";
+  const hallId = params.get("hallId") || localStorage.getItem("customerHallId") || localStorage.getItem("hallId") || "";
+  const screen = localStorage.getItem("screenNo") || "";
+  const seat = localStorage.getItem("seatNo") || "";
 
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -53,53 +40,51 @@ const PaymentPage = () => {
     }
   }, []);
 
-  // ✅ Calling /api/order/create to create order
-  const createFoodOrder = async () => {
-    if (!cart || cart.length === 0) {
-      throw new Error("Cart is empty.");
-    }
+  const total = cart.reduce(
+    (sum, item) => sum + Number(item.finalPrice || item.price || 0) * item.quantity,
+    0
+  );
 
-    // ✅ CORRECT API CALL (NEW BACKEND ALIGNMENT)
-    const res = await fetch(`${API_BASE}/order/create`, {
+  const authHeaders = () => {
+    const token = localStorage.getItem("token") || "";
+    const sessionId = localStorage.getItem("sessionId") || "";
+    return {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...(sessionId && { "session-id": sessionId })
+    };
+  };
+
+  const createFoodOrder = async () => {
+    const items = cart.map((item) => ({
+      menuId: item.menuId || item._id || item.id,
+      name: item.name,
+      quantity: item.quantity,
+      price: Number(item.finalPrice || item.price || 0),
+    }));
+
+    const res = await fetch(`${API_BASE}/order`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(sessionId && { "session-id": sessionId }),
-        ...(token && { Authorization: `Bearer ${token}` })
-      },
+      headers: authHeaders(),
       body: JSON.stringify({
-        items: cart.map(i => ({
-          menuId: i._id,
-          quantity: i.quantity
-        })),
-        theaterId,
-        hallId,
-        seatId,
-        seatNumber: seat
-      })
+        seatNumber: seat || seatId || "Unknown",
+        hallId: hallId || "Unknown",
+        cinemaId: theaterId || "Unknown",
+        theaterId: theaterId || "Unknown",
+        totalAmount: total,
+        items,
+      }),
     });
 
     const data = await res.json();
-
-    if (res.status === 401) {
-      localStorage.removeItem("sessionId");
-      // "Session expired" -> clear session and re-verify seat silently
-      window.location.href = `/customer/welcome?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}&seat=${seat}`;
-      throw new Error(data.message || "Session expired. Reinitializing...");
-    }
-
-    // ✅ SAFE ERROR HANDLING
-    if (!res.ok || !data.success) {
-      throw new Error(data.message || "Order creation failed");
-    }
-
+    if (!data.success) throw new Error(data.message || "Order creation failed.");
     return data;
   };
 
   const verifyPayment = async (paymentId) => {
     const res = await fetch(`${API_BASE}/payment/verify`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ orderId: paymentId }), 
     });
 
@@ -117,7 +102,6 @@ const PaymentPage = () => {
     }
 
     try {
-      // 1. Create order and get payment details in one call
       const orderData = await createFoodOrder();
       
       const internalOrderId = orderData.order?._id;
@@ -126,7 +110,7 @@ const PaymentPage = () => {
 
       const options = {
         key: RAZORPAY_KEY,
-        amount: orderData.payment.amount,
+        amount: total * 100,
         currency: "INR",
         name: "PopSeat Cinema",
         description: "Food Order Payment",
@@ -134,19 +118,17 @@ const PaymentPage = () => {
         handler: async () => {
           try {
             await verifyPayment(internalPaymentId);
-
             localStorage.setItem("currentOrderId", internalOrderId || "");
             localStorage.setItem("currentPaymentId", internalPaymentId || "");
             localStorage.removeItem("cart");
-
-            navigate(`/tracking?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}`);
+            navigate(`/tracking?theaterId=${theaterId}&screen=${screen}&seat=${seat}&hallId=${hallId}&seatId=${seatId}`);
           } catch (verifyErr) {
             setError(verifyErr.message || "Payment verification failed.");
             setLoading(false);
           }
         },
-        theme: { color: "#79334D" },
-        modal: { ondismiss: () => { setLoading(false); setError("Payment cancelled."); } },
+        theme: { color: "#6C63FF" },
+        modal: { ondismiss: () => { setLoading(false); setError("Payment cancelled by user."); } },
       };
 
       const rzp = new window.Razorpay(options);
@@ -156,26 +138,18 @@ const PaymentPage = () => {
       });
       rzp.open();
     } catch (err) {
-      // 6. ✅ SAFE ERROR HANDLING
-      setError(err.response?.data?.message || err.message || "Order failed");
+      setError(err.message || "Could not start payment.");
       setLoading(false);
     }
   };
 
   const handlePayment = () => {
     if (cart.length === 0) { setError("Your cart is empty."); return; }
-    if (!theaterId || !seatId) { 
-      setError("Seat information missing. Please scan QR code again."); 
-      return; 
-    }
+    if (!theaterId || !hallId) { setError("Cinema data missing. Scan QR code again."); return; }
     setError("");
     setLoading(true);
     startRazorpay();
   };
-
-  if (!theaterId || !seatId) {
-    return <SessionExpiredUI />;
-  }
 
   return (
     <div className="payment-page">
@@ -184,11 +158,11 @@ const PaymentPage = () => {
         <h1 className="payment-plan-name">Confirm Order</h1>
 
         <div className="payment-price-block">
-          {/* Total is calculated securely by the backend upon order creation */}
-          <span className="payment-amount">Confirming Details...</span>
+          <span className="payment-currency">₹</span>
+          <span className="payment-amount">{total.toLocaleString("en-IN")}</span>
         </div>
 
-        <p className="plan-note">✦ Seat ID: {seatId}</p>
+        <p className="plan-note">✦ Screen {screen} • Seat {seat}</p>
         <div className="payment-divider" />
 
         <div className="customer-order-list">
@@ -196,6 +170,9 @@ const PaymentPage = () => {
             <div key={item.cartKey || item._id || i} className="customer-order-item">
               <span className="item-name">
                 {item.name}{item.size ? ` (${item.size})` : ""} × {item.quantity}
+              </span>
+              <span className="item-price">
+                ₹ {Number(item.finalPrice || item.price || 0) * item.quantity}
               </span>
             </div>
           ))}
@@ -210,7 +187,7 @@ const PaymentPage = () => {
               Processing...
             </span>
           ) : (
-            `Proceed to Pay`
+            `Pay ₹${total.toLocaleString("en-IN")}`
           )}
         </button>
 
