@@ -98,8 +98,8 @@ const CustomerMenu = () => {
       setCategoryLoading(true);
       
       try {
-        // Isolation-Aware Menu Fetch (Reverted to working query pattern)
-        const url = `${API_BASE}/api/menu?theaterId=${targetTheaterId}`;
+        // Isolation-Aware Menu Fetch (Using cinemaId for backend alignment)
+        const url = `${API_BASE}/api/menu?cinemaId=${targetTheaterId}`;
         const res = await fetch(url, { headers: { "session-id": sessionId } });
 
         // Handle error states (e.g. theater not found or session expired)
@@ -110,8 +110,12 @@ const CustomerMenu = () => {
 
         const data = await res.json();
         if (data.success && data.menu) {
+          // Frontend Isolation Guard: Strictly filter by cinemaId
           const availableItems = (data.menu || []).filter(
-            (item) => item.available !== false && !item.isDeleted
+            (item) => 
+              (item.cinemaId === targetTheaterId || item.theaterId === targetTheaterId) && 
+              item.available !== false && 
+              !item.isDeleted
           );
           setItems(availableItems);
           syncCategories(availableItems);

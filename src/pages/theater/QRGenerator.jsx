@@ -14,14 +14,33 @@ const QRGenerator = () => {
   const navigate = useNavigate();
   const ownerEmail = localStorage.getItem("email") || "";
   const role = (localStorage.getItem("role") || "").toLowerCase();
-  const [theaterId] = useState(() => {
-    return (
-      localStorage.getItem("theaterId") ||
-      new URLSearchParams(window.location.search).get("theaterId") ||
-      state?.theaterId ||
-      ""
-    );
-  });
+
+  // ── FIX: Make theaterId reactive ──────────────────────────
+  // Instead of static state, we derive it from storage/params 
+  // on every render so the component reacts to the Top Bar.
+  const getActiveTheaterId = () => (
+    new URLSearchParams(window.location.search).get("theaterId") ||
+    localStorage.getItem("theaterId") ||
+    state?.theaterId ||
+    ""
+  );
+
+  const [theaterId, setTheaterId] = useState(getActiveTheaterId());
+
+  // Listen for storage changes (Top Bar switches)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const newId = getActiveTheaterId();
+      if (newId !== theaterId) setTheaterId(newId);
+    };
+    window.addEventListener("storage", handleStorageChange);
+    // Periodically check in case Top Bar doesn't fire storage event
+    const interval = setInterval(handleStorageChange, 1000);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [theaterId]);
   const [theaterData, setTheaterData]   = useState(null);
   const [halls, setHalls]               = useState([]);
   const [selectedScreen, setSelectedScreen] = useState("");
