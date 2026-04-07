@@ -98,8 +98,8 @@ const CustomerMenu = () => {
       setCategoryLoading(true);
       
       try {
-        // Scoped Backend Endpoint (Isolation-Aware)
-        const url = `${API_BASE}/api/customer/theaters/${targetTheaterId}/menu`;
+        // Isolation-Aware Menu Fetch (Reverted to working query pattern)
+        const url = `${API_BASE}/api/menu?theaterId=${targetTheaterId}`;
         const res = await fetch(url, { headers: { "session-id": sessionId } });
 
         // Handle error states (e.g. theater not found or session expired)
