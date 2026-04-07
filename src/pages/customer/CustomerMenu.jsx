@@ -67,87 +67,83 @@ const CustomerMenu = () => {
     fetchTheater();
   }, [theaterId]);
 
-  /* ================= LOAD CATEGORIES ================= */
-  useEffect(() => {
-    const fetchCategories = async () => {
-      setCategoryLoading(true);
-      try {
-        const res = await fetch(`${API_BASE}/api/category`);
-        const data = await res.json();
+  /* ================= LOAD CATEGORIES (Derive from items) ================= */
+  // We derive categories from the theater-specific items to ensure 
+  // users only see categories that have items in the current theater.
+  const syncCategories = (menuItems) => {
+    if (!menuItems || !menuItems.length) return;
+    const uniqueCats = [...new Set(menuItems.map(i => 
+      typeof i.category === 'string' ? i.category : i.category?.name
+    ))].filter(Boolean);
+    
+    setCategories(uniqueCats);
+    if (uniqueCats.length > 0 && !activeCategory) {
+      setActiveCategory(uniqueCats[0]);
+    }
+  };
 
-        if (data.success && data.categories.length > 0) {
-          const categoryNames = data.categories.map((cat) =>
-            typeof cat === "string" ? cat : cat.name
-          );
-          setCategories(categoryNames);
-          setActiveCategory(categoryNames[0]);
-        }
-      } catch (error) {
-        console.log("Category fetch error:", error);
-      } finally {
-        setCategoryLoading(false);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  /* ================= LOAD MENU ================= */
+  /* ================= LOAD MENU (Scoped to Theater) ================= */
   useEffect(() => {
     const fetchMenu = async () => {
+      const targetTheaterId = params.get("theaterId") || theaterId;
+      
+      // Security Guard: Prevent fetching if no theater identified
+      if (!targetTheaterId) {
+        console.warn("No theater ID found. Redirecting to Welcome...");
+        navigate("/customer/welcome");
+        return;
+      }
+
       setMenuLoading(true);
+      setCategoryLoading(true);
+      
       try {
-        const targetTheaterId = params.get("theaterId") || theaterId;
-        const url = targetTheaterId
-          ? `${API_BASE}/api/menu?cinemaId=${targetTheaterId}`
-          : `${API_BASE}/api/menu`;
+        // Scoped Backend Endpoint (Isolation-Aware)
+        const url = `${API_BASE}/api/customer/theaters/${targetTheaterId}/menu`;
+        const res = await fetch(url, { headers: { "session-id": sessionId } });
 
-        const res = await fetch(url, {
-          headers: {
-            "session-id": sessionId
-          }
-        });
-
-        // Handle session expiration - redirect for refresh
+        // Handle error states (e.g. theater not found or session expired)
         if (res.status === 401 || res.status === 403) {
-          console.warn("Session expired or invalid. Redirecting for refresh...");
-          // If we have params, we can just redirect to welcome which now handles silent refresh
           navigate(`/customer/welcome?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}`);
           return;
         }
 
         const data = await res.json();
-
-        if (data.success) {
-          const availableItems = data.menu.filter(
+        if (data.success && data.menu) {
+          const availableItems = (data.menu || []).filter(
             (item) => item.available !== false && !item.isDeleted
           );
           setItems(availableItems);
-
-          setCategories((prev) => {
-            if (prev.length > 0) return prev;
-            const derived = [...new Set(availableItems.map((i) => i.category))];
-            if (derived.length > 0 && !activeCategory) setActiveCategory(derived[0]);
-            return derived;
-          });
+          syncCategories(availableItems);
         }
       } catch (error) {
-        console.log("Menu fetch error:", error);
+        console.log("Menu isolation error:", error);
       } finally {
         setMenuLoading(false);
+        setCategoryLoading(false);
       }
     };
     fetchMenu();
-  }, []);
+  }, [theaterId]);
 
-  /* ================= LOAD CART ================= */
+  /* ================= LOAD CART (With Multi-Theater Isolation) ================= */
   useEffect(() => {
     try {
       const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
-      setCart(savedCart);
+      const cartTheater = localStorage.getItem("cartTheaterId");
+
+      // Isolation Guard: If the cart belongs to a different theater, clear it.
+      if (cartTheater && cartTheater !== theaterId && savedCart.length > 0) {
+        console.warn("Cart theater mismatch detected. Clearing cart for isolation.");
+        localStorage.removeItem("cart");
+        setCart([]);
+      } else {
+        setCart(savedCart);
+      }
     } catch {
       setCart([]);
     }
-  }, []);
+  }, [theaterId]);
 
   /* ================= SAVE CART ================= */
   useEffect(() => {

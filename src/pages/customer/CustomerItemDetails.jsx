@@ -126,6 +126,7 @@ const CustomerItemDetails = () => {
     }
 
     localStorage.setItem("cart", JSON.stringify(cart));
+    localStorage.setItem("cartTheaterId", state?.theaterId || "");
 
     navigate(-1);
 
