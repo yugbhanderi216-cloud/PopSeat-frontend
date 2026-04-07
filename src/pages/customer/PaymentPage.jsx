@@ -10,7 +10,7 @@ const PaymentPage = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
 
-  const seatId = params.get("seatId") || localStorage.getItem("customerSeatId");
+  const seatId = params.get("seatId") || localStorage.getItem("seatId");
   const theaterId = localStorage.getItem("customerTheaterId") || localStorage.getItem("theaterId") || "";
   const hallId = params.get("hallId") || localStorage.getItem("customerHallId") || localStorage.getItem("hallId") || "";
   const screen = localStorage.getItem("screenNo") || "";
@@ -86,7 +86,7 @@ const PaymentPage = () => {
     const res = await fetch(`${API_BASE}/payment/verify`, {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({ orderId: paymentId }), 
+      body: JSON.stringify({ orderId: paymentId }),
     });
 
     const data = await res.json();
@@ -104,7 +104,7 @@ const PaymentPage = () => {
 
     try {
       const orderData = await createFoodOrder();
-      
+
       const internalOrderId = orderData.order?._id;
       const internalPaymentId = orderData.payment?._id;
       const rzpOrderId = orderData.payment?.razorpayOrderId;
