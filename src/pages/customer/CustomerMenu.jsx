@@ -91,6 +91,15 @@ const CustomerMenu = () => {
             "session-id": sessionId
           }
         });
+
+        // Handle session expiration - redirect for refresh
+        if (res.status === 401 || res.status === 403) {
+          console.warn("Session expired or invalid. Redirecting for refresh...");
+          // If we have params, we can just redirect to welcome which now handles silent refresh
+          navigate(`/customer/welcome?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}`);
+          return;
+        }
+
         const data = await res.json();
 
         if (data.success) {

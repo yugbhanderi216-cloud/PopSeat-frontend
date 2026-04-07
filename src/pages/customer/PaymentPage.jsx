@@ -89,8 +89,8 @@ const PaymentPage = () => {
 
     if (res.status === 401) {
       localStorage.removeItem("sessionId");
-      // "Session expired" -> clear session and reinitialize
-      window.location.href = "/customer/welcome";
+      // "Session expired" -> clear session and re-verify seat silently
+      window.location.href = `/customer/welcome?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}&seat=${seat}`;
       throw new Error(data.message || "Session expired. Reinitializing...");
     }
 
@@ -180,6 +180,11 @@ const PaymentPage = () => {
   };
 
   if (!sessionId) {
+    // Instead of showing the error UI, we redirect for a silent refresh if we have params
+    if (theaterId && seatId) {
+      window.location.href = `/customer/welcome?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}&seat=${seat}`;
+      return <div style={{ padding: "40px", textAlign: "center" }}>Refreshing session...</div>;
+    }
     return <SessionExpiredUI />;
   }
 

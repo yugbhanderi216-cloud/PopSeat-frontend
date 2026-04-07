@@ -1,38 +1,36 @@
-import React from "react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-const SessionExpiredUI = () => (
-  <div style={{ 
-    display: "flex", 
-    flexDirection: "column", 
-    alignItems: "center", 
-    justifyContent: "center", 
-    height: "100vh", 
-    textAlign: "center",
-    padding: "20px",
-    background: "#fdfdfd"
-  }}>
-    <div style={{ fontSize: "60px", marginBottom: "20px" }}>⏳</div>
-    <h2 style={{ color: "#333", fontSize: "24px", marginBottom: "10px" }}>Session Expired</h2>
-    <p style={{ color: "#666", marginBottom: "30px", maxWidth: "400px" }}>
-      Your session has timed out or is invalid. Please scan the QR code on your table to restart your order.
-    </p>
-    <button 
-      onClick={() => window.location.href = "/"}
-      style={{
-        background: "#e61e2a",
-        color: "#fff",
-        border: "none",
-        padding: "12px 30px",
-        borderRadius: "30px",
-        fontSize: "16px",
-        fontWeight: "600",
-        cursor: "pointer",
-        boxShadow: "0 4px 15px rgba(230, 30, 42, 0.2)"
-      }}
-    >
-      Scan QR Again
-    </button>
-  </div>
-);
+const SessionExpiredUI = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // 1. READ EXISTING PARAMS
+    const theaterId = localStorage.getItem("customerTheaterId") || localStorage.getItem("theaterId") || "";
+    const hallId = localStorage.getItem("customerHallId") || localStorage.getItem("hallId") || "";
+    const seatId = localStorage.getItem("customerSeatId") || localStorage.getItem("seatId") || "";
+    const seat = localStorage.getItem("seatNo") || "";
+
+    // 2. REDIRECT FOR REFRESH
+    if (theaterId && (seatId || seat)) {
+      navigate(`/customer/welcome?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}&seat=${seat}`, { replace: true });
+    } else {
+      navigate("/", { replace: true });
+    }
+  }, [navigate]);
+
+  return (
+    <div style={{ 
+      display: "flex", 
+      flexDirection: "column", 
+      alignItems: "center", 
+      justifyContent: "center", 
+      height: "100vh", 
+      background: "#fff" 
+    }}>
+      <p style={{ color: "#666" }}>Refreshing your table session...</p>
+    </div>
+  );
+};
 
 export default SessionExpiredUI;
