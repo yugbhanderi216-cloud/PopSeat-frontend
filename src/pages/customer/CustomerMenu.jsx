@@ -4,6 +4,8 @@ import "./CustomerMenu.css";
 
 const API_BASE = "https://popseat.onrender.com";
 
+const sessionId = localStorage.getItem("sessionId");
+
 const getImageUrl = (url) => {
   if (!url) return "";
   // Force https to prevent Mixed Content errors on HTTPS deployments
@@ -46,8 +48,8 @@ const CustomerMenu = () => {
   /* ================= SAVE INFO ================= */
   useEffect(() => {
     if (theaterId) localStorage.setItem("theaterId", theaterId);
-    if (hallId)    localStorage.setItem("hallId",    hallId);
-    if (seatId)    localStorage.setItem("seatId",    seatId);
+    if (hallId) localStorage.setItem("hallId", hallId);
+    if (seatId) localStorage.setItem("seatId", seatId);
   }, [theaterId, hallId, seatId]);
 
   /* ================= LOAD CATEGORIES ================= */
@@ -84,7 +86,11 @@ const CustomerMenu = () => {
           ? `${API_BASE}/api/menu?cinemaId=${targetTheaterId}`
           : `${API_BASE}/api/menu`;
 
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          headers: {
+            "session-id": sessionId
+          }
+        });
         const data = await res.json();
 
         if (data.success) {
@@ -226,11 +232,11 @@ const CustomerMenu = () => {
                         {isFeatured && <div className="veg-badge" />}
                       </div>
                     )}
-                    
+
                     {/* Content Section */}
                     <div className="card-content">
                       <h2 className="item-name">{item.name}</h2>
-                      
+
                       {/* Full Info (Desktop) */}
                       <div className="full-info">
                         {item.description && (
@@ -258,7 +264,7 @@ const CustomerMenu = () => {
                       </div>
 
                       <div className="item-cta-btn">
-                         Order now
+                        Order now
                       </div>
                     </div>
 

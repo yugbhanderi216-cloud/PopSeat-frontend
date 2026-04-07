@@ -91,7 +91,6 @@ const CustomerWelcome = () => {
 
     const init = async () => {
       if (!theaterId || !hallId || !seatId || !seat) {
-        // wait a bit before failing (prevents false error)
         setTimeout(() => {
           if (!theaterId || !hallId || !seatId || !seat) {
             setError(true);
@@ -100,7 +99,12 @@ const CustomerWelcome = () => {
         return;
       }
 
-      localStorage.removeItem("sessionId");
+      const existingSession = localStorage.getItem("sessionId");
+
+      if (existingSession) {
+        navigate("/customer/menu");
+        return;
+      }
 
       const success = await createSession();
 
@@ -112,7 +116,6 @@ const CustomerWelcome = () => {
         setError(true);
       }
     };
-
     init();
 
     return () => {
