@@ -32,7 +32,7 @@ const CustomerWelcome = () => {
     return new URLSearchParams(queryString);
   }, [location]);
 
-  const theaterId = params.get("theaterId") || params.get("cinemaId") || localStorage.getItem("customerTheaterId");
+  const theaterId = params.get("theaterId") || params.get("cinemaId") || localStorage.getItem("theaterId");
   const hallId = params.get("hallId") || localStorage.getItem("customerHallId");
   const seatId = params.get("seatId") || localStorage.getItem("customerSeatId");
   const seatName = params.get("seat") || localStorage.getItem("seatNo");
@@ -40,9 +40,9 @@ const CustomerWelcome = () => {
 
   // Sync with localStorage
   useEffect(() => {
-    if (theaterId) localStorage.setItem("customerTheaterId", theaterId);
-    if (hallId) localStorage.setItem("customerHallId", hallId);
-    if (seatId) localStorage.setItem("customerSeatId", seatId);
+    if (theaterId) localStorage.setItem("theaterId", theaterId);
+    if (hallId) localStorage.setItem("hallId", hallId);
+    if (seatId) localStorage.setItem("seatId", seatId);
     if (seatName) localStorage.setItem("seatNo", seatName);
     if (screen) localStorage.setItem("screenNo", screen);
   }, [theaterId, hallId, seatId, seatName, screen]);
@@ -129,7 +129,7 @@ const CustomerWelcome = () => {
   }, [theaterId, hallId, seatId, seatName]);
 
   const handleOrderNow = () => {
-    navigate("/customer/menu");
+    navigate(`/customer/menu?theaterId=${theaterId}&hallId=${hallId}&seatId=${seatId}&seat=${seatName}&screen=${screen}`);
   };
 
   // -- Loading/Error States (minimalist/bypass) --
