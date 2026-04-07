@@ -246,7 +246,7 @@ const Orders = () => {
             />
             {selectedDate && <button className="orders-date-clear" onClick={() => setSelectedDate("")}>✕</button>}
           </div>
-          <button className="orders-refresh-btn" onClick={() => { setLoading(true); fetchOrders(); }}>↻ Refresh</button>
+          <button className="orders-refresh-btn" onClick={() => { setOrders([]); setLoading(true); fetchOrders(); }}>↻ Refresh</button>
         </div>
       </div>
 
@@ -350,7 +350,26 @@ const Orders = () => {
       {totalPages > 1 && (
         <div className="orders-pagination">
           <button className="pagination-btn" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>Previous</button>
-          <div className="pagination-info">Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong></div>
+          <div className="pagination-pages">
+            {(() => {
+              const pages = [];
+              const delta = 2;
+              const left = Math.max(1, currentPage - delta);
+              const right = Math.min(totalPages, currentPage + delta);
+              if (left > 1) {
+                pages.push(<button key={1} className={`pagination-page-btn${currentPage === 1 ? " active" : ""}`} onClick={() => setCurrentPage(1)}>1</button>);
+                if (left > 2) pages.push(<span key="l-ellipsis" className="pagination-ellipsis">…</span>);
+              }
+              for (let i = left; i <= right; i++) {
+                pages.push(<button key={i} className={`pagination-page-btn${currentPage === i ? " active" : ""}`} onClick={() => setCurrentPage(i)}>{i}</button>);
+              }
+              if (right < totalPages) {
+                if (right < totalPages - 1) pages.push(<span key="r-ellipsis" className="pagination-ellipsis">…</span>);
+                pages.push(<button key={totalPages} className={`pagination-page-btn${currentPage === totalPages ? " active" : ""}`} onClick={() => setCurrentPage(totalPages)}>{totalPages}</button>);
+              }
+              return pages;
+            })()}
+          </div>
           <button className="pagination-btn" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>Next</button>
         </div>
       )}

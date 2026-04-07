@@ -717,6 +717,55 @@
   color: var(--text);
 }
 
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pagination-page-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .12s;
+  box-shadow: var(--sh);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-page-btn:hover:not(.active) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-lt);
+}
+
+.pagination-page-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(121, 51, 77, 0.28);
+  cursor: default;
+}
+
+.pagination-ellipsis {
+  color: var(--dim);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 2px;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+}
 /* ═══════════════════════════════════════════
    RESPONSIVE
 ═══════════════════════════════════════════ */
