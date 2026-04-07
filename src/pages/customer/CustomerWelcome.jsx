@@ -148,7 +148,9 @@ const CustomerWelcome = () => {
   }
 
   // Header/Logo defaults
-  const logoUrl = getImageUrl(theater?.logo || "");
+  const logoData = theater?.theaterLogo || theater?.logo || theater?.logoUrl || "";
+  const logoUrl = logoData.startsWith("data:") ? logoData : getImageUrl(logoData);
+  
   const name = theater?.name || "Welcome to Cinema";
   const branch = theater?.branchName || "Main Branch";
   const city = theater?.city || theater?.location || "Theater";
@@ -159,9 +161,9 @@ const CustomerWelcome = () => {
         {/* Concave Header with Theater Logo */}
         <div className="welcome-header-card">
           <div className="welcome-logo-container">
-            {getImageUrl(theater?.logo) ? (
+            {logoUrl ? (
               <img
-                src={getImageUrl(theater?.logo)}
+                src={logoUrl}
                 alt="Theater Logo"
                 className="welcome-logo-modern"
                 onError={(e) => e.target.style.display = 'none'}

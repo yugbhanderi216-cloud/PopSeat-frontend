@@ -23,18 +23,14 @@ const CustomerMenu = () => {
 
   const params = new URLSearchParams(location.search);
 
-  const theaterId =
-    params.get("theaterId") || localStorage.getItem("theaterId") || "";
+  const theaterId = params.get("theaterId") || localStorage.getItem("theaterId") || "";
+  const hallId    = params.get("hallId") || localStorage.getItem("hallId") || "";
+  const seatId    = params.get("seatId") || localStorage.getItem("seatId") || "";
+  const seatNo    = params.get("seat") || localStorage.getItem("seatNo") || "";
+  const screenNo  = params.get("screen") || localStorage.getItem("screenNo") || "";
+  const type      = params.get("type") || localStorage.getItem("seatType");
 
-  const hallId =
-    params.get("hallId") || localStorage.getItem("hallId") || "";
-
-  const seatId =
-    params.get("seatId") || localStorage.getItem("seatId") || "";
-
-  const type =
-    params.get("type") || localStorage.getItem("seatType");
-
+  const [theater, setTheater] = useState(null);
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState("");
@@ -48,9 +44,28 @@ const CustomerMenu = () => {
   /* ================= SAVE INFO ================= */
   useEffect(() => {
     if (theaterId) localStorage.setItem("theaterId", theaterId);
-    if (hallId) localStorage.setItem("hallId", hallId);
-    if (seatId) localStorage.setItem("seatId", seatId);
-  }, [theaterId, hallId, seatId]);
+    if (hallId)    localStorage.setItem("hallId", hallId);
+    if (seatId)    localStorage.setItem("seatId", seatId);
+    if (seatNo)    localStorage.setItem("seatNo", seatNo);
+    if (screenNo)  localStorage.setItem("screenNo", screenNo);
+  }, [theaterId, hallId, seatId, seatNo, screenNo]);
+
+  /* ================= LOAD THEATER DETAILS ================= */
+  useEffect(() => {
+    const fetchTheater = async () => {
+      if (!theaterId) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/cinema/${theaterId}`);
+        const data = await res.json();
+        if (data.success && data.cinema) {
+          setTheater(data.cinema);
+        }
+      } catch (err) {
+        console.error("Theater fetch failed:", err);
+      }
+    };
+    fetchTheater();
+  }, [theaterId]);
 
   /* ================= LOAD CATEGORIES ================= */
   useEffect(() => {
@@ -163,9 +178,9 @@ const CustomerMenu = () => {
           </button>
 
           <div className="header-info">
-            <h1 className="header-title">Order Food</h1>
+            <h1 className="header-title">{theater?.name || "Order Food"}</h1>
             <p className="header-details">
-              Seat ID: {seatId}
+              Delivering to: Screen {screenNo || "1"} • Seat {seatNo || "---"}
             </p>
           </div>
 

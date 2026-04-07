@@ -242,7 +242,7 @@ const QRGenerator = () => {
   };
   // ── FIX 1: theaterId= param + use theaterData._id as source of truth ──
   const buildQRUrl = (seat) =>
-    `${CUSTOMER_BASE}?theaterId=${theaterData?._id || theaterId}&hallId=${seat.hallId}&seatId=${seat._id}&seat=${seat.seatNumber}`;
+    `${CUSTOMER_BASE}?theaterId=${theaterData?._id || theaterId}&hallId=${seat.hallId}&seatId=${seat._id}&seat=${seat.seatNumber}&screen=${selectedScreen}`;
   // ── Loading / guard screens ───────────────────────────────
   if (theaterLoading) return (
     <div className="qr-page"><div className="qr-loader"><div className="qr-spinner" /><p>Loading theater…</p></div></div>
