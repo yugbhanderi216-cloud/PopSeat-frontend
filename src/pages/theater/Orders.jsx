@@ -293,7 +293,7 @@ const Orders = () => {
                 <div className="order-meta-item">
                   <span className="order-meta-label">Screen/Seat</span>
                   <span className="order-meta-value">
-                    Sc {getScreenNumber(order.hallId)} · {getSeatNumber(order.seatId)}
+                    Sc {getScreenNumber(order.hallId)} · {order.seatNumber || getSeatNumber(order.seatId)}
                   </span>
                 </div>
                 <div className="order-meta-divider" />
