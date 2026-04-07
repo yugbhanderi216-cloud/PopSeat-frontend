@@ -1,59 +1,72 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SessionExpiredUI from "../component/SessionExpiredUI";
+import "./CustomerWelcome.css";
 
 const API_BASE = "https://popseat.onrender.com/api";
 
 const CustomerWelcome = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // -- UI States --
+  const [theater, setTheater] = useState(null);
   const [error, setError] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
+  // -- Params Extraction (Supporting both theaterId and cinemaId) --
   const params = useMemo(() => {
     const searchParams = new URLSearchParams(location.search);
-
-    // Handle both normal and hash routing
     if (searchParams.has("seatId") || searchParams.has("cinemaId") || searchParams.has("theaterId")) {
       return searchParams;
     }
-
     const hash = location.hash || "";
     const queryIndex = hash.indexOf("?");
     const queryString = queryIndex !== -1 ? hash.slice(queryIndex + 1) : "";
-
     return new URLSearchParams(queryString);
   }, [location]);
 
-  const theaterId =
-    params.get("theaterId") ||
-    params.get("cinemaId") ||
-    localStorage.getItem("customerTheaterId");
+  const theaterId = params.get("theaterId") || params.get("cinemaId") || localStorage.getItem("customerTheaterId");
+  const hallId = params.get("hallId") || localStorage.getItem("customerHallId");
+  const seatId = params.get("seatId") || localStorage.getItem("customerSeatId");
+  const seatName = params.get("seat") || localStorage.getItem("seatNo");
 
-  const hallId =
-    params.get("hallId") ||
-    localStorage.getItem("customerHallId");
-
-  const seatId =
-    params.get("seatId") ||
-    localStorage.getItem("customerSeatId");
-
-  const seat =
-    params.get("seat") ||
-    localStorage.getItem("seatNo");
+  // Sync with localStorage
   useEffect(() => {
     if (theaterId) localStorage.setItem("customerTheaterId", theaterId);
     if (hallId) localStorage.setItem("customerHallId", hallId);
     if (seatId) localStorage.setItem("customerSeatId", seatId);
-    if (seat) localStorage.setItem("seatNo", seat);
-  }, [theaterId, hallId, seatId, seat]);
+    if (seatName) localStorage.setItem("seatNo", seatName);
+  }, [theaterId, hallId, seatId, seatName]);
 
+  // -- Fetch Theater Info for Rich UI --
+  useEffect(() => {
+    const fetchTheater = async () => {
+      if (!theaterId) return;
+      try {
+        const res = await fetch(`${API_BASE}/cinema/${theaterId}`);
+        const data = await res.json();
+        if (data.success && data.cinema) {
+          setTheater(data.cinema);
+        } else {
+          // Fallback if theater not found
+          setTheater({ name: "Cinema", branchName: "Theater", location: "PopSeat" });
+        }
+      } catch (err) {
+        console.error("Theater fetch failed:", err);
+      }
+    };
+    fetchTheater();
+  }, [theaterId]);
+
+  // -- Functional Session logic (kept from previous fix) --
   const createSession = async () => {
     try {
       // 1. TRY ORIGINAL SESSION CREATE (POST)
       const res = await fetch(`${API_BASE}/session/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ theaterId, hallId, seatId, seatNumber: seat })
+        body: JSON.stringify({ theaterId, hallId, seatId, seatNumber: seatName })
       });
 
       if (res.status === 201) {
@@ -65,32 +78,23 @@ const CustomerWelcome = () => {
       }
 
       // 2. FALLBACK: TRY SEAT VALIDATION (GET)
-      // Documentation matches: /api/customer/theaters/:theaterId/seats/:seatId
       const validRes = await fetch(`${API_BASE}/customer/theaters/${theaterId}/seats/${seatId}`);
-      
       if (validRes.ok) {
         const validData = await validRes.json();
-        // If validation returns a sessionId or token, use it
         if (validData.sessionId || validData.token) {
           localStorage.setItem("sessionId", validData.sessionId || validData.token);
           return true;
         }
-        // If validation succeeds but no sessionId, we still proceed (Bypass Blocking)
-        return true;
+        return true; // Bypass if validation ok
       }
 
-      // 3. LAST RESORT: IF WE HAVE PARAMS, JUST PROCEED WITHOUT SESSION
-      // (This addresses the user's feedback about removing the expiration block)
-      if (theaterId && hallId && seatId && seat) {
-        console.log("Proceeding without backend session via local parameters.");
-        return true; 
-      }
+      // 3. LAST RESORT BYPASS
+      if (theaterId && hallId && seatId && seatName) return true;
 
       return false;
     } catch (err) {
       console.error("Session initialization failed:", err);
-      // Still bypass if we have enough local info
-      return !!(theaterId && hallId && seatId && seat);
+      return !!(theaterId && hallId && seatId && seatName);
     }
   };
 
@@ -100,62 +104,105 @@ const CustomerWelcome = () => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
-    let isMounted = true;
-
     const init = async () => {
-      // Clear error immediately on new scan
-      setError(false);
-
-      if (!theaterId || !hallId || !seatId || !seat) {
+      setInitializing(true);
+      if (!theaterId || !hallId || !seatId || !seatName) {
         setTimeout(() => {
-          if (!theaterId || !hallId || !seatId || !seat) {
+          if (!theaterId || !hallId || !seatId || !seatName) {
             setError(true);
+            setInitializing(false);
           }
-        }, 800);
+        }, 1200);
         return;
       }
 
-      // Check if we already have a session, but still verify if needed
-      const existingSession = localStorage.getItem("sessionId");
-
-      // If we have everything, we attempt to initialize/refresh with backend
-      const success = await createSession();
-
-      if (!isMounted) return;
-
-      if (success || existingSession) {
-        // We proceed if createSession succeeded OR if we have an existing session
-        // This ensures a "smooth" experience even if the backend call fails
-        navigate("/customer/menu");
-      } else {
-        setError(true);
-      }
+      // Attempt session creation silently
+      await createSession();
+      setInitializing(false);
     };
     init();
+  }, [theaterId, hallId, seatId, seatName]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [theaterId, hallId, seatId, seat, navigate]);
+  const handleOrderNow = () => {
+    navigate("/customer/menu");
+  };
+
+  // -- Loading/Error States (minimalist/bypass) --
   if (error) {
-    return <SessionExpiredUI />;
+    return (
+      <div className="welcome-container">
+        <div className="welcome-glass">
+            <div style={{ fontSize: "64px", marginBottom: "20px" }}>📱</div>
+            <h2 style={{ color: "#333", fontSize: "24px", marginBottom: "10px" }}>Ready to Order?</h2>
+            <p style={{ color: "#666", marginBottom: "30px", maxWidth: "320px", lineHeight: "1.6" }}>
+              Please scan the QR code located on your table to see the menu and place your order.
+            </p>
+        </div>
+      </div>
+    );
   }
 
+  // Header/Logo defaults
+  const logoUrl = theater?.logo || "";
+  const name = theater?.name || "Welcome to Cinema";
+  const branch = theater?.branchName || "Main Branch";
+  const city = theater?.location || "Theater";
+
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      height: "100vh",
-      background: "#fff"
-    }}>
-      <div className="welcome-loader">
-        <div style={{ fontSize: "24px", fontWeight: "600", color: "#e61e2a" }}>
-          Welcome to PopSeat
+    <div className="welcome-container">
+      <main className="welcome-main-card">
+        {/* Concave Header with Theater Logo */}
+        <div className="welcome-header-card">
+          <div className="welcome-logo-container">
+            {logoUrl ? (
+              <img src={logoUrl} alt="Theater Logo" className="welcome-logo-modern" />
+            ) : (
+              <div className="logo-placeholder">🎬</div>
+            )}
+          </div>
         </div>
-        <p style={{ color: "#888" }}>Setting up your table...</p>
-      </div>
+
+        {/* Content Section */}
+        <section className="welcome-content-section">
+          <h2 className="welcome-theater-name">{name}</h2>
+          <div className="welcome-location">
+            <span>{branch}</span>
+            <span className="dot" />
+            <span>{city}</span>
+          </div>
+
+          {/* Table Box (Screen & Seat info) */}
+          <div className="welcome-info-box">
+            <div className="info-item">
+              <div className="info-label-group">
+                <div className="info-icon">🖥️</div>
+                <span className="info-label">Screen</span>
+              </div>
+              <span className="info-value">{hallId || "---"}</span>
+            </div>
+            <div className="info-item">
+              <div className="info-label-group">
+                <div className="info-icon">💺</div>
+                <span className="info-label">Seat</span>
+              </div>
+              <span className="info-value">{seatName || "---"}</span>
+            </div>
+          </div>
+
+          {/* Circular Action Button (Arrow) */}
+          <button 
+            className="welcome-arrow-button" 
+            onClick={handleOrderNow}
+            aria-label="Start Ordering"
+          >
+            <div className="arrow-icon">→</div>
+          </button>
+          
+          <p style={{ fontSize: "14px", color: "#94a3b8", fontWeight: "600" }}>
+            Tap the button to start ordering
+          </p>
+        </section>
+      </main>
     </div>
   );
 };
