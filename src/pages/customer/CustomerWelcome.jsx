@@ -87,11 +87,18 @@ const CustomerWelcome = () => {
         }
       }
 
-      // 2. FALLBACK BYPASS: If session creation fails/404s, we still have IDs.
-      // Allowing the customer to proceed ensures they aren't blocked.
+      // 2. CRITICAL ERROR CHECK: If 400 (Bad Request), the IDs are missing/invalid.
+      // We must stop and show an error to prevent loading incorrect cached data.
+      if (res.status === 400) {
+        setError(true);
+        return false;
+      }
+
+      // 3. FALLBACK BYPASS: If 404 (Not Found), the backend endpoint isn't ready.
+      // We proceed using URL params directly so the user isn't stuck.
       return true; 
     } catch (err) {
-      console.warn("Session bypass active:", err);
+      console.warn("Session bypass active due to network/endpoint issue:", err);
       return true;
     }
   };
