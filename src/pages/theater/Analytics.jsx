@@ -194,7 +194,7 @@ const Analytics = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE}/orders?theaterId=${theaterId}`, {
+      const res = await fetch(`${API_BASE}/orders?cinemaId=${theaterId}`, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
       });
       const data = await res.json();

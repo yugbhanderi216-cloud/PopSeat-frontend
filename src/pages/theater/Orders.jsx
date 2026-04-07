@@ -117,7 +117,7 @@ const Orders = () => {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/orders?theaterId=${theaterId}`, {
+      const res = await fetch(`${API_BASE}/orders?cinemaId=${theaterId}`, {
         headers: authHeaders(),
       });
 

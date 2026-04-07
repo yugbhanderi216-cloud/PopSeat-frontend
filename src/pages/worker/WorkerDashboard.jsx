@@ -80,7 +80,7 @@ const WorkerDashboard = () => {
     if (!theaterId) return;
     setError("");
     try {
-      const res = await fetch(`${API_BASE}/orders?theaterId=${theaterId}`, {
+      const res = await fetch(`${API_BASE}/orders?cinemaId=${theaterId}`, {
         headers: authHeaders(),
       });
       const data = await res.json();

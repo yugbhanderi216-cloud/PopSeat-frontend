@@ -106,7 +106,7 @@ const TheaterDashboard = () => {
   const fetchOrders = useCallback(async () => {
     if (!theaterId) return;
     try {
-      const res = await fetch(`${API_BASE}/orders?theaterId=${theaterId}`, {
+      const res = await fetch(`${API_BASE}/orders?cinemaId=${theaterId}`, {
         headers: authHeaders(),
       });
       const data = await res.json();
