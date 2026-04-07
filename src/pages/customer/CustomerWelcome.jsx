@@ -5,6 +5,12 @@ import "./CustomerWelcome.css";
 
 const API_BASE = "https://popseat.onrender.com/api";
 
+const getImageUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("blob:")) return url;
+  return `https://popseat.onrender.com/${url.replace(/^\//, "")}`;
+};
+
 const CustomerWelcome = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,15 +35,17 @@ const CustomerWelcome = () => {
   const theaterId = params.get("theaterId") || params.get("cinemaId") || localStorage.getItem("customerTheaterId");
   const hallId = params.get("hallId") || localStorage.getItem("customerHallId");
   const seatId = params.get("seatId") || localStorage.getItem("customerSeatId");
-  const seatName = params.get("seat") || localStorage.getItem("seatNo");
+  const seat = params.get("seat") || localStorage.getItem("seatNo");
+  const screen = params.get("screen") || localStorage.getItem("screenNo");
 
   // Sync with localStorage
   useEffect(() => {
     if (theaterId) localStorage.setItem("customerTheaterId", theaterId);
     if (hallId) localStorage.setItem("customerHallId", hallId);
     if (seatId) localStorage.setItem("customerSeatId", seatId);
-    if (seatName) localStorage.setItem("seatNo", seatName);
-  }, [theaterId, hallId, seatId, seatName]);
+    if (seat) localStorage.setItem("seatNo", seat);
+    if (screen) localStorage.setItem("screenNo", screen);
+  }, [theaterId, hallId, seatId, seat, screen]);
 
   // -- Fetch Theater Info for Rich UI --
   useEffect(() => {
@@ -66,7 +74,7 @@ const CustomerWelcome = () => {
       const res = await fetch(`${API_BASE}/session/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ theaterId, hallId, seatId, seatNumber: seatName })
+        body: JSON.stringify({ theaterId, hallId, seatId, seatNumber: seat })
       });
 
       if (res.status === 201) {
@@ -143,10 +151,10 @@ const CustomerWelcome = () => {
   }
 
   // Header/Logo defaults
-  const logoUrl = theater?.logo || "";
+  const logoUrl = getImageUrl(theater?.logo || "");
   const name = theater?.name || "Welcome to Cinema";
   const branch = theater?.branchName || "Main Branch";
-  const city = theater?.location || "Theater";
+  const city = theater?.city || theater?.location || "Theater";
 
   return (
     <div className="welcome-container">
@@ -155,7 +163,12 @@ const CustomerWelcome = () => {
         <div className="welcome-header-card">
           <div className="welcome-logo-container">
             {logoUrl ? (
-              <img src={logoUrl} alt="Theater Logo" className="welcome-logo-modern" />
+              <img 
+                src={logoUrl} 
+                alt="Theater Logo" 
+                className="welcome-logo-modern" 
+                onError={(e) => e.target.style.display = 'none'}
+              />
             ) : (
               <div className="logo-placeholder">🎬</div>
             )}
@@ -178,14 +191,14 @@ const CustomerWelcome = () => {
                 <div className="info-icon">🖥️</div>
                 <span className="info-label">Screen</span>
               </div>
-              <span className="info-value">{hallId || "---"}</span>
+              <span className="info-value">{screen || "---"}</span>
             </div>
             <div className="info-item">
               <div className="info-label-group">
                 <div className="info-icon">💺</div>
                 <span className="info-label">Seat</span>
               </div>
-              <span className="info-value">{seatName || "---"}</span>
+              <span className="info-value">{seat || "---"}</span>
             </div>
           </div>
 
