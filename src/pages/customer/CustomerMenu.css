@@ -197,9 +197,10 @@
   }
 
   .featured-card .item-name {
-    font-size: 24px; /* Increased from 22px */
+    font-size: 24px;
     font-weight: 800;
     margin-bottom: 4px;
+    color: white;
     text-align: center;
     width: 100%;
   }
@@ -214,9 +215,10 @@
   }
 
   .standard-card .item-name {
-    font-size: 16px; /* Increased from 14px */
+    font-size: 16px;
     font-weight: 700;
     line-height: 1.3;
+    color: white;
     text-align: center;
     width: 100%;
     /* Limit to 2 lines for grid stability */
@@ -336,10 +338,10 @@
   }
 
   .item-name {
-    font-size: 28px; /* Increased from 26px */
+    font-size: 34px; /* Increased from 28px */
     font-weight: 800;
     margin-bottom: 8px;
-    color: white;
+    color: white; /* Explicitly white as requested */
     text-align: center;
     width: 100%;
     line-height: 1.25;
@@ -348,7 +350,7 @@
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    min-height: 2.5em; /* Optimized for 2 lines at 28px */
+    min-height: 2.8em; /* Adjusted for 34px font size */
   }
 
   .item-desc {
