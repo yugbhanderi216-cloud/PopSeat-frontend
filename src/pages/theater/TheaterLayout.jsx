@@ -12,8 +12,15 @@ import logo from "../PopSeat_Logo.png";
 //   • Responsive  → bottom-nav shown on ≤768px
 // ─────────────────────────────────────────────────────────────
 
-const TheaterLayout = () => {
+const API_BASE = "https://popseat.onrender.com";
 
+const getImageUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("blob:")) return url;
+  return `${API_BASE}/api/${url.replace(/^\//, "")}`;
+};
+
+const TheaterLayout = () => {
   const navigate = useNavigate();
 
   /* ── Read identity ── */
@@ -88,7 +95,7 @@ const TheaterLayout = () => {
     if (!isOwner) return;
     const fetchTheaters = async () => {
       try {
-        const res = await fetch("https://popseat.onrender.com/api/cinema", {
+        const res = await fetch(`${API_BASE}/api/cinema`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token") || ""}`
           }
@@ -148,6 +155,8 @@ const TheaterLayout = () => {
   ].filter(Boolean).join(" ");
 
   const getInitial = () => email ? email.charAt(0).toUpperCase() : "U";
+
+  const currentTheater = theaters.find((t) => t._id === theaterId);
 
   return (
     <div className={rootClass}>
@@ -227,13 +236,21 @@ const TheaterLayout = () => {
                   className="tl-switcher-btn"
                   onClick={() => setSwitcherOpen(!switcherOpen)}
                 >
-                  <div className="tl-switcher-icon">🏛️</div>
+                  {currentTheater?.theaterLogo ? (
+                    <img
+                      src={getImageUrl(currentTheater.theaterLogo)}
+                      alt="Logo"
+                      className="tl-switcher-icon-img"
+                    />
+                  ) : (
+                    <div className="tl-switcher-icon">🏛️</div>
+                  )}
                   <div className="tl-switcher-text">
                     <span className="tl-switcher-name">
-                      {theaters.find(t => t._id === theaterId)?.name || "Select Theater"}
+                      {currentTheater?.name || "Select Theater"}
                     </span>
                     <span className="tl-switcher-branch">
-                      {theaters.find(t => t._id === theaterId)?.branchName || "Switch Cinema"}
+                      {currentTheater?.branchName || "Switch Cinema"}
                     </span>
                   </div>
                   <span className={`tl-switcher-arrow ${switcherOpen ? "open" : ""}`}>▾</span>

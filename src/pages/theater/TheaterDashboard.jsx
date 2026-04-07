@@ -153,8 +153,8 @@ const TheaterDashboard = () => {
     <div className="theater-dashboard">
       <div className="dashboard-header">
         <div className="dashboard-header-left">
-          {theater?.image && (
-            <img src={getImageUrl(theater.image)} alt="Theater" className="theater-thumb" />
+          {(theater?.theaterLogo || theater?.image) && (
+            <img src={getImageUrl(theater?.theaterLogo || theater?.image)} alt="Theater" className="dashboard-logo" />
           )}
           <div className="theater-titles">
             <h1 className="theater-name">{theater?.name || "Loading..."}</h1>

@@ -703,6 +703,15 @@
   border-radius: 8px;
 }
 
+.tl-switcher-icon-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #fff;
+  border: 1px solid var(--border-soft);
+}
+
 .tl-switcher-text {
   flex: 1;
   display: flex;
