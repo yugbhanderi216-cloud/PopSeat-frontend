@@ -268,7 +268,7 @@ const Menu = () => {
     const formData = new FormData();
     formData.append("name", capitalizeWords(form.name));
     formData.append("category", form.category.trim().toLowerCase());
-    formData.append("description", capitalizeWords(form.description));
+    formData.append("description", form.description);
     if (sizes.length > 0) {
       formData.append("price", sizes[0].price);
       formData.append("size", sizes[0].name);
@@ -685,7 +685,7 @@ const Menu = () => {
                 placeholder="Short description (optional)"
                 value={form.description}
                 onChange={(e) =>
-                  setForm({ ...form, description: capitalizeWords(e.target.value) })
+                  setForm({ ...form, description: e.target.value })
                 }
               />
             </div>

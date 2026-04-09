@@ -341,7 +341,7 @@ const OwnerHome = () => {
     }
     // Set theaterId for unified session tracking
     localStorage.setItem("theaterId", theater._id);
-    
+
     navigate(`/theater/overview?theaterId=${theater._id}`, {
       state: { theaterId: theater._id },
     });
@@ -366,7 +366,7 @@ const OwnerHome = () => {
   /* ── Logout ── */
   const handleLogout = () => {
     ["token", "email", "role", "theaterId", "theaterName", "branchName",
-     "sessionToken", "seatId", "hallId", "cart"]
+      "sessionToken", "seatId", "hallId", "cart"]
       .forEach((k) => localStorage.removeItem(k));
     sessionStorage.clear();
     navigate("/login");
@@ -385,6 +385,7 @@ const OwnerHome = () => {
 
   return (
     <div className="owner-container">
+      <button className="back-btn-v2" onClick={() => navigate("/login")} title="Go back">←</button>
 
       <ConfirmModal
         confirmDelete={confirmDelete}
