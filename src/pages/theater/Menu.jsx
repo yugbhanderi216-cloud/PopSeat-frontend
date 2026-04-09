@@ -75,8 +75,8 @@ const Menu = () => {
   // ── FIX 1: Read theaterId once (EXACT LOGIC) ──
   // ── FIX 1: Read theaterId once ──
   const [theaterId] = useState(() => {
-    return localStorage.getItem("theaterId") || 
-           new URLSearchParams(window.location.search).get("theaterId") || "";
+    return localStorage.getItem("theaterId") ||
+      new URLSearchParams(window.location.search).get("theaterId") || "";
   });
 
   // ── Role: safely read from localStorage, always a string ──
@@ -789,7 +789,7 @@ const Menu = () => {
               <div className="option-preview">
                 {toppings.map((t, i) => (
                   <div key={`${t.name}-${t.price}-${i}`} className="option-chip">
-                    {t.name} +₹{t.price}
+                    {t.name} . ₹{t.price}
                     <button className="chip-remove" onClick={() => removeTopping(i)}>
                       ✕
                     </button>
@@ -827,7 +827,7 @@ const Menu = () => {
               <div className="option-preview">
                 {dips.map((d, i) => (
                   <div key={`${d.name}-${d.price}-${i}`} className="option-chip">
-                    {d.name} +₹{d.price}
+                    {d.name} . ₹{d.price}
                     <button className="chip-remove" onClick={() => removeDip(i)}>
                       ✕
                     </button>
