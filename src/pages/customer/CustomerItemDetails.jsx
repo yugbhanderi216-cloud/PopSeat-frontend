@@ -213,28 +213,24 @@ const CustomerItemDetails = () => {
 
             <h3>Add Toppings</h3>
 
-            {toppingOptions.map((top, i) => (
-
-              <div key={i} className="option-row">
-
-                <label>
-
-                  {/* FIX: controlled checkbox — checked prop added */}
-                  <input
-                    type="checkbox"
-                    checked={!!toppings.find((t) => t.name === top.name)}
-                    onChange={() => toggleTopping(top)}
-                  />
-
-                  {top.name}
-
-                </label>
-
-                <span>+₹{top.price}</span>
-
-              </div>
-
-            ))}
+            {toppingOptions.map((top, i) => {
+              const isSelected = !!toppings.find((t) => t.name === top.name);
+              return (
+                <div key={i} className={`option-row ${isSelected ? "selected" : ""}`}>
+                  <label className="option-label">
+                    <div className="option-left">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleTopping(top)}
+                      />
+                      <span className="option-name">{top.name}</span>
+                    </div>
+                    <span className="option-price">+₹{top.price}</span>
+                  </label>
+                </div>
+              );
+            })}
 
           </div>
 
@@ -248,28 +244,24 @@ const CustomerItemDetails = () => {
 
             <h3>Add Dips</h3>
 
-            {dipOptions.map((dip, i) => (
-
-              <div key={i} className="option-row">
-
-                <label>
-
-                  {/* FIX: controlled checkbox — checked prop added */}
-                  <input
-                    type="checkbox"
-                    checked={!!dips.find((d) => d.name === dip.name)}
-                    onChange={() => toggleDip(dip)}
-                  />
-
-                  {dip.name}
-
-                </label>
-
-                <span>+₹{dip.price}</span>
-
-              </div>
-
-            ))}
+            {dipOptions.map((dip, i) => {
+              const isSelected = !!dips.find((d) => d.name === dip.name);
+              return (
+                <div key={i} className={`option-row ${isSelected ? "selected" : ""}`}>
+                  <label className="option-label">
+                    <div className="option-left">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleDip(dip)}
+                      />
+                      <span className="option-name">{dip.name}</span>
+                    </div>
+                    <span className="option-price">+₹{dip.price}</span>
+                  </label>
+                </div>
+              );
+            })}
 
           </div>
 

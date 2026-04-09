@@ -145,6 +145,11 @@
   border-bottom: 1px solid var(--sw-border);
 }
 
+.item-details .section {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .section h3 {
   font-family: 'Outfit', sans-serif;
   font-size: 20px;
@@ -192,33 +197,101 @@
   box-shadow: 0 6px 16px rgba(121, 51, 77, 0.25);
 }
 
-/* ─── OPTOIN DATA ─── */
+/* ─── OPTION CARDS (Toppings/Dips) ─── */
 .option-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 0;
-  font-weight: 600;
+  margin-bottom: 12px;
+  background: white;
+  border: 2px solid #eeeeee;
+  border-radius: 16px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
-.option-row label {
+.option-row:hover {
+  border-color: #ddd;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.option-row:active {
+  transform: scale(0.98);
+}
+
+.option-row.selected {
+  background: #79334D15;
+  border-color: var(--sw-primary);
+  box-shadow: 0 6px 16px rgba(121, 51, 77, 0.12);
+}
+
+.option-label {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  width: 100%;
+  user-select: none;
+}
+
+.option-left {
   display: flex;
   align-items: center;
-  gap: 14px;
-  cursor: pointer;
+  gap: 16px;
 }
 
 .option-row input[type="checkbox"] {
-  width: 24px;
-  height: 24px;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #ccc;
   border-radius: 6px;
-  accent-color: var(--sw-primary);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+  margin: 0;
+  display: grid;
+  place-content: center;
 }
 
-.option-row span {
+.option-row input[type="checkbox"]:checked {
+  background: var(--sw-primary);
+  border-color: var(--sw-primary);
+}
+
+.option-row input[type="checkbox"]::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  transform: scale(0);
+  transition: 120ms transform ease-in-out;
+  box-shadow: inset 1em 1em white;
+  background-color: CanvasText;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+.option-row input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+
+.option-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sw-dark);
+  transition: all 0.2s;
+}
+
+.option-row.selected .option-name {
   color: var(--sw-primary);
   font-weight: 700;
+}
+
+.option-price {
   font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sw-primary);
 }
 
 /* ─── QUANTITY ─── */
