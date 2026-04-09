@@ -38,25 +38,25 @@
 }
 
 .back-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(8px);
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(0, 0, 0, 0.05);
-  color: var(--sw-dark);
-  font-size: 18px;
-  font-weight: 800;
+  color: var(--sw-primary);
+  font-size: 22px;
+  font-weight: 900;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 .back-btn:hover {
-  transform: scale(1.05);
+  transform: scale(1.08) rotate(-5deg);
   background: white;
 }
 
@@ -199,10 +199,12 @@
 
 /* ─── OPTION CHIPS (Toppings/Dips) ─── */
 .options-container {
-  display: flex;
-  flex-wrap: wrap;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
   gap: 10px;
-  padding: 4px 0;
+  padding: 8px 0;
+  width: 100%;
 }
 
 .option-row {
@@ -367,6 +369,10 @@
   font-size: 18px;
   font-weight: 900;
   color: var(--sw-dark);
+  white-space: nowrap;
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 .total-label {
@@ -381,7 +387,8 @@
   color: white;
   border: none;
   padding: 15px 0;
-  width: 58%;
+  width: 52%;
+  flex-shrink: 0;
   border-radius: 50px;
   font-weight: 800;
   font-size: 15px;
