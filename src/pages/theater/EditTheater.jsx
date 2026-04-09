@@ -34,7 +34,7 @@ const capitalizeSmart = (text) => {
   return text.toLowerCase().replace(/(^|\s)\w/g, (l) => l.toUpperCase());
 };
 
-const CAPITALIZE_FIELDS = ["ownerName", "name", "branchName", "city", "address"];
+const CAPITALIZE_FIELDS = ["ownerName", "name", "branchName", "city", "address", "accountHolder", "bankName"];
 const REQUIRED_FIELDS = ["name", "ownerName", "city", "contactNumber"];
 
 const EditTheater = () => {
@@ -63,6 +63,21 @@ const EditTheater = () => {
       navigate("/dashboard", { replace: true });
     }
   }, [role, navigate]);
+
+  /* ── Memory Cleanup ── */
+  useEffect(() => {
+    return () => {
+      // Cleanup any blob URLs on unmount
+      if (theaterData) {
+        if (theaterData.theaterLogo && theaterData.theaterLogo.startsWith("blob:")) {
+          URL.revokeObjectURL(theaterData.theaterLogo);
+        }
+        if (theaterData.banner && theaterData.banner.startsWith("blob:")) {
+          URL.revokeObjectURL(theaterData.banner);
+        }
+      }
+    };
+  }, [theaterData]);
 
   /* ═══════════════════════════════════════
      GET /api/cinema/:id
@@ -137,6 +152,14 @@ const EditTheater = () => {
       return;
     }
 
+    if (name === "ifsc") {
+      setTheaterData((prev) => ({
+        ...prev,
+        ifsc: value.toUpperCase(),
+      }));
+      return;
+    }
+
     setTheaterData((prev) => ({
       ...prev,
       [name]: CAPITALIZE_FIELDS.includes(name) ? capitalizeSmart(value) : value,
@@ -151,9 +174,15 @@ const EditTheater = () => {
     const previewUrl = URL.createObjectURL(file);
 
     if (name === "theaterLogo") {
+      if (theaterData && theaterData.theaterLogo && theaterData.theaterLogo.startsWith("blob:")) {
+        URL.revokeObjectURL(theaterData.theaterLogo);
+      }
       setLogoFile(file);
       setTheaterData((prev) => ({ ...prev, theaterLogo: previewUrl }));
     } else if (name === "banner") {
+      if (theaterData && theaterData.banner && theaterData.banner.startsWith("blob:")) {
+        URL.revokeObjectURL(theaterData.banner);
+      }
       setBannerFile(file);
       setTheaterData((prev) => ({ ...prev, banner: previewUrl }));
     }
@@ -224,17 +253,12 @@ const EditTheater = () => {
         formData.append("openingTime", theaterData.openingTime || "");
         formData.append("closingTime", theaterData.closingTime || "");
 
-        // Append new files if selected; otherwise keep existing URL in body
-        // so backend's cinemaData spread doesn't lose the old value
+        // Append new files if selected; do not send URL strings in multipart
         if (logoFile instanceof File) {
           formData.append("theaterLogo", logoFile);
-        } else {
-          formData.append("theaterLogo", theaterData.theaterLogo || "");
         }
         if (bannerFile instanceof File) {
           formData.append("banner", bannerFile);
-        } else {
-          formData.append("banner", theaterData.banner || "");
         }
 
         cinemaRes = await fetch(`${API_BASE}/cinema/${theaterData._id}`, {
@@ -442,7 +466,7 @@ const EditTheater = () => {
           <div className="edit-field-row">
             <div className="edit-field">
               <label className="edit-label">Theater Logo
-                <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}></span>
+                <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}>(Square aspect ratio recommended)</span>
               </label>
               <input className="edit-input" name="theaterLogo" type="file" accept="image/*" onChange={handleFileChange} />
               {theaterData.theaterLogo && (
@@ -456,7 +480,7 @@ const EditTheater = () => {
             </div>
             <div className="edit-field">
               <label className="edit-label">Banner Image
-                <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}></span>
+                <span style={{ fontSize: 11, color: "#aaa", marginLeft: 6 }}>(Wide landscape recommended)</span>
               </label>
               <input className="edit-input" name="banner" type="file" accept="image/*" onChange={handleFileChange} />
               {theaterData.banner && (
@@ -498,9 +522,7 @@ const EditTheater = () => {
                 className="edit-input"
                 name="ifsc"
                 value={theaterData.ifsc}
-                onChange={(e) =>
-                  setTheaterData((prev) => ({ ...prev, ifsc: e.target.value.toUpperCase() }))
-                }
+                onChange={handleChange}
                 placeholder="IFSC Code"
               />
             </div>
