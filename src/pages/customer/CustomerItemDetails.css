@@ -197,21 +197,20 @@
   box-shadow: 0 6px 16px rgba(121, 51, 77, 0.25);
 }
 
-/* ─── OPTION CHIPS (Toppings/Dips) ─── */
+/* ─── OPTION PILLS (Toppings/Dips) ─── */
 .options-container {
   display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: wrap !important;
-  gap: 10px;
+  flex-direction: column !important;
+  gap: 12px;
   padding: 8px 0;
   width: 100%;
 }
 
 .option-row {
-  width: fit-content;
+  width: 100%;
   background: white;
-  border: 1px solid #e2e2e2;
-  border-radius: 40px;
+  border: 1px solid #e5e5e5;
+  border-radius: 50px;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
@@ -233,10 +232,11 @@
 
 .option-label {
   display: flex !important;
+  justify-content: space-between !important;
   align-items: center;
-  gap: 10px;
-  padding: 8px 18px;
+  padding: 12px 20px;
   cursor: pointer;
+  width: 100%;
   user-select: none;
 }
 
@@ -393,6 +393,9 @@
   font-weight: 800;
   font-size: 15px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 8px 16px rgba(121, 51, 77, 0.3);

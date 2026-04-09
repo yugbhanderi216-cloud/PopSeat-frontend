@@ -303,9 +303,7 @@ const CustomerItemDetails = () => {
 
         <div className="add-cart-bar">
 
-          <div className="total-price">
-            <span className="total-label">Total</span> ₹ {totalPrice}
-          </div>
+          <div className="total-price">₹ {totalPrice}</div>
 
           <button className="add-btn" onClick={addToCart}>
             Add To Cart
