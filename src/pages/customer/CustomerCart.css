@@ -132,12 +132,27 @@
   margin: 0;
 }
 
+.cart-price-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.cart-item-total {
+  font-size: 11px;
+  color: var(--sw-text-muted);
+  font-weight: 600;
+  margin: 0;
+}
+
 .cart-price {
   font-family: 'Outfit', sans-serif;
   font-size: 16px;
   font-weight: 800;
   color: var(--sw-primary);
-  margin-left: auto;
+  margin: 0;
 }
 
 /* ── Quantity pill (below name, inside cart-info) ── */

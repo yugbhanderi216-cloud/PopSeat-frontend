@@ -77,8 +77,11 @@ const CustomerCart = () => {
     updateStorage(cart.filter((item) => (item.id || item._id) !== id));
   };
 
-  /* ── Total ── */
-  // Removed total calculation on frontend
+  /* ── Total Calculation ── */
+  const totalAmount = cart.reduce((acc, item) => {
+    const price = item.finalPrice || item.price || 0;
+    return acc + (item.quantity * price);
+  }, 0);
 
   /* ── Checkout ── */
   const handleCheckout = () => {
@@ -152,9 +155,14 @@ const CustomerCart = () => {
                   </div>
                 </div>
                 
-                <p className="cart-price">
-                  {formatCurrency(item.finalPrice || item.price || 0)}
-                </p>
+                <div className="cart-price-container">
+                  <p className="cart-item-total">
+                    {item.quantity} × {formatCurrency(item.finalPrice || item.price || 0)}
+                  </p>
+                  <p className="cart-price">
+                    {formatCurrency(item.quantity * (item.finalPrice || item.price || 0))}
+                  </p>
+                </div>
               </div>
             );
           })
@@ -164,14 +172,14 @@ const CustomerCart = () => {
       {/* Footer */}
       <div className="cart-footer">
         <h3>
-          Proceed to Checkout
+          Total Bill <span>{formatCurrency(totalAmount)}</span>
         </h3>
         <button
           className="checkout-btn"
           onClick={handleCheckout}
           disabled={cart.length === 0}
         >
-          Proceed to Checkout
+          <span>Proceed to Checkout</span>
         </button>
       </div>
     </div>
