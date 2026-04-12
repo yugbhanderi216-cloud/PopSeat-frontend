@@ -178,6 +178,14 @@ const CustomerMenu = () => {
           </button>
 
           <div className="header-info">
+            {(theater?.theaterLogo || theater?.image) && (
+              <img
+                src={getImageUrl(theater.theaterLogo || theater.image)}
+                alt="Theater Logo"
+                className="header-logo"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            )}
             <h1 className="header-title">{theater?.name || "Order Food"}</h1>
             <p className="header-details">
               Delivering to: Screen {screenNo || "1"} • Seat {seatNo || "---"}

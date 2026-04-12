@@ -38,11 +38,13 @@
    HEADER & CATEGORIES
 ═══════════════════════════════════════════ */
 .customer-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 60px 1fr 60px;
   align-items: center;
-  padding: 30px 0;
-  gap: 16px;
+  padding: 24px 0;
+  gap: 12px;
   position: relative;
+  width: 100%;
 }
 
 .back-btn {
@@ -58,6 +60,7 @@
   opacity: 0.8;
   cursor: pointer;
   z-index: 10;
+  justify-self: start;
 }
 
 .cart-btn {
@@ -74,6 +77,7 @@
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  justify-self: end;
 }
 
 .cart-count-badge {
@@ -95,25 +99,34 @@
 }
 
 .header-info {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
+  grid-column: 2;
+}
+
+.header-logo {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border: 1px solid #f0f0f0;
 }
 
 .header-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 800;
   margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  color: var(--sw-text);
+  line-height: 1.2;
 }
 
-.header-title::before {
-  content: '🍿';
-  font-size: 20px;
-}
+/* Popcorn emoji removed as requested */
 
 .header-details {
   font-size: 13px;
@@ -274,16 +287,10 @@
 /* Desktop View (min-width: 769px) */
 @media (min-width: 769px) {
   .customer-header {
-    display: grid;
     grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 0;
     padding: 40px 0;
+    gap: 32px;
   }
-
-  .back-btn { justify-self: start; }
-  .header-info { grid-column: 2; }
-  .cart-btn { justify-self: end; }
 
   .customer-grid {
     display: grid;
